@@ -1188,5 +1188,261 @@
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
+
+<!-- MODULE AJOUTÉ : Défis progressifs de calcul (CP → Terminale) -->
+<style>
+  .calc-challenge{max-width:1100px;margin:28px auto;padding:24px;border-radius:22px;background:#fff;border:1px solid #e5e7eb;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+  .calc-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+  .calc-tabs button,.calc-actions button{border:0;border-radius:12px;padding:10px 15px;font-weight:700;cursor:pointer;background:#eef2ff}
+  .calc-tabs button.active{background:#4f46e5;color:#fff}
+  .calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+  .calc-card{border:1px solid #e5e7eb;border-radius:18px;padding:18px;background:#fafafa}
+  .calc-question{font-size:34px;font-weight:800;text-align:center;margin:18px 0}
+  .calc-input{display:block;width:100%;max-width:280px;margin:0 auto;padding:13px;border:2px solid #d1d5db;border-radius:12px;font-size:22px;text-align:center}
+  .calc-timer{font-size:28px;font-weight:900;text-align:center}
+  .calc-progress{height:10px;border-radius:99px;background:#e5e7eb;overflow:hidden;margin:14px 0}
+  .calc-progress>div{height:100%;background:#4f46e5;transition:width .25s}
+  .calc-feedback{text-align:center;min-height:30px;font-weight:700;margin:12px 0}
+  .calc-level{font-weight:800}
+  .calc-muted{color:#6b7280}
+  .calc-score{font-size:18px;font-weight:800}
+  @media(max-width:600px){.calc-challenge{margin:15px;padding:16px}.calc-question{font-size:28px}}
+</style>
+
+<section id="defis-calcul-progressifs" class="calc-challenge">
+  <h2>🧠 Défis de calcul progressifs</h2>
+  <p class="calc-muted">
+    À partir du CP : 10 questions par niveau. Une fois les 10 réussies,
+    le niveau suivant est débloqué. Le chronomètre est activé pour les défis.
+  </p>
+
+  <div class="calc-tabs">
+    <button class="active" data-calc-mode="tables">Tables de multiplication</button>
+    <button data-calc-mode="addsub">Additions &amp; soustractions</button>
+  </div>
+
+  <div class="calc-grid">
+    <div class="calc-card">
+      <div class="calc-level" id="calcLevelLabel">CP — Niveau 1</div>
+      <div class="calc-score" id="calcScore">Question 1 / 10 · Réussites : 0</div>
+      <div class="calc-progress"><div id="calcProgressBar" style="width:0%"></div></div>
+      <div class="calc-timer">⏱️ <span id="calcTimer">--</span></div>
+    </div>
+
+    <div class="calc-card">
+      <div class="calc-muted">Progression proposée</div>
+      <ul id="calcDifficultyList"></ul>
+    </div>
+  </div>
+
+  <div class="calc-card" style="margin-top:16px">
+    <div id="calcQuestion" class="calc-question">—</div>
+    <input id="calcAnswer" class="calc-input" type="number" inputmode="numeric" autocomplete="off"
+           placeholder="Ta réponse" aria-label="Réponse">
+    <div class="calc-actions" style="display:flex;justify-content:center;gap:10px;margin-top:14px">
+      <button id="calcValidate">Valider</button>
+      <button id="calcNext" style="display:none">Question suivante</button>
+      <button id="calcRestart">Recommencer</button>
+    </div>
+    <div id="calcFeedback" class="calc-feedback"></div>
+  </div>
+</section>
+
+<script>
+(function(){
+  const grades = [
+    {name:"CP", tableMax:2, addMax:10, subMax:10},
+    {name:"CE1", tableMax:5, addMax:50, subMax:50},
+    {name:"CE2", tableMax:10, addMax:100, subMax:100},
+    {name:"CM1", tableMax:10, addMax:1000, subMax:1000},
+    {name:"CM2", tableMax:10, addMax:10000, subMax:10000},
+    {name:"6ème", tableMax:10, addMax:100000, subMax:100000},
+    {name:"5ème", tableMax:10, addMax:1000000, subMax:1000000},
+    {name:"4ème", tableMax:10, addMax:10000000, subMax:10000000},
+    {name:"3ème", tableMax:10, addMax:100000000, subMax:100000000},
+    {name:"Seconde", tableMax:12, addMax:1000000000, subMax:1000000000},
+    {name:"1ère", tableMax:15, addMax:10000000000, subMax:10000000000},
+    {name:"Terminale", tableMax:20, addMax:100000000000, subMax:100000000000}
+  ];
+
+  const modeConfig = {
+    tables: {
+      label:"Tables de multiplication",
+      levels:[
+        "Tables 2 et 5 · produits directs",
+        "Tables 2, 5 et 10 · mélange",
+        "Tables 2 à 5 · mélange",
+        "Tables 2 à 10 · mélange",
+        "Tables 2 à 10 · calculs à trous",
+        "Tables 2 à 10 · facteurs inversés",
+        "Tables 2 à 10 · rapidité",
+        "Produits plus grands · pièges de calcul",
+        "Produits mélangés · niveau avancé",
+        "Défi expert · mélange complet"
+      ]
+    },
+    addsub: {
+      label:"Additions & soustractions",
+      levels:[
+        "Additions jusqu'à 10",
+        "Additions et soustractions jusqu'à 20",
+        "Jusqu'à 100 · sans retenue complexe",
+        "Jusqu'à 1 000 · retenues",
+        "Grands nombres · jusqu'à 10 000",
+        "Calculs en chaîne",
+        "Nombres relatifs",
+        "Priorités et expressions simples",
+        "Calcul littéral / nombres complexes",
+        "Défi avancé"
+      ]
+    }
+  };
+
+  let mode="tables", gradeIndex=0, level=0, qIndex=0, successes=0;
+  let current=null, timer=null, remaining=0, locked=false;
+
+  const $=id=>document.getElementById(id);
+  const levelLabel=$("calcLevelLabel"), score=$("calcScore"), progress=$("calcProgressBar"),
+        timerEl=$("calcTimer"), question=$("calcQuestion"), answer=$("calcAnswer"),
+        feedback=$("calcFeedback"), validate=$("calcValidate"), next=$("calcNext"),
+        restart=$("calcRestart"), difficultyList=$("calcDifficultyList");
+
+  function rand(n){return Math.floor(Math.random()*n);}
+  function randInt(a,b){return a+rand(b-a+1);}
+  function shuffle(a){return a.sort(()=>Math.random()-.5);}
+
+  function getTableQuestion(){
+    const g=grades[gradeIndex], L=level;
+    let a,b;
+    if(L===0){a=shuffle([2,5])[0]; b=randInt(1,5);}
+    else if(L===1){a=shuffle([2,5,10])[0]; b=randInt(1,10);}
+    else if(L===2){a=randInt(2,5); b=randInt(1,10);}
+    else {a=randInt(2,g.tableMax); b=randInt(1,10);}
+    if(L>=4 && Math.random()<.35) return {text:`${a} × ? = ${a*b}`, answer:b};
+    if(L>=5 && Math.random()<.25) return {text:`? × ${b} = ${a*b}`, answer:a};
+    return {text:`${a} × ${b} = ?`, answer:a*b};
+  }
+
+  function getAddSubQuestion(){
+    const g=grades[gradeIndex], L=level;
+    if(L<=1){
+      const max=L===0?10:20, a=randInt(0,max), b=randInt(0,max);
+      const sub=Math.random()<.45;
+      if(sub){const x=Math.max(a,b),y=Math.min(a,b);return {text:`${x} − ${y} = ?`,answer:x-y};}
+      return {text:`${a} + ${b} = ?`,answer:a+b};
+    }
+    if(L<=4){
+      const max=g.addMax, a=randInt(0,max), b=randInt(0,max);
+      const sub=Math.random()<.45;
+      if(sub){const x=Math.max(a,b),y=Math.min(a,b);return {text:`${x} − ${y} = ?`,answer:x-y};}
+      return {text:`${a} + ${b} = ?`,answer:a+b};
+    }
+    if(L===5){
+      const a=randInt(1,999), b=randInt(1,999), c=randInt(1,999);
+      return Math.random()<.5
+        ? {text:`${a} + ${b} − ${c} = ?`,answer:a+b-c}
+        : {text:`${a} − ${b} + ${c} = ?`,answer:a-b+c};
+    }
+    if(L===6){
+      const a=randInt(-50,50), b=randInt(-50,50);
+      return Math.random()<.5
+        ? {text:`(${a}) + (${b}) = ?`,answer:a+b}
+        : {text:`(${a}) − (${b}) = ?`,answer:a-b};
+    }
+    const a=randInt(1,99), b=randInt(1,99), c=randInt(1,20);
+    if(L>=8) return {text:`${a} + ${b} − ${c} + ${randInt(1,20)} = ?`,answer:a+b-c+Math.floor(Math.random()*20)+1};
+    return {text:`${a} + ${b} − ${c} = ?`,answer:a+b-c};
+  }
+
+  function timeForLevel(){
+    // Le temps diminue progressivement, sans rendre le CP excessivement court.
+    return Math.max(12, 45 - level*3 - Math.floor(gradeIndex/3)*2);
+  }
+
+  function renderDifficulty(){
+    difficultyList.innerHTML="";
+    modeConfig[mode].levels.forEach((x,i)=>{
+      const li=document.createElement("li");
+      li.textContent=(i===level?"▶ ":"")+(i+1)+". "+x;
+      if(i<level) li.style.textDecoration="line-through";
+      difficultyList.appendChild(li);
+    });
+  }
+
+  function stopTimer(){ if(timer){clearInterval(timer);timer=null;} }
+
+  function startTimer(){
+    stopTimer(); remaining=timeForLevel(); timerEl.textContent=remaining+" s";
+    timer=setInterval(()=>{
+      remaining--; timerEl.textContent=remaining+" s";
+      if(remaining<=0){ stopTimer(); locked=true; feedback.textContent="⏰ Temps écoulé. La réponse était "+current.answer+"."; next.style.display="inline-block"; }
+    },1000);
+  }
+
+  function updateUI(){
+    levelLabel.textContent=grades[gradeIndex].name+" — Niveau "+(level+1)+" · "+modeConfig[mode].label;
+    score.textContent=`Question ${qIndex+1} / 10 · Réussites : ${successes}`;
+    progress.style.width=(qIndex/10*100)+"%";
+    renderDifficulty();
+  }
+
+  function newQuestion(){
+    stopTimer(); locked=false; next.style.display="none"; feedback.textContent="";
+    answer.value=""; answer.focus();
+    current=mode==="tables"?getTableQuestion():getAddSubQuestion();
+    question.textContent=current.text;
+    updateUI(); startTimer();
+  }
+
+  function advance(){
+    if(qIndex>=9){
+      stopTimer(); progress.style.width="100%";
+      if(successes===10){
+        feedback.textContent=`🎉 Niveau ${level+1} validé ! Passage au niveau suivant.`;
+        if(level<9) level++;
+        else if(gradeIndex<grades.length-1){gradeIndex++;level=0;}
+        qIndex=0; successes=0;
+      } else {
+        feedback.textContent=`Il faut 10 réussites sur 10 pour débloquer la suite. Recommence ce niveau.`;
+        qIndex=0; successes=0;
+      }
+      setTimeout(newQuestion,900);
+      return;
+    }
+    qIndex++; newQuestion();
+  }
+
+  function check(){
+    if(locked) return;
+    const v=Number(answer.value);
+    if(answer.value.trim()==="") return;
+    stopTimer(); locked=true;
+    if(v===current.answer){
+      successes++; feedback.textContent="✅ Correct !";
+    }else{
+      feedback.textContent=`❌ Pas encore. La bonne réponse est ${current.answer}.`;
+    }
+    score.textContent=`Question ${qIndex+1} / 10 · Réussites : ${successes}`;
+    next.style.display="inline-block";
+  }
+
+  document.querySelectorAll("[data-calc-mode]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      document.querySelectorAll("[data-calc-mode]").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      mode=btn.dataset.calcMode; gradeIndex=0; level=0; qIndex=0; successes=0; newQuestion();
+    });
+  });
+
+  validate.addEventListener("click",check);
+  next.addEventListener("click",advance);
+  restart.addEventListener("click",()=>{qIndex=0;successes=0;newQuestion();});
+  answer.addEventListener("keydown",e=>{if(e.key==="Enter"){if(!locked)check();else advance();}});
+
+  // Démarrage uniquement si le module est présent.
+  newQuestion();
+})();
+</script>
+
 </body>
 </html>
