@@ -1,234 +1,288 @@
-import React, { useState, useEffect } from 'react';
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathsAcademy</title>
+  <!-- Tailwind CSS pour les styles -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & React DOM via CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- Babel pour compiler le JSX directement dans le navigateur -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
 
-// --- CURRICULUM GLOBAL (PS À TERMINALE) ---
-const CURRICULUM = {
-  PS: [
-    { id: 'ps_shapes', name: 'Formes simples (Rond, Carré)', icon: '🔴', type: 'ps_shapes' },
-    { id: 'ps_sorting', name: 'Tri d\'objets (Couleurs & Formes)', icon: '🎨', type: 'ps_sorting' },
-    { id: 'ps_count3', name: 'Comptine numérique jusqu\'à 3', icon: '🔢', type: 'ps_count3' },
-    { id: 'ps_spatial', name: 'Repérage spatial (Sur/Sous, Dedans/Dehors)', icon: '📦', type: 'ps_spatial' },
-    { id: 'ps_patterns', name: 'Rythmes simples (Suites de couleurs)', icon: '🧩', type: 'ps_patterns' }
-  ],
-  MS: [
-    { id: 'ms_count6', name: 'Dénombrement jusqu\'à 5 ou 6', icon: '🖐️', type: 'ms_count6' },
-    { id: 'ms_compare', name: 'Comparaison de collections (Plus / Moins)', icon: '⚖️', type: 'ms_compare' },
-    { id: 'ms_triangle', name: 'Formes (Triangle, Carré, Rond)', icon: '🔺', type: 'ms_triangle' },
-    { id: 'ms_sizes', name: 'Tailles (Grand / Petit)', icon: '📏', type: 'ms_sizes' },
-    { id: 'ms_logic', name: 'Puzzles & Labyrinthes', icon: '🧩', type: 'ms_logic' }
-  ],
-  GS: [
-    { id: 'gs_num_writing', name: 'Chiffres & Nombres jusqu\'à 10', icon: '🔢', type: 'gs_num_writing' },
-    { id: 'gs_decomp', name: 'Décomposition des nombres (ex: 5 = 4 + 1)', icon: '🧩', type: 'gs_decomp' },
-    { id: 'gs_shapes_solids', name: 'Formes planes & Solides (Cube)', icon: '🧊', type: 'gs_shapes_solids' },
-    { id: 'gs_orientation', name: 'Orientation (Droite / Gauche)', icon: '↔️', type: 'gs_orientation' },
-    { id: 'gs_patterns', name: 'Algorithmes logiques complexes', icon: '🎨', type: 'gs_patterns' }
-  ],
-  CP: [
-    { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100' },
-    { id: 'cp_add_sub', name: 'Additions & Soustractions simples', icon: '➕', type: 'cp_add_sub' },
-    { id: 'cp_mental', name: 'Calcul mental (Compléments à 10)', icon: '🧠', type: 'cp_mental' },
-    { id: 'cp_money', name: 'Monnaie (Euros €)', icon: '💶', type: 'cp_money' },
-    { id: 'cp_length', name: 'Mesure de longueurs (cm)', icon: '📏', type: 'cp_length' },
-    { id: 'cp_shapes', name: 'Formes (Rectangle, Triangle, Carré)', icon: '🔷', type: 'cp_shapes' },
-    { id: 'cp_grid', name: 'Repérage sur quadrillage', icon: '🏁', type: 'cp_grid' }
-  ],
-  CE1: [
-    { id: 'ce1_num1000', name: 'Nombres jusqu\'à 1 000', icon: '🔢', type: 'ce1_num1000' },
-    { id: 'ce1_tables', name: 'Tables de multiplication (2, 3, 4, 5, 10)', icon: '✖️', type: 'ce1_tables' },
-    { id: 'ce1_sub_posed', name: 'Soustraction posée', icon: '➖', type: 'ce1_sub_posed' },
-    { id: 'ce1_double_half', name: 'Double et Moitié', icon: '⚖️', type: 'ce1_double_half' },
-    { id: 'ce1_measures', name: 'Masses (g, kg) & Temps (heures, min)', icon: '⏰', type: 'ce1_measures' },
-    { id: 'ce1_symmetry', name: 'Symétrie axiale', icon: '🪞', type: 'ce1_symmetry' }
-  ],
-  CE2: [
-    { id: 'ce2_num10000', name: 'Nombres jusqu\'à 10 000', icon: '🔢', type: 'ce2_num10000' },
-    { id: 'ce2_mult_posed', name: 'Multiplication posée', icon: '✖️', type: 'ce2_mult_posed' },
-    { id: 'ce2_division_intro', name: 'Approche de la division (Partages)', icon: '➗', type: 'ce2_division_intro' },
-    { id: 'ce2_capacity', name: 'Contenances (Litres)', icon: '🧪', type: 'ce2_capacity' },
-    { id: 'ce2_perimeters', name: 'Périmètres de figures', icon: '📏', type: 'ce2_perimeters' },
-    { id: 'ce2_solids', name: 'Solides (Cube, Pavé droit)', icon: '🧊', type: 'ce2_solids' },
-    { id: 'ce2_charts', name: 'Lecture de tableaux & graphiques', icon: '📊', type: 'ce2_charts' }
-  ],
-  CM1: [
-    { id: 'cm1_millions', name: 'Grands nombres (Millions)', icon: '🌌', type: 'cm1_millions' },
-    { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions' },
-    { id: 'cm1_decimals', name: 'Nombres décimaux (à virgule)', icon: '🎯', type: 'cm1_decimals' },
-    { id: 'cm1_div_posed', name: 'Division posée (à 1 chiffre)', icon: '➗', type: 'cm1_div_posed' },
-    { id: 'cm1_areas', name: 'Mesures d\'aires (cm², m²)', icon: '📐', type: 'cm1_areas' },
-    { id: 'cm1_lines_angles', name: 'Parallèles, Perpendiculaires & Angles droits', icon: '📏', type: 'cm1_lines_angles' }
-  ],
-  Terminale: [
-    { id: 'term_limits', name: 'Limites de suites & fonctions', icon: '♾️', type: 'term_limits' },
-    { id: 'term_exp_ln', name: 'Fonctions Exponentielle & Logarithme (ln)', icon: '📈', type: 'term_exp_ln' },
-    { id: 'term_integral', name: 'Calcul intégral & Aires', icon: '∫', type: 'term_integral' },
-    { id: 'term_geom_3d', name: 'Géométrie dans l\'espace (3D)', icon: '🧊', type: 'term_geom_3d' },
-    { id: 'term_combinatorics', name: 'Combinatoire & Dénombrement', icon: '🔢', type: 'term_combinatorics' },
-    { id: 'term_prob', name: 'Lois de probabilités & Grands nombres', icon: '🎲', type: 'term_prob' },
-    { id: 'term_diffeq', name: 'Équations différentielles', icon: '⚙️', type: 'term_diffeq' }
-  ]
-};
+  <div id="root"></div>
 
-// --- MOTEUR DE GÉNÉRATION D'EXERCICES UNIFIÉ ---
-function ExerciseRunner({ grade, module, onBack, onResult }) {
-  const [q, setQ] = useState({ text: '', ans: '', options: [], sub: '' });
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-  const generateQuestion = () => {
-    let text = '', ans = '', opts = [], sub = module.name;
+    // --- CURRICULUM COMPLET (PS À TERMINALE) ---
+    const CURRICULUM = {
+      PS: [
+        { id: 'ps_shapes', name: 'Formes simples (Rond, Carré)', icon: '🔴', type: 'ps_shapes' },
+        { id: 'ps_sorting', name: 'Tri d\'objets (Couleurs & Formes)', icon: '🎨', type: 'ps_sorting' },
+        { id: 'ps_count3', name: 'Comptine numérique jusqu\'à 3', icon: '🔢', type: 'ps_count3' },
+        { id: 'ps_spatial', name: 'Repérage spatial (Sur/Sous, Dedans/Dehors)', icon: '📦', type: 'ps_spatial' },
+        { id: 'ps_patterns', name: 'Rythmes simples (Suites de couleurs)', icon: '🧩', type: 'ps_patterns' }
+      ],
+      MS: [
+        { id: 'ms_count6', name: 'Dénombrement jusqu\'à 5 ou 6', icon: '🖐️', type: 'ms_count6' },
+        { id: 'ms_compare', name: 'Comparaison de collections (Plus / Moins)', icon: '⚖️', type: 'ms_compare' },
+        { id: 'ms_triangle', name: 'Formes (Triangle, Carré, Rond)', icon: '🔺', type: 'ms_triangle' },
+        { id: 'ms_sizes', name: 'Tailles (Grand / Petit)', icon: '📏', type: 'ms_sizes' },
+        { id: 'ms_logic', name: 'Puzzles & Labyrinthes', icon: '🧩', type: 'ms_logic' }
+      ],
+      GS: [
+        { id: 'gs_num_writing', name: 'Chiffres & Nombres jusqu\'à 10', icon: '🔢', type: 'gs_num_writing' },
+        { id: 'gs_decomp', name: 'Décomposition des nombres (ex: 5 = 4 + 1)', icon: '🧩', type: 'gs_decomp' },
+        { id: 'gs_shapes_solids', name: 'Formes planes & Solides (Cube)', icon: '🧊', type: 'gs_shapes_solids' },
+        { id: 'gs_orientation', name: 'Orientation (Droite / Gauche)', icon: '↔️', type: 'gs_orientation' },
+        { id: 'gs_patterns', name: 'Algorithmes logiques complexes', icon: '🎨', type: 'gs_patterns' }
+      ],
+      CP: [
+        { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100' },
+        { id: 'cp_add_sub', name: 'Additions & Soustractions simples', icon: '➕', type: 'cp_add_sub' },
+        { id: 'cp_mental', name: 'Calcul mental (Compléments à 10)', icon: '🧠', type: 'cp_mental' },
+        { id: 'cp_money', name: 'Monnaie (Euros €)', icon: '💶', type: 'cp_money' },
+        { id: 'cp_length', name: 'Mesure de longueurs (cm)', icon: '📏', type: 'cp_length' },
+        { id: 'cp_shapes', name: 'Formes (Rectangle, Triangle, Carré)', icon: '🔷', type: 'cp_shapes' },
+        { id: 'cp_grid', name: 'Repérage sur quadrillage', icon: '🏁', type: 'cp_grid' }
+      ],
+      CE1: [
+        { id: 'ce1_num1000', name: 'Nombres jusqu\'à 1 000', icon: '🔢', type: 'ce1_num1000' },
+        { id: 'ce1_tables', name: 'Tables de multiplication (2, 3, 4, 5, 10)', icon: '✖️', type: 'ce1_tables' },
+        { id: 'ce1_sub_posed', name: 'Soustraction posée', icon: '➖', type: 'ce1_sub_posed' },
+        { id: 'ce1_double_half', name: 'Double et Moitié', icon: '⚖️', type: 'ce1_double_half' },
+        { id: 'ce1_measures', name: 'Masses (g, kg) & Temps (heures, min)', icon: '⏰', type: 'ce1_measures' },
+        { id: 'ce1_symmetry', name: 'Symétrie axiale', icon: '🪞', type: 'ce1_symmetry' }
+      ],
+      CE2: [
+        { id: 'ce2_num10000', name: 'Nombres jusqu\'à 10 000', icon: '🔢', type: 'ce2_num10000' },
+        { id: 'ce2_mult_posed', name: 'Multiplication posée', icon: '✖️', type: 'ce2_mult_posed' },
+        { id: 'ce2_division_intro', name: 'Approche de la division (Partages)', icon: '➗', type: 'ce2_division_intro' },
+        { id: 'ce2_capacity', name: 'Contenances (Litres)', icon: '🧪', type: 'ce2_capacity' },
+        { id: 'ce2_perimeters', name: 'Périmètres de figures', icon: '📏', type: 'ce2_perimeters' },
+        { id: 'ce2_solids', name: 'Solides (Cube, Pavé droit)', icon: '🧊', type: 'ce2_solids' },
+        { id: 'ce2_charts', name: 'Lecture de tableaux & graphiques', icon: '📊', type: 'ce2_charts' }
+      ],
+      CM1: [
+        { id: 'cm1_millions', name: 'Grands nombres (Millions)', icon: '🌌', type: 'cm1_millions' },
+        { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions' },
+        { id: 'cm1_decimals', name: 'Nombres décimaux (à virgule)', icon: '🎯', type: 'cm1_decimals' },
+        { id: 'cm1_div_posed', name: 'Division posée (à 1 chiffre)', icon: '➗', type: 'cm1_div_posed' },
+        { id: 'cm1_areas', name: 'Mesures d\'aires (cm², m²)', icon: '📐', type: 'cm1_areas' },
+        { id: 'cm1_lines_angles', name: 'Parallèles, Perpendiculaires & Angles droits', icon: '📏', type: 'cm1_lines_angles' }
+      ],
+      CM2: [
+        { id: 'cm2_milliards', name: 'Grands nombres (Milliards)', icon: '🪐', type: 'cm2_milliards' },
+        { id: 'cm2_frac_ops', name: 'Opérations sur fractions', icon: '🍰', type: 'cm2_frac_ops' },
+        { id: 'cm2_div_2digits', name: 'Division posée à 2 chiffres', icon: '➗', type: 'cm2_div_2digits' },
+        { id: 'cm2_proportionality', name: 'Proportionnalité & Pourcentages', icon: '📈', type: 'cm2_proportionality' },
+        { id: 'cm2_volumes', name: 'Volumes & Conversions', icon: '📦', type: 'cm2_volumes' }
+      ],
+      '6ème': [
+        { id: 'c6_fractions_dec', name: 'Fractions & Écritures décimales', icon: '🔢', type: 'c6_fractions_dec' },
+        { id: 'c6_angles', name: 'Notion d\'angle & Rapporteur', icon: '📐', type: 'c6_angles' },
+        { id: 'c6_perimeter_area', name: 'Périmètre du cercle & Aires', icon: '⚪', type: 'c6_perimeter_area' },
+        { id: 'c6_sym_axiale', name: 'Propriétés de la symétrie axiale', icon: '🪞', type: 'c6_sym_axiale' }
+      ],
+      '5ème': [
+        { id: 'c5_relatifs', name: 'Nombres relatifs (Positifs/Négatifs)', icon: '🌡️', type: 'c5_relatifs' },
+        { id: 'c5_literal', name: 'Calcul littéral (Introduction)', icon: '🔤', type: 'c5_literal' },
+        { id: 'c5_sym_centrale', name: 'Symétrie centrale', icon: '🔄', type: 'c5_sym_centrale' },
+        { id: 'c5_triangle_angles', name: 'Somme des angles d\'un triangle (180°)', icon: '📐', type: 'c5_triangle_angles' }
+      ],
+      '4ème': [
+        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore' },
+        { id: 'c4_powers', name: 'Puissances & Notation scientifique', icon: '⚡', type: 'c4_powers' },
+        { id: 'c4_relatif_ops', name: 'Opérations sur les relatifs', icon: '➕', type: 'c4_relatif_ops' },
+        { id: 'c4_equations', name: 'Équations du premier degré', icon: '⚖️', type: 'c4_equations' }
+      ],
+      '3ème': [
+        { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales' },
+        { id: 'c3_trigo', name: 'Trigonométrie (Cosinus, Sinus, Tangente)', icon: '📊', type: 'c3_trigo' },
+        { id: 'c3_functions', name: 'Fonctions affines & linéaires', icon: '📈', type: 'c3_functions' },
+        { id: 'c3_prob', name: 'Probabilités & Statistiques', icon: '🎲', type: 'c3_prob' }
+      ],
+      Seconde: [
+        { id: 'sec_vectors', name: 'Vecteurs & Coordonnées', icon: '➡️', type: 'sec_vectors' },
+        { id: 'sec_functions', name: 'Généralités sur les fonctions & Variations', icon: '📉', type: 'sec_functions' },
+        { id: 'sec_lines', name: 'Équations de droites', icon: '📏', type: 'sec_lines' },
+        { id: 'sec_prob_stat', name: 'Probabilités conditionnelles & Échantillonnage', icon: '📊', type: 'sec_prob_stat' }
+      ],
+      '1ère': [
+        { id: 'p1_derivation', name: 'Dérivation & Tangente', icon: '📈', type: 'p1_derivation' },
+        { id: 'p1_sequences', name: 'Suites numériques (Arithmétiques & Géométriques)', icon: '🔢', type: 'p1_sequences' },
+        { id: 'p1_trigo', name: 'Trigonométrie (Cercle trigonométrique)', icon: '🎯', type: 'p1_trigo' },
+        { id: 'p1_quadratic', name: 'Polynômes du second degré (Discriminant Δ)', icon: '🧮', type: 'p1_quadratic' }
+      ],
+      Terminale: [
+        { id: 'term_limits', name: 'Limites de suites & fonctions', icon: '♾️', type: 'term_limits' },
+        { id: 'term_exp_ln', name: 'Fonctions Exponentielle & Logarithme (ln)', icon: '📈', type: 'term_exp_ln' },
+        { id: 'term_integral', name: 'Calcul intégral & Aires', icon: '∫', type: 'term_integral' },
+        { id: 'term_geom_3d', name: 'Géométrie dans l\'espace (3D)', icon: '🧊', type: 'term_geom_3d' },
+        { id: 'term_combinatorics', name: 'Combinatoire & Dénombrement', icon: '🔢', type: 'term_combinatorics' },
+        { id: 'term_prob', name: 'Lois de probabilités & Grands nombres', icon: '🎲', type: 'term_prob' },
+        { id: 'term_diffeq', name: 'Équations différentielles', icon: '⚙️', type: 'term_diffeq' }
+      ]
+    };
 
-    // Logique PS
-    if (module.type === 'ps_shapes') {
-      text = "Quelle forme est parfaitement RONDE ?"; ans = "Un rond 🔴"; opts = ["Un rond 🔴", "Un carré 🟦", "Une étoile ⭐"];
-    } else if (module.type === 'ps_patterns') {
-      text = "Complète la suite : 🔴 🔵 🔴 🔵 ... ?"; ans = "🔴"; opts = ["🔴", "🔵", "🟡"];
-    }
-    // Logique GS
-    else if (module.type === 'gs_num_writing') {
-      text = "Quel chiffre vient juste APRÈS le 7 ?"; ans = "8"; opts = ["8", "6", "9", "5"];
-    } else if (module.type === 'gs_decomp') {
-      text = "5 c'est 4 et ... ?"; ans = "1"; opts = ["1", "2", "3", "0"];
-    }
-    // Logique CP
-    else if (module.type === 'cp_add_sub') {
-      text = "Combien font 15 + 8 ?"; ans = "23"; opts = ["23", "22", "24", "21"];
-    } else if (module.type === 'cp_money') {
-      text = "2 pièces de 2€ et 1 billet de 5€. Total ?"; ans = "9 €"; opts = ["9 €", "7 €", "10 €", "8 €"];
-    }
-    // Logique CE1
-    else if (module.type === 'ce1_tables') {
-      text = "Combien font 4 × 6 ?"; ans = "24"; opts = ["24", "20", "28", "18"];
-    } else if (module.type === 'ce1_double_half') {
-      text = "Quel est le DOUBLE de 25 ?"; ans = "50"; opts = ["50", "40", "45", "60"];
-    }
-    // Logique CE2
-    else if (module.type === 'ce2_mult_posed') {
-      text = "Calculer : 142 × 3 = ... ?"; ans = "426"; opts = ["426", "416", "326", "436"];
-    } else if (module.type === 'ce2_perimeters') {
-      text = "Périmètre d'un carré de 6 cm de côté ?"; ans = "24 cm"; opts = ["24 cm", "36 cm", "12 cm", "18 cm"];
-    }
-    // Logique CM1
-    else if (module.type === 'cm1_fractions') {
-      text = "Quelle fraction représente 3 parts sur 4 ?"; ans = "3/4"; opts = ["3/4", "1/4", "4/3", "2/4"];
-    } else if (module.type === 'cm1_decimals') {
-      text = "Écriture décimale de 3/10 ?"; ans = "0,3"; opts = ["0,3", "0,03", "3,0", "0,33"];
-    }
-    // Logique Terminale
-    else if (module.type === 'term_limits') {
-      text = "Quelle est la limite en +∞ de f(x) = e^x / x ?"; ans = "+∞"; opts = ["+∞", "0", "1", "N'existe pas"];
-    } else if (module.type === 'term_exp_ln') {
-      text = "Simplifier : ln(e³) + e^(ln(2))"; ans = "5"; opts = ["5", "6", "e⁶", "ln(6)"];
-    } else if (module.type === 'term_integral') {
-      text = "Valeur de ∫_0^1 (2x) dx ?"; ans = "1"; opts = ["1", "2", "0", "0,5"];
-    } else if (module.type === 'term_diffeq') {
-      text = "Solutions de l'équation y' = 3y ?"; ans = "y(x) = C × e^(3x)"; opts = ["y(x) = C × e^(3x)", "y(x) = 3e^x + C", "y(x) = C × e^(-3x)"];
-    } 
-    // Fallback dynamique
-    else {
-      text = `Exercice guidé pour le module : ${module.name}`;
-      ans = "Bonne réponse";
-      opts = ["Bonne réponse", "Option A", "Option B", "Option C"];
-    }
+    // --- MOTEUR D'EXERCICES ---
+    function ExerciseRunner({ grade, module, onBack, onResult }) {
+      const [q, setQ] = useState({ text: '', ans: '', options: [], sub: '' });
 
-    opts = Array.from(new Set(opts)).sort(() => Math.random() - 0.5);
-    setQ({ text, ans, options: opts, sub });
-  };
+      const generateQuestion = () => {
+        let text = '', ans = '', opts = [], sub = module.name;
 
-  useEffect(() => { generateQuestion(); }, [module.type]);
+        if (module.type === 'ps_shapes') {
+          text = "Quelle forme est parfaitement RONDE ?"; ans = "Un rond 🔴"; opts = ["Un rond 🔴", "Un carré 🟦", "Une étoile ⭐"];
+        } else if (module.type === 'ps_patterns') {
+          text = "Complète la suite : 🔴 🔵 🔴 🔵 ... ?"; ans = "🔴"; opts = ["🔴", "🔵", "🟡"];
+        } else if (module.type === 'ms_count6') {
+          text = "Combien de doigts sont levés ? 🖐️ 👍"; ans = "6"; opts = ["6", "5", "4", "7"];
+        } else if (module.type === 'gs_num_writing') {
+          text = "Quel chiffre vient juste APRÈS le 7 ?"; ans = "8"; opts = ["8", "6", "9", "5"];
+        } else if (module.type === 'cp_add_sub') {
+          text = "Combien font 15 + 8 ?"; ans = "23"; opts = ["23", "22", "24", "21"];
+        } else if (module.type === 'ce1_tables') {
+          text = "Combien font 4 × 6 ?"; ans = "24"; opts = ["24", "20", "28", "18"];
+        } else if (module.type === 'ce2_mult_posed') {
+          text = "Calculer : 142 × 3 = ... ?"; ans = "426"; opts = ["426", "416", "326", "436"];
+        } else if (module.type === 'cm1_fractions') {
+          text = "Quelle fraction représente 3 parts sur 4 ?"; ans = "3/4"; opts = ["3/4", "1/4", "4/3", "2/4"];
+        } else if (module.type === 'cm2_proportionality') {
+          text = "Si 3 cahiers coûtent 6€, combien coûtent 5 cahiers ?"; ans = "10 €"; opts = ["10 €", "8 €", "12 €", "15 €"];
+        } else if (module.type === 'c6_angles') {
+          text = "Un angle mesurant 90° est un angle..."; ans = "Droit"; opts = ["Droit", "Aigu", "Obtus", "Plat"];
+        } else if (module.type === 'c5_relatifs') {
+          text = "Calculer : (-5) + (+8) = ... ?"; ans = "3"; opts = ["3", "-3", "-13", "13"];
+        } else if (module.type === 'c4_pythagore') {
+          text = "Dans un triangle rectangle, l'hypoténuse au carré est égale à..."; ans = "La somme des carrés des 2 autres côtés"; opts = ["La somme des carrés des 2 autres côtés", "La somme des 2 autres côtés", "Le produit des côtés", "La différence des carrés"];
+        } else if (module.type === 'c3_thales') {
+          text = "Le théorème de Thalès sert principalement à calculer..."; ans = "Des longueurs"; opts = ["Des longueurs", "Des angles", "Des aires", "Des périmètres"];
+        } else if (module.type === 'sec_vectors') {
+          text = "Si A(1; 2) et B(4; 6), quelles sont les coordonnées du vecteur AB ?"; ans = "(3 ; 4)"; opts = ["(3 ; 4)", "(5 ; 8)", "(-3 ; -4)", "(4 ; 3)"];
+        } else if (module.type === 'p1_derivation') {
+          text = "Quelle est la dérivée de f(x) = x² ?"; ans = "f'(x) = 2x"; opts = ["f'(x) = 2x", "f'(x) = x", "f'(x) = 2", "f'(x) = x³"];
+        } else if (module.type === 'term_limits') {
+          text = "Quelle est la limite en +∞ de f(x) = e^x / x ?"; ans = "+∞"; opts = ["+∞", "0", "1", "N'existe pas"];
+        } else {
+          const a = Math.floor(Math.random() * 10) + 2;
+          const b = Math.floor(Math.random() * 10) + 2;
+          text = `Exercice guidé (${module.name}) : Combien font ${a} × ${b} ?`;
+          ans = `${a * b}`;
+          opts = [`${a * b}`, `${a * b + 2}`, `${a * b - 3}`, `${a * (b + 1)}`];
+        }
 
-  const handleAns = (val) => {
-    const correct = val === q.ans;
-    onResult(correct, correct ? 20 : 0);
-    generateQuestion();
-  };
+        opts = Array.from(new Set(opts)).sort(() => Math.random() - 0.5);
+        setQ({ text, ans, options: opts, sub });
+      };
 
-  return (
-    <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto relative pop-in">
-      <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition-all">
-        ← Retour
-      </button>
-      <span className="text-xs font-bold text-indigo-400 block mt-4 uppercase tracking-wider">{grade} • {q.sub}</span>
-      <div className="text-xl font-extrabold my-8 text-white min-h-[80px] flex items-center justify-center leading-relaxed">
-        {q.text}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {q.options.map((opt, i) => (
-          <button key={i} onClick={() => handleAns(opt)} className="glass hover:bg-indigo-600/40 text-white py-4 rounded-2xl text-base font-black border border-indigo-500/30 transition-all active:scale-95">
-            {opt}
+      useEffect(() => { generateQuestion(); }, [module.type]);
+
+      const handleAns = (val) => {
+        const correct = val === q.ans;
+        onResult(correct, correct ? 20 : 0);
+        generateQuestion();
+      };
+
+      return (
+        <div className="bg-slate-900/80 backdrop-blur-md p-6 rounded-3xl text-center max-w-md mx-auto relative border border-slate-800 shadow-2xl">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition-all">
+            ← Retour
           </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// --- APPLICATION PRINCIPALE ---
-export default function App() {
-  const [selectedGrade, setSelectedGrade] = useState('CP');
-  const [activeModule, setActiveModule] = useState(null);
-  const [score, setScore] = useState(0);
-
-  const handleResult = (isCorrect, points) => {
-    if (isCorrect) setScore(prev => prev + points);
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 font-sans antialiased selection:bg-indigo-500 selection:text-white">
-      <header className="max-w-4xl mx-auto flex justify-between items-center py-6 border-b border-slate-800/80 mb-8">
-        <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-2,5 rounded-2xl text-2xl shadow-lg shadow-indigo-500/20">🎓</div>
-          <div>
-            <h1 className="text-xl font-black bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">MathsAcademy</h1>
-            <p className="text-xs text-slate-400 font-medium">De la Maternelle à la Terminale</p>
+          <span className="text-xs font-bold text-indigo-400 block mt-4 uppercase tracking-wider">{grade} • {q.sub}</span>
+          <div className="text-xl font-extrabold my-8 text-white min-h-[80px] flex items-center justify-center leading-relaxed">
+            {q.text}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {q.options.map((opt, i) => (
+              <button key={i} onClick={() => handleAns(opt)} className="bg-slate-800/60 hover:bg-indigo-600/40 text-white py-4 rounded-2xl text-base font-black border border-indigo-500/30 transition-all active:scale-95">
+                {opt}
+              </button>
+            ))}
           </div>
         </div>
-        <div className="glass px-4 py-2 rounded-2xl border border-indigo-500/20 flex items-center gap-2">
-          <span className="text-xs text-slate-400 uppercase font-bold">XP</span>
-          <span className="text-lg font-black text-indigo-400">{score}</span>
-        </div>
-      </header>
+      );
+    }
 
-      <main className="max-w-4xl mx-auto">
-        {!activeModule ? (
-          <>
-            {/* SÉLECTEUR DE NIVEAU */}
-            <nav className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
-              {Object.keys(CURRICULUM).map(grade => (
-                <button
-                  key={grade}
-                  onClick={() => setSelectedGrade(grade)}
-                  className={`px-5 py-2.5 rounded-2xl font-extrabold text-sm whitespace-nowrap transition-all ${
-                    selectedGrade === grade
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105'
-                      : 'glass text-slate-400 hover:text-white hover:bg-slate-800/50'
-                  }`}
-                >
-                  {grade}
-                </button>
-              ))}
-            </nav>
+    // --- APPLICATION PRINCIPALE ---
+    function App() {
+      const [selectedGrade, setSelectedGrade] = useState('CP');
+      const [activeModule, setActiveModule] = useState(null);
+      const [score, setScore] = useState(0);
 
-            {/* GRILLE DES MODULES */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {CURRICULUM[selectedGrade]?.map(module => (
-                <button
-                  key={module.id}
-                  onClick={() => setActiveModule(module)}
-                  className="glass p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-950/20 transition-all group flex flex-col justify-between h-36"
-                >
-                  <span className="text-3xl p-2 bg-slate-900/50 rounded-2xl w-fit group-hover:scale-110 transition-transform">{module.icon}</span>
-                  <span className="font-bold text-sm text-slate-200 group-hover:text-indigo-300 transition-colors">{module.name}</span>
-                </button>
-              ))}
+      const handleResult = (isCorrect, points) => {
+        if (isCorrect) setScore(prev => prev + points);
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 p-4 font-sans">
+          <header className="max-w-4xl mx-auto flex justify-between items-center py-6 border-b border-slate-800 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="bg-indigo-600 p-2.5 rounded-2xl text-2xl shadow-lg shadow-indigo-500/20">🎓</div>
+              <div>
+                <h1 className="text-xl font-black bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">MathsAcademy</h1>
+                <p className="text-xs text-slate-400 font-medium">PS à Terminale • Programme Officiel</p>
+              </div>
             </div>
-          </>
-        ) : (
-          <ExerciseRunner
-            grade={selectedGrade}
-            module={activeModule}
-            onBack={() => setActiveModule(null)}
-            onResult={handleResult}
-          />
-        )}
-      </main>
-    </div>
-  );
-}
+            <div className="bg-slate-900/80 px-4 py-2 rounded-2xl border border-indigo-500/20 flex items-center gap-2">
+              <span className="text-xs text-slate-400 uppercase font-bold">XP</span>
+              <span className="text-lg font-black text-indigo-400">{score}</span>
+            </div>
+          </header>
+
+          <main className="max-w-4xl mx-auto">
+            {!activeModule ? (
+              <>
+                <nav className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+                  {Object.keys(CURRICULUM).map(grade => (
+                    <button
+                      key={grade}
+                      onClick={() => setSelectedGrade(grade)}
+                      className={`px-5 py-2.5 rounded-2xl font-extrabold text-sm whitespace-nowrap transition-all ${
+                        selectedGrade === grade
+                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105'
+                          : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800/50'
+                      }`}
+                    >
+                      {grade}
+                    </button>
+                  ))}
+                </nav>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {CURRICULUM[selectedGrade]?.map(module => (
+                    <button
+                      key={module.id}
+                      onClick={() => setActiveModule(module)}
+                      className="bg-slate-900/50 p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-950/20 transition-all group flex flex-col justify-between h-36"
+                    >
+                      <span className="text-3xl p-2 bg-slate-900 rounded-2xl w-fit group-hover:scale-110 transition-transform">{module.icon}</span>
+                      <span className="font-bold text-sm text-slate-200 group-hover:text-indigo-300 transition-colors">{module.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <ExerciseRunner
+                grade={selectedGrade}
+                module={activeModule}
+                onBack={() => setActiveModule(null)}
+                onResult={handleResult}
+              />
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    // Rendu dans le DOM
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
