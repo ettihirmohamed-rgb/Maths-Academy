@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    .glass { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.12); }
+    .glass { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.12); }
     .pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     @keyframes popIn {
       0% { transform: scale(0.5); opacity: 0; }
@@ -28,7 +28,9 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch((err) => console.log('Erreur SW:', err));
+        navigator.serviceWorker.register('./sw.js?v=2').then(reg => {
+          reg.update();
+        }).catch((err) => console.log('Erreur SW:', err));
       });
     }
   </script>
@@ -45,14 +47,33 @@
       { id: 'unicorn', name: 'Licorne Magique', emoji: '🦄', price: 500 },
     ];
 
+    const ALL_GAMES = [
+      { id: 'vocal', name: 'Nourris le Dino (Dénombrement)', grades: ['Maternelle'], icon: '🦖', color: 'from-pink-500 to-rose-500' },
+      { id: 'mental_easy', name: 'Calcul Simple (+ / -)', grades: ['Maternelle', 'CP-CE1'], icon: '🐣', color: 'from-emerald-500 to-teal-500' },
+      { id: 'money', name: 'La Caisse Enregistreuse (€)', grades: ['CP-CE1', 'CE2-CM1', 'CM2-6ème'], icon: '🪙', color: 'from-amber-500 to-yellow-500' },
+      { id: 'mental_tables', name: 'Tables de Multiplication', grades: ['CE2-CM1', 'CM2-6ème'], icon: '⚡', color: 'from-indigo-500 to-purple-500' },
+      { id: 'algebra', name: 'Équations & Algèbre (x)', grades: ['5ème-4ème', '3ème-Lycée'], icon: '⚖️', color: 'from-rose-500 to-red-600' }
+    ];
+
     const TIMER_RULES = {
-      'Maternelle': { mental: null, algebra: null, money: null },
-      'CP-CE1':     { mental: 8,    algebra: 20,   money: 15 },
-      'CE2-CM1':   { mental: 5,    algebra: 15,   money: 12 },
-      'CM2-6ème':  { mental: 3,    algebra: 12,   money: 10 },
-      '5ème-4ème': { mental: 3,    algebra: 10,   money: 8 },
-      '3ème-Lycée':{ mental: 2,    algebra: 8,    money: 6 }
+      'Maternelle': null,
+      'CP-CE1': 15,
+      'CE2-CM1': 12,
+      'CM2-6ème': 10,
+      '5ème-4ème': 8,
+      '3ème-Lycée': 6
     };
+
+    const COINS_LIST = [
+      { value: 0.01, label: '1c' },
+      { value: 0.02, label: '2c' },
+      { value: 0.05, label: '5c' },
+      { value: 0.10, label: '10c' },
+      { value: 0.20, label: '20c' },
+      { value: 0.50, label: '50c' },
+      { value: 1.00, label: '1€' },
+      { value: 2.00, label: '2€' }
+    ];
 
     const speak = (text) => {
       if ('speechSynthesis' in window) {
@@ -104,25 +125,25 @@
     };
 
     function App() {
-      const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('mathia_profile') || 'null'));
-      const [coins, setCoins] = useState(() => parseInt(localStorage.getItem('mathia_coins') || '0'));
-      const [level, setLevel] = useState(() => parseInt(localStorage.getItem('mathia_level') || '1'));
-      const [stats, setStats] = useState(() => JSON.parse(localStorage.getItem('mathia_stats') || '{"played":0, "success":0}'));
+      const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('mathia_profile_v2') || 'null'));
+      const [coins, setCoins] = useState(() => parseInt(localStorage.getItem('mathia_coins_v2') || '0'));
+      const [level, setLevel] = useState(() => parseInt(localStorage.getItem('mathia_level_v2') || '1'));
+      const [stats, setStats] = useState(() => JSON.parse(localStorage.getItem('mathia_stats_v2') || '{"played":0, "success":0}'));
       const [combo, setCombo] = useState(1);
-      const [unlockedAvatars, setUnlockedAvatars] = useState(() => JSON.parse(localStorage.getItem('mathia_unlocked_avatars') || '["fox"]'));
-      const [currentAvatar, setCurrentAvatar] = useState(() => JSON.parse(localStorage.getItem('mathia_current_avatar') || '{"id":"fox","name":"Renard Astro","emoji":"🦊","price":0}'));
+      const [unlockedAvatars, setUnlockedAvatars] = useState(() => JSON.parse(localStorage.getItem('mathia_unlocked_avatars_v2') || '["fox"]'));
+      const [currentAvatar, setCurrentAvatar] = useState(() => JSON.parse(localStorage.getItem('mathia_current_avatar_v2') || '{"id":"fox","name":"Renard Astro","emoji":"🦊","price":0}'));
       
       const [activeMode, setActiveMode] = useState('menu');
       const [currentGame, setCurrentGame] = useState(null);
       const [praiseMessage, setPraiseMessage] = useState(null);
 
       useEffect(() => {
-        if (profile) localStorage.setItem('mathia_profile', JSON.stringify(profile));
-        localStorage.setItem('mathia_coins', coins);
-        localStorage.setItem('mathia_level', level);
-        localStorage.setItem('mathia_stats', JSON.stringify(stats));
-        localStorage.setItem('mathia_unlocked_avatars', JSON.stringify(unlockedAvatars));
-        localStorage.setItem('mathia_current_avatar', JSON.stringify(currentAvatar));
+        if (profile) localStorage.setItem('mathia_profile_v2', JSON.stringify(profile));
+        localStorage.setItem('mathia_coins_v2', coins);
+        localStorage.setItem('mathia_level_v2', level);
+        localStorage.setItem('mathia_stats_v2', JSON.stringify(stats));
+        localStorage.setItem('mathia_unlocked_avatars_v2', JSON.stringify(unlockedAvatars));
+        localStorage.setItem('mathia_current_avatar_v2', JSON.stringify(currentAvatar));
       }, [profile, coins, level, stats, unlockedAvatars, currentAvatar]);
 
       const resetData = () => {
@@ -190,63 +211,65 @@
       if (activeMode === 'parents') return <ParentsSpace stats={stats} onReset={resetData} onBack={() => setActiveMode('menu')} />;
 
       return (
-        <div class="max-w-4xl mx-auto p-4 flex flex-col min-h-screen relative">
+        <div className="max-w-4xl mx-auto p-4 flex flex-col min-h-screen relative">
           
           {praiseMessage && (
-            <div class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 pop-in pointer-events-none">
-              <div class="bg-gradient-to-r from-amber-400 via-pink-500 to-indigo-500 text-white font-black text-2xl px-8 py-4 rounded-3xl shadow-2xl border-4 border-white text-center">
+            <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 pop-in pointer-events-none">
+              <div className="bg-gradient-to-r from-amber-400 via-pink-500 to-indigo-500 text-white font-black text-2xl px-8 py-4 rounded-3xl shadow-2xl border-4 border-white text-center">
                 {praiseMessage}
               </div>
             </div>
           )}
 
-          <header class="glass p-4 rounded-2xl mb-6 flex justify-between items-center shadow-2xl">
-            <div class="flex items-center gap-3">
-              <span class="text-3xl">{currentAvatar.emoji}</span>
+          <header className="glass p-4 rounded-2xl mb-6 flex justify-between items-center shadow-2xl">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">{currentAvatar.emoji}</span>
               <div>
-                <h2 class="font-black text-lg text-indigo-300">{profile.name}</h2>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">Niv. {level}</span>
-                  <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-bold border border-slate-700">{profile.grade}</span>
+                <h2 className="font-black text-lg text-indigo-300">{profile.name}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">Niv. {level}</span>
+                  <button onClick={() => setProfile(null)} className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-bold border border-slate-700 hover:bg-slate-700">
+                    {profile.grade} ✏️
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div className="flex items-center gap-3">
               {combo > 1 && (
-                <div class="bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1 rounded-full font-black text-xs animate-bounce shadow-lg">
+                <div className="bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1 rounded-full font-black text-xs animate-bounce shadow-lg">
                   ⚡ x{combo}
                 </div>
               )}
-              <div class="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-full">
-                <span class="text-lg">🪙</span>
-                <span class="font-black text-amber-400">{coins}</span>
+              <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-full">
+                <span className="text-lg">🪙</span>
+                <span className="font-black text-amber-400">{coins}</span>
               </div>
-              <button onClick={() => setActiveMode('parents')} class="bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-xs font-bold border border-slate-700">
+              <button onClick={() => setActiveMode('parents')} className="bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-xs font-bold border border-slate-700">
                 🔒 Parents
               </button>
             </div>
           </header>
 
-          <div class="grid grid-cols-3 gap-2 mb-6">
-            <button onClick={() => { setActiveMode('menu'); setCurrentGame(null); setCombo(1); }} class={`py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition ${activeMode === 'menu' && !currentGame ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'glass text-slate-400'}`}>
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            <button onClick={() => { setActiveMode('menu'); setCurrentGame(null); setCombo(1); }} className={`py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition ${activeMode === 'menu' && !currentGame ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'glass text-slate-400'}`}>
               🎮 Jeux
             </button>
-            <button onClick={() => setActiveMode('duel')} class="glass hover:bg-rose-900/30 text-rose-400 font-black text-sm py-3 rounded-xl border-rose-500/30 flex items-center justify-center gap-2 transition">
+            <button onClick={() => setActiveMode('duel')} className="glass hover:bg-rose-900/30 text-rose-400 font-black text-sm py-3 rounded-xl border-rose-500/30 flex items-center justify-center gap-2 transition">
               ⚔️ Mode Duel
             </button>
-            <button onClick={() => setActiveMode('shop')} class={`py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition ${activeMode === 'shop' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/30' : 'glass text-slate-400'}`}>
+            <button onClick={() => setActiveMode('shop')} className={`py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition ${activeMode === 'shop' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/30' : 'glass text-slate-400'}`}>
               🎁 Boutique
             </button>
           </div>
 
-          <main class="flex-1">
+          <main className="flex-1">
             {activeMode === 'shop' ? (
               <Shop coins={coins} unlockedAvatars={unlockedAvatars} currentAvatar={currentAvatar} onBuy={buyAvatar} onSelect={selectAvatar} />
             ) : currentGame ? (
               <GameContainer profile={profile} game={currentGame} onBack={() => setCurrentGame(null)} onResult={recordResult} />
             ) : (
-              <GameMenu onSelectGame={setCurrentGame} />
+              <GameMenu profile={profile} onSelectGame={setCurrentGame} />
             )}
           </main>
         </div>
@@ -255,30 +278,30 @@
 
     function ProfileSelector({ onSelect }) {
       const [name, setName] = useState('');
-      const [grade, setGrade] = useState('CM2-6ème');
+      const [grade, setGrade] = useState('CP-CE1');
 
       const handleSubmit = (e) => {
         e.preventDefault();
-        if (name.trim()) onSelect({ name, grade, avatar: '🦊' });
+        if (name.trim()) onSelect({ name, grade });
       };
 
       return (
-        <div class="min-h-screen flex items-center justify-center p-4">
-          <div class="glass p-8 rounded-3xl max-w-md w-full shadow-2xl text-center border-indigo-500/30">
-            <div class="text-7xl mb-4 animate-bounce">🦄</div>
-            <h1 class="text-4xl font-black mb-2 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">MATHIA</h1>
-            <p class="text-slate-400 mb-6 text-xs uppercase tracking-widest font-semibold">L'Aventure Mathématique</p>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="glass p-8 rounded-3xl max-w-md w-full shadow-2xl text-center border-indigo-500/30">
+            <div className="text-7xl mb-4 animate-bounce">🦄</div>
+            <h1 className="text-4xl font-black mb-2 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">MATHIA</h1>
+            <p className="text-slate-400 mb-6 text-xs uppercase tracking-widest font-semibold">Choisis ton niveau</p>
             
-            <form onSubmit={handleSubmit} class="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label class="block text-left text-xs font-bold text-slate-400 mb-1 ml-1">PRÉNOM DE L'ENFANT</label>
-                <input type="text" placeholder="Ex: Thomas, Sarah..." value={name} onChange={(e) => setName(e.target.value)} class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-center text-lg font-bold focus:outline-none focus:border-indigo-500 transition" required />
+                <label className="block text-left text-xs font-bold text-slate-400 mb-1 ml-1">PRÉNOM DE L'ENFANT</label>
+                <input type="text" placeholder="Ex: Thomas, Sarah..." value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-center text-lg font-bold focus:outline-none focus:border-indigo-500 transition" required />
               </div>
 
               <div>
-                <label class="block text-left text-xs font-bold text-slate-400 mb-1 ml-1">NIVEAU SCOLAIRE</label>
-                <select value={grade} onChange={(e) => setGrade(e.target.value)} class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-center text-base font-bold focus:outline-none focus:border-indigo-500 transition text-indigo-300">
-                  <option value="Maternelle">🐣 Maternelle (Sans chrono)</option>
+                <label className="block text-left text-xs font-bold text-slate-400 mb-1 ml-1">NIVEAU SCOLAIRE</label>
+                <select value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-center text-base font-bold focus:outline-none focus:border-indigo-500 transition text-indigo-300">
+                  <option value="Maternelle">🐣 Maternelle (3-5 ans)</option>
                   <option value="CP-CE1">🌱 CP - CE1</option>
                   <option value="CE2-CM1">🌿 CE2 - CM1</option>
                   <option value="CM2-6ème">🚀 CM2 - 6ème</option>
@@ -287,8 +310,8 @@
                 </select>
               </div>
 
-              <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-black py-4 rounded-xl shadow-xl transform active:scale-95 transition mt-2">
-                JOUER MAINTENANT 🚀
+              <button type="submit" className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-black py-4 rounded-xl shadow-xl transform active:scale-95 transition mt-2">
+                VALIDER MES EXERCICES 🚀
               </button>
             </form>
           </div>
@@ -296,42 +319,100 @@
       );
     }
 
-    function GameMenu({ onSelectGame }) {
-      const games = [
-        { id: 'mental', name: 'Calcul Réflexe (Tables)', discipline: 'mental', lvl: 'CP à Lycée', icon: '⚡', color: 'from-amber-500 to-red-500' },
-        { id: 'algebra', name: 'La Balance Royale (Équations)', discipline: 'algebra', lvl: 'Collège & Lycée', icon: '⚖️', color: 'from-indigo-500 to-purple-500' },
-        { id: 'money', name: 'La Caisse Enregistreuse (€)', discipline: 'money', lvl: 'Primaire & Collège', icon: '🪙', color: 'from-emerald-500 to-teal-500' },
-        { id: 'vocal', name: 'Nourris le Dino (Objets)', discipline: 'mental', lvl: 'Maternelle', icon: '🦖', color: 'from-pink-500 to-rose-500' }
-      ];
+    function GameMenu({ profile, onSelectGame }) {
+      const filteredGames = ALL_GAMES.filter(g => g.grades.includes(profile.grade));
 
       return (
-        <div class="grid md:grid-cols-2 gap-4">
-          {games.map(g => (
-            <div key={g.id} onClick={() => onSelectGame(g)} class="glass p-5 rounded-2xl cursor-pointer hover:scale-[1.02] transition shadow-xl border-slate-800 flex items-center gap-4">
-              <div class={`w-16 h-16 rounded-2xl bg-gradient-to-br ${g.color} flex items-center justify-center text-3xl shadow-lg shrink-0`}>
-                {g.icon}
+        <div className="space-y-4">
+          <div className="text-center mb-4">
+            <span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Programme adapté : {profile.grade}</span>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {filteredGames.map(g => (
+              <div key={g.id} onClick={() => onSelectGame(g)} className="glass p-5 rounded-2xl cursor-pointer hover:scale-[1.02] transition shadow-xl border-slate-800 flex items-center gap-4">
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${g.color} flex items-center justify-center text-3xl shadow-lg shrink-0`}>
+                  {g.icon}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-lg text-white mt-1">{g.name}</h3>
+                  <span className="text-xs text-indigo-400 font-bold">Lancer cet exercice ➔</span>
+                </div>
               </div>
-              <div>
-                <span class="text-[10px] bg-white/10 text-slate-300 px-2 py-0.5 rounded-full font-bold uppercase">{g.lvl}</span>
-                <h3 class="font-extrabold text-lg text-white mt-1">{g.name}</h3>
-                <span class="text-xs text-indigo-400 font-bold">Lancer le jeu ➔</span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       );
     }
 
     function GameContainer({ profile, game, onBack, onResult }) {
       if (game.id === 'vocal') return <VocalGame profile={profile} onBack={onBack} onResult={onResult} />;
+      if (game.id === 'mental_easy') return <MentalEasyGame profile={profile} onBack={onBack} onResult={onResult} />;
       if (game.id === 'money') return <MoneyGame profile={profile} onBack={onBack} onResult={onResult} />;
-      if (game.id === 'mental') return <MentalSpeedGame profile={profile} onBack={onBack} onResult={onResult} />;
+      if (game.id === 'mental_tables') return <MentalTablesGame profile={profile} onBack={onBack} onResult={onResult} />;
       if (game.id === 'algebra') return <AlgebraGame profile={profile} onBack={onBack} onResult={onResult} />;
       return null;
     }
 
-    function MentalSpeedGame({ profile, onBack, onResult }) {
-      const maxTime = TIMER_RULES[profile.grade]?.mental || null;
+    function MentalEasyGame({ profile, onBack, onResult }) {
+      const maxTime = TIMER_RULES[profile.grade];
+      const [q, setQ] = useState({ n1: 2, n2: 3, op: '+', ans: 5 });
+      const [timeLeft, setTimeLeft] = useState(maxTime);
+      const [options, setOptions] = useState([]);
+
+      const generateQuestion = () => {
+        const isPlus = Math.random() > 0.5;
+        const n1 = Math.floor(Math.random() * 8) + 2;
+        const n2 = Math.floor(Math.random() * 5) + 1;
+        const ans = isPlus ? n1 + n2 : n1 - n2;
+        const opts = [ans, ans + 1, ans - 1, ans + 2].filter(v => v >= 0).sort(() => Math.random() - 0.5);
+        setQ({ n1, n2, op: isPlus ? '+' : '-', ans });
+        setOptions(opts);
+        if (maxTime) setTimeLeft(maxTime);
+      };
+
+      useEffect(() => { generateQuestion(); }, []);
+
+      useEffect(() => {
+        if (!maxTime) return;
+        if (timeLeft <= 0) {
+          onResult(false, 0);
+          generateQuestion();
+          return;
+        }
+        const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+        return () => clearTimeout(timer);
+      }, [timeLeft, maxTime]);
+
+      const handleAnswer = (val) => {
+        const correct = val === q.ans;
+        onResult(correct, correct ? 15 : 0);
+        generateQuestion();
+      };
+
+      return (
+        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
+          
+          <div className="mt-4 mb-2 flex justify-between items-center px-2">
+            <span className="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Calcul Simple</span>
+            {maxTime && <span className={`text-base font-black ${timeLeft <= 2 ? 'text-rose-500 animate-ping' : 'text-amber-400'}`}>⏱️ {timeLeft}s</span>}
+          </div>
+
+          <div className="text-6xl font-black mb-8 text-white tracking-tight">{q.n1} {q.op} {q.n2}</div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {options.map((opt, i) => (
+              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-indigo-600/50 active:bg-indigo-500 py-5 rounded-2xl text-3xl font-black border-indigo-500/30 active:scale-95 transition">
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function MentalTablesGame({ profile, onBack, onResult }) {
+      const maxTime = TIMER_RULES[profile.grade];
       const [q, setQ] = useState({ n1: 6, n2: 7, ans: 42 });
       const [timeLeft, setTimeLeft] = useState(maxTime);
       const [options, setOptions] = useState([]);
@@ -366,19 +447,19 @@
       };
 
       return (
-        <div class="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
-          <button onClick={onBack} class="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
+        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
           
-          <div class="mt-4 mb-2 flex justify-between items-center px-2">
-            <span class="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Calcul Réflexe</span>
-            {maxTime && <span class={`text-base font-black ${timeLeft <= 2 ? 'text-rose-500 animate-ping' : 'text-amber-400'}`}>⏱️ {timeLeft}s</span>}
+          <div className="mt-4 mb-2 flex justify-between items-center px-2">
+            <span className="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Tables</span>
+            {maxTime && <span className={`text-base font-black ${timeLeft <= 2 ? 'text-rose-500 animate-ping' : 'text-amber-400'}`}>⏱️ {timeLeft}s</span>}
           </div>
 
-          <div class="text-6xl font-black mb-8 text-white tracking-tight">{q.n1} × {q.n2}</div>
+          <div className="text-6xl font-black mb-8 text-white tracking-tight">{q.n1} × {q.n2}</div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} class="glass hover:bg-indigo-600/50 active:bg-indigo-500 py-5 rounded-2xl text-3xl font-black border-indigo-500/30 active:scale-95 transition">
+              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-indigo-600/50 active:bg-indigo-500 py-5 rounded-2xl text-3xl font-black border-indigo-500/30 active:scale-95 transition">
                 {opt}
               </button>
             ))}
@@ -388,7 +469,7 @@
     }
 
     function AlgebraGame({ profile, onBack, onResult }) {
-      const maxTime = TIMER_RULES[profile.grade]?.algebra || null;
+      const maxTime = TIMER_RULES[profile.grade];
       const [q, setQ] = useState({ expr: '2x + 4 = 10', ans: 3, options: [2, 3, 4, 5] });
       const [timeLeft, setTimeLeft] = useState(maxTime);
 
@@ -423,20 +504,20 @@
       };
 
       return (
-        <div class="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
-          <button onClick={onBack} class="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
+        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
           
-          <div class="mt-4 mb-2 flex justify-between items-center px-2">
-            <span class="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Équations</span>
-            {maxTime && <span class="text-base font-black text-amber-400">⏱️ {timeLeft}s</span>}
+          <div className="mt-4 mb-2 flex justify-between items-center px-2">
+            <span className="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Équations</span>
+            {maxTime && <span className="text-base font-black text-amber-400">⏱️ {timeLeft}s</span>}
           </div>
 
-          <div class="text-sm font-bold text-slate-400 mb-2">Trouve la valeur de x :</div>
-          <div class="text-4xl font-black mb-8 text-indigo-300 tracking-wide">{q.expr}</div>
+          <div className="text-sm font-bold text-slate-400 mb-2">Trouve la valeur de x :</div>
+          <div className="text-4xl font-black mb-8 text-indigo-300 tracking-wide">{q.expr}</div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {q.options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} class="glass hover:bg-purple-600/50 py-4 rounded-2xl text-2xl font-black border-purple-500/30 active:scale-95 transition">
+              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-purple-600/50 py-4 rounded-2xl text-2xl font-black border-purple-500/30 active:scale-95 transition">
                 x = {opt}
               </button>
             ))}
@@ -446,13 +527,12 @@
     }
 
     function MoneyGame({ profile, onBack, onResult }) {
-      const maxTime = TIMER_RULES[profile.grade]?.money || null;
       const [targetMoney, setTargetMoney] = useState(3.50);
       const [currentTotal, setCurrentTotal] = useState(0);
 
       const init = () => {
-        const values = [1.50, 2.00, 3.50, 4.00, 5.50];
-        setTargetMoney(values[Math.floor(Math.random() * values.length)]);
+        const targets = [0.85, 1.40, 2.75, 3.20, 4.50, 5.80];
+        setTargetMoney(targets[Math.floor(Math.random() * targets.length)]);
         setCurrentTotal(0);
       };
 
@@ -461,29 +541,50 @@
       const addCoin = (val) => {
         const next = Math.round((currentTotal + val) * 100) / 100;
         setCurrentTotal(next);
-        if (next === targetMoney) {
-          onResult(true, 20);
-          setTimeout(init, 1000);
-        } else if (next > targetMoney) {
+      };
+
+      const validatePayment = () => {
+        if (Math.abs(currentTotal - targetMoney) < 0.001) {
+          onResult(true, 25);
+          setTimeout(init, 1200);
+        } else {
           onResult(false, 0);
-          setTimeout(() => setCurrentTotal(0), 800);
+          setTimeout(() => setCurrentTotal(0), 1000);
         }
       };
 
       return (
-        <div class="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
-          <button onClick={onBack} class="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
+        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
           
-          <h2 class="text-xl font-black mb-2 mt-4">🪙 Caisse Enregistreuse</h2>
-          <p class="text-slate-300 mb-2">Paye exactement : <span class="text-amber-400 font-black text-2xl">{targetMoney.toFixed(2)} €</span></p>
-          <div class="text-lg font-bold text-indigo-300 mb-6">Total déposé : {currentTotal.toFixed(2)} €</div>
-
-          <div class="flex justify-center gap-3 mb-6">
-            <button onClick={() => addCoin(0.50)} class="glass p-4 rounded-2xl text-lg font-bold hover:bg-amber-500/20 active:scale-95">🪙 0,50€</button>
-            <button onClick={() => addCoin(1.00)} class="glass p-4 rounded-2xl text-lg font-bold hover:bg-amber-500/20 active:scale-95">🪙 1,00€</button>
-            <button onClick={() => addCoin(2.00)} class="glass p-4 rounded-2xl text-lg font-bold hover:bg-amber-500/20 active:scale-95">🪙 2,00€</button>
+          <h2 className="text-xl font-black mb-2 mt-4">🪙 Caisse Enregistreuse</h2>
+          <p className="text-slate-300 mb-1">Montant à payer :</p>
+          <div className="text-3xl font-black text-amber-400 mb-4">{targetMoney.toFixed(2)} €</div>
+          
+          <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 mb-6">
+            <span className="text-xs text-slate-400 font-bold block mb-1">Total déposé dans la caisse :</span>
+            <span className={`text-2xl font-black ${currentTotal > targetMoney ? 'text-rose-400' : 'text-indigo-300'}`}>
+              {currentTotal.toFixed(2)} €
+            </span>
           </div>
-          <button onClick={() => setCurrentTotal(0)} class="text-xs text-rose-400 font-bold underline">Vider la caisse</button>
+
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            {COINS_LIST.map((coin, i) => (
+              <button key={i} onClick={() => addCoin(coin.value)} className="glass hover:bg-amber-500/20 active:scale-95 p-3 rounded-2xl font-black text-sm border-amber-500/20 text-amber-300 flex flex-col items-center gap-1">
+                <span className="text-xl">🪙</span>
+                <span>{coin.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={() => setCurrentTotal(0)} className="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-bold text-xs">
+              🗑️ Vider
+            </button>
+            <button onClick={validatePayment} className="w-2/3 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-black text-sm shadow-lg active:scale-95 transition">
+              PAYER ➔
+            </button>
+          </div>
         </div>
       );
     }
@@ -512,19 +613,19 @@
       };
 
       return (
-        <div class="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
-          <button onClick={onBack} class="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
-          <h2 class="text-2xl font-extrabold mb-2 mt-4">🦖 Nourris le Dino</h2>
-          <button onClick={() => speak(`${profile.name}, donne ${target} pommes au dinosaure !`)} class="bg-indigo-600/30 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold mb-6">
+        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
+          <h2 className="text-2xl font-extrabold mb-2 mt-4">🦖 Nourris le Dino</h2>
+          <button onClick={() => speak(`${profile.name}, donne ${target} pommes au dinosaure !`)} className="bg-indigo-600/30 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold mb-6">
             🔊 Écouter la consigne
           </button>
 
-          <div class="text-6xl mb-6 animate-pulse">🦖</div>
-          <div class="flex justify-center gap-2 mb-8">
-            {Array.from({ length: count }).map((_, i) => <span key={i} class="text-4xl">🍎</span>)}
+          <div className="text-6xl mb-6 animate-pulse">🦖</div>
+          <div className="flex justify-center gap-2 mb-8 min-h-[40px]">
+            {Array.from({ length: count }).map((_, i) => <span key={i} className="text-4xl">🍎</span>)}
           </div>
 
-          <button onClick={addApple} class="bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-black px-8 py-4 rounded-2xl shadow-xl active:scale-95 transition">
+          <button onClick={addApple} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-black px-8 py-4 rounded-2xl shadow-xl active:scale-95 transition">
             Donner une pomme 🍎
           </button>
         </div>
@@ -554,31 +655,31 @@
       };
 
       return (
-        <div class="min-h-screen flex flex-col justify-between p-4 bg-slate-950">
-          <div class="glass p-4 rounded-3xl text-center transform rotate-180 border-rose-500/30">
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-black text-rose-400">JOUEUR 2</span>
-              <span class="text-xl font-black">Score : {scoreP2}</span>
+        <div className="min-h-screen flex flex-col justify-between p-4 bg-slate-950">
+          <div className="glass p-4 rounded-3xl text-center transform rotate-180 border-rose-500/30">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-black text-rose-400">JOUEUR 2</span>
+              <span className="text-xl font-black">Score : {scoreP2}</span>
             </div>
-            <div class="text-3xl font-black mb-4">{q.n1} × {q.n2} = ?</div>
-            <div class="flex justify-center gap-2">
+            <div className="text-3xl font-black mb-4">{q.n1} × {q.n2} = ?</div>
+            <div className="flex justify-center gap-2">
               {[q.ans, q.ans + 2, q.ans - 3].sort(() => Math.random() - 0.5).map((opt, i) => (
-                <button key={i} onClick={() => answer(2, opt)} class="bg-rose-600/40 hover:bg-rose-600 px-6 py-3 rounded-xl font-bold text-xl">{opt}</button>
+                <button key={i} onClick={() => answer(2, opt)} className="bg-rose-600/40 hover:bg-rose-600 px-6 py-3 rounded-xl font-bold text-xl">{opt}</button>
               ))}
             </div>
           </div>
 
-          <button onClick={onBack} class="mx-auto bg-slate-800 px-4 py-2 rounded-full text-xs font-bold my-4">Quitter le Duel</button>
+          <button onClick={onBack} className="mx-auto bg-slate-800 px-4 py-2 rounded-full text-xs font-bold my-4">Quitter le Duel</button>
 
-          <div class="glass p-4 rounded-3xl text-center border-indigo-500/30">
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-black text-indigo-400">{profile.name} (P1)</span>
-              <span class="text-xl font-black">Score : {scoreP1}</span>
+          <div className="glass p-4 rounded-3xl text-center border-indigo-500/30">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-black text-indigo-400">{profile.name} (P1)</span>
+              <span className="text-xl font-black">Score : {scoreP1}</span>
             </div>
-            <div class="text-3xl font-black mb-4">{q.n1} × {q.n2} = ?</div>
-            <div class="flex justify-center gap-2">
+            <div className="text-3xl font-black mb-4">{q.n1} × {q.n2} = ?</div>
+            <div className="flex justify-center gap-2">
               {[q.ans, q.ans + 1, q.ans - 2].sort(() => Math.random() - 0.5).map((opt, i) => (
-                <button key={i} onClick={() => answer(1, opt)} class="bg-indigo-600/40 hover:bg-indigo-600 px-6 py-3 rounded-xl font-bold text-xl">{opt}</button>
+                <button key={i} onClick={() => answer(1, opt)} className="bg-indigo-600/40 hover:bg-indigo-600 px-6 py-3 rounded-xl font-bold text-xl">{opt}</button>
               ))}
             </div>
           </div>
@@ -605,31 +706,31 @@
       }, []);
 
       return (
-        <div class="glass p-6 rounded-3xl max-w-lg mx-auto">
-          <button onClick={onBack} class="bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold mb-4">← Retour</button>
-          <h2 class="text-2xl font-black mb-4 flex items-center gap-2">🔒 Tableau de bord Parents</h2>
+        <div className="glass p-6 rounded-3xl max-w-lg mx-auto">
+          <button onClick={onBack} className="bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold mb-4">← Retour</button>
+          <h2 className="text-2xl font-black mb-4 flex items-center gap-2">🔒 Tableau de bord Parents</h2>
           
-          <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
-              <span class="text-xs text-slate-400 font-bold uppercase">Questions Jouées</span>
-              <div class="text-3xl font-black text-white mt-1">{stats.played}</div>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
+              <span className="text-xs text-slate-400 font-bold uppercase">Questions Jouées</span>
+              <div className="text-3xl font-black text-white mt-1">{stats.played}</div>
             </div>
-            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
-              <span class="text-xs text-slate-400 font-bold uppercase">Taux de Réussite</span>
-              <div class="text-3xl font-black text-emerald-400 mt-1">{rate}%</div>
+            <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
+              <span className="text-xs text-slate-400 font-bold uppercase">Taux de Réussite</span>
+              <div className="text-3xl font-black text-emerald-400 mt-1">{rate}%</div>
             </div>
           </div>
 
-          <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center mb-6">
-            <span class="text-xs text-indigo-300 font-bold uppercase tracking-wider block mb-3">📲 Partager l'Application</span>
-            <div class="flex justify-center mb-3">
-              <div ref={qrRef} class="p-2 bg-white rounded-xl shadow-lg"></div>
+          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center mb-6">
+            <span className="text-xs text-indigo-300 font-bold uppercase tracking-wider block mb-3">📲 Partager l'Application</span>
+            <div className="flex justify-center mb-3">
+              <div ref={qrRef} className="p-2 bg-white rounded-xl shadow-lg"></div>
             </div>
-            <p class="text-xs text-slate-400">Flashez ce QR Code avec un autre téléphone pour l'installer.</p>
+            <p className="text-xs text-slate-400">Flashez ce QR Code avec un autre téléphone pour l'installer.</p>
           </div>
 
-          <div class="border-t border-slate-800 pt-4 text-center">
-            <button onClick={() => { if(confirm("Attention : supprimer la progression ?")) onReset(); }} class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-2 rounded-xl text-xs font-bold transition">
+          <div className="border-t border-slate-800 pt-4 text-center">
+            <button onClick={() => { if(confirm("Attention : supprimer la progression ?")) onReset(); }} className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-2 rounded-xl text-xs font-bold transition">
               🗑️ Réinitialiser la partie
             </button>
           </div>
@@ -639,27 +740,27 @@
 
     function Shop({ coins, unlockedAvatars, currentAvatar, onBuy, onSelect }) {
       return (
-        <div class="glass p-6 rounded-3xl text-center max-w-lg mx-auto">
-          <h2 class="text-2xl font-extrabold mb-2">🛍️ Boutique d'Avatars</h2>
-          <p class="text-slate-400 text-sm mb-6">Tu as <span class="text-amber-400 font-bold">{coins} 🪙</span></p>
+        <div className="glass p-6 rounded-3xl text-center max-w-lg mx-auto">
+          <h2 className="text-2xl font-extrabold mb-2">🛍️ Boutique d'Avatars</h2>
+          <p className="text-slate-400 text-sm mb-6">Tu as <span className="text-amber-400 font-bold">{coins} 🪙</span></p>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {AVATARS.map((avatar) => {
               const isUnlocked = unlockedAvatars.includes(avatar.id);
               const isEquipped = currentAvatar.id === avatar.id;
               const canAfford = coins >= avatar.price;
 
               return (
-                <div key={avatar.id} class={`p-4 rounded-2xl border flex flex-col items-center transition ${isEquipped ? 'bg-indigo-600/30 border-indigo-500 shadow-lg' : isUnlocked ? 'bg-slate-800 border-slate-700' : 'bg-slate-950/50 border-slate-800 opacity-80'}`}>
-                  <div class="text-5xl mb-2">{avatar.emoji}</div>
-                  <div class="font-bold text-white text-xs mb-3">{avatar.name}</div>
+                <div key={avatar.id} className={`p-4 rounded-2xl border flex flex-col items-center transition ${isEquipped ? 'bg-indigo-600/30 border-indigo-500 shadow-lg' : isUnlocked ? 'bg-slate-800 border-slate-700' : 'bg-slate-950/50 border-slate-800 opacity-80'}`}>
+                  <div className="text-5xl mb-2">{avatar.emoji}</div>
+                  <div className="font-bold text-white text-xs mb-3">{avatar.name}</div>
 
                   {isEquipped ? (
-                    <span class="text-xs bg-indigo-500/30 text-indigo-300 font-bold px-3 py-1 rounded-full">Équipé ✓</span>
+                    <span className="text-xs bg-indigo-500/30 text-indigo-300 font-bold px-3 py-1 rounded-full">Équipé ✓</span>
                   ) : isUnlocked ? (
-                    <button onClick={() => onSelect(avatar)} class="w-full text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold py-1.5 rounded-xl transition">Utiliser</button>
+                    <button onClick={() => onSelect(avatar)} className="w-full text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold py-1.5 rounded-xl transition">Utiliser</button>
                   ) : (
-                    <button onClick={() => onBuy(avatar)} disabled={!canAfford} class={`w-full text-xs font-bold py-1.5 rounded-xl flex items-center justify-center gap-1 transition ${canAfford ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
+                    <button onClick={() => onBuy(avatar)} disabled={!canAfford} className={`w-full text-xs font-bold py-1.5 rounded-xl flex items-center justify-center gap-1 transition ${canAfford ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
                       🔒 🪙 {avatar.price}
                     </button>
                   )}
