@@ -3,147 +3,128 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MathsAcademy - PS à Terminale</title>
-  <!-- Tailwind CSS -->
+  <title>MathsAcademy</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React & React DOM via CDN -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <!-- Babel pour compiler le JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    @keyframes pulse-subtle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
-    .animate-pulse-subtle { animation: pulse-subtle 2s infinite ease-in-out; }
-    @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .animate-pop { animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-indigo-500">
 
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect } = React;
 
-    // --- CURRICULUM GLOBAL (13 NIVEAUX - EXHAUSTIF) ---
+    // --- CURRICULUM STRICTEMENT THÉMATIQUE ---
     const CURRICULUM = {
       PS: [
         { id: 'ps_shapes', name: 'Formes simples (Rond, Carré)', icon: '🔴', type: 'ps_shapes' },
-        { id: 'ps_sorting', name: 'Tri d\'objets (Couleurs & Formes)', icon: '🎨', type: 'ps_sorting' },
-        { id: 'ps_count3', name: 'Comptine numérique jusqu\'à 3', icon: '🔢', type: 'ps_count3' },
-        { id: 'ps_spatial', name: 'Repérage spatial (Sur/Sous)', icon: '📦', type: 'ps_spatial' },
-        { id: 'ps_patterns', name: 'Rythmes simples (Suites)', icon: '🧩', type: 'ps_patterns' }
+        { id: 'ps_patterns', name: 'Rythmes et Suites', icon: '🧩', type: 'ps_patterns' },
+        { id: 'ps_count3', name: 'Comptine jusqu\'à 3', icon: '🔢', type: 'ps_count3' }
       ],
       MS: [
-        { id: 'ms_count6', name: 'Dénombrement jusqu\'à 6', icon: '🖐️', type: 'ms_count6' },
-        { id: 'ms_compare', name: 'Comparaison (Plus / Moins)', icon: '⚖️', type: 'ms_compare' },
-        { id: 'ms_shapes', name: 'Formes (Triangle, Carré, Rond)', icon: '🔺', type: 'ms_shapes' },
-        { id: 'ms_sizes', name: 'Tailles (Grand / Petit)', icon: '📏', type: 'ms_sizes' }
+        { id: 'ms_count6', name: 'Dénombrement jusqu\'à 6', icon: '🍎', type: 'ms_count6' },
+        { id: 'ms_compare', name: 'Plus / Moins', icon: '⚖️', type: 'ms_compare' }
       ],
       GS: [
         { id: 'gs_num', name: 'Chiffres jusqu\'à 10', icon: '🔢', type: 'gs_num' },
-        { id: 'gs_decomp', name: 'Décomposition (ex: 5 = 4 + 1)', icon: '🧩', type: 'gs_decomp' },
-        { id: 'gs_shapes_solids', name: 'Solides simples (Cube)', icon: '🧊', type: 'gs_shapes_solids' }
+        { id: 'gs_decomp', name: 'Décomposition des nombres', icon: '🧩', type: 'gs_decomp' }
       ],
       CP: [
         { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100' },
-        { id: 'cp_add_sub', name: 'Additions & Soustractions', icon: '➕', type: 'cp_add_sub' },
-        { id: 'cp_mental', name: 'Calcul mental', icon: '🧠', type: 'cp_mental' },
-        { id: 'cp_shapes', name: 'Géométrie plane', icon: '🔷', type: 'cp_shapes' }
+        { id: 'cp_add_sub', name: 'Additions & Soustractions', icon: '➕', type: 'cp_add_sub' }
       ],
       CE1: [
-        { id: 'ce1_num1000', name: 'Nombres jusqu\'à 1 000', icon: '🔢', type: 'ce1_num1000' },
         { id: 'ce1_tables', name: 'Tables de multiplication', icon: '✖️', type: 'ce1_tables' },
         { id: 'ce1_symmetry', name: 'Symétrie axiale', icon: '🪞', type: 'ce1_symmetry' }
       ],
       CE2: [
-        { id: 'ce2_num10000', name: 'Nombres jusqu\'à 10 000', icon: '🔢', type: 'ce2_num10000' },
-        { id: 'ce2_mult_posed', name: 'Multiplication posée', icon: '✖️', type: 'ce2_mult_posed' },
-        { id: 'ce2_perimeters', name: 'Périmètres de figures', icon: '📏', type: 'ce2_perimeters' }
+        { id: 'ce2_mult', name: 'Multiplications posées', icon: '✖️', type: 'ce2_mult' },
+        { id: 'ce2_perimeters', name: 'Périmètres', icon: '📏', type: 'ce2_perimeters' }
       ],
       CM1: [
-        { id: 'cm1_millions', name: 'Grands nombres (Millions)', icon: '🌌', type: 'cm1_millions' },
         { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions' },
         { id: 'cm1_decimals', name: 'Nombres décimaux', icon: '🎯', type: 'cm1_decimals' },
-        { id: 'cm1_lines_angles', name: 'Angles & Droites', icon: '📐', type: 'cm1_lines_angles' }
+        { id: 'cm1_angles', name: 'Angles et géométrie', icon: '📐', type: 'cm1_angles' }
       ],
       CM2: [
         { id: 'cm2_frac_ops', name: 'Opérations sur fractions', icon: '🍰', type: 'cm2_frac_ops' },
-        { id: 'cm2_proportionality', name: 'Proportionnalité', icon: '📈', type: 'cm2_proportionality' }
+        { id: 'cm2_prop', name: 'Proportionnalité', icon: '📈', type: 'cm2_prop' }
       ],
       '6ème': [
-        { id: 'c6_fractions_dec', name: 'Fractions & Décimaux', icon: '🔢', type: 'c6_fractions_dec' },
-        { id: 'c6_angles', name: 'Angles & Rapporteur', icon: '📐', type: 'c6_angles' }
+        { id: 'c6_fractions', name: 'Fractions & Décimaux', icon: '🔢', type: 'c6_fractions' },
+        { id: 'c6_angles', name: 'Mesure d\'angles', icon: '📐', type: 'c6_angles' }
       ],
       '5ème': [
-        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs' },
-        { id: 'c5_literal', name: 'Calcul littéral', icon: '🔤', type: 'c5_literal' }
+        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs' }
       ],
       '4ème': [
-        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore' },
-        { id: 'c4_equations', name: 'Équations du 1er degré', icon: '⚖️', type: 'c4_equations' }
+        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore' }
       ],
       '3ème': [
         { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales' },
         { id: 'c3_trigo', name: 'Trigonométrie', icon: '📊', type: 'c3_trigo' }
       ],
       Seconde: [
-        { id: 'sec_vectors', name: 'Vecteurs & Coordonnées', icon: '➡️', type: 'sec_vectors' },
-        { id: 'sec_functions', name: 'Fonctions & Variations', icon: '📉', type: 'sec_functions' }
+        { id: 'sec_vect', name: 'Vecteurs & Coordonnées', icon: '➡️', type: 'sec_vect' },
+        { id: 'sec_func', name: 'Fonctions & Variations', icon: '📉', type: 'sec_func' }
       ],
       '1ère': [
-        { id: 'p1_derivation', name: 'Dérivation & Tangente', icon: '📈', type: 'p1_derivation' },
-        { id: 'p1_quadratic', name: 'Second degré (Discriminant Δ)', icon: '🧮', type: 'p1_quadratic' }
+        { id: 'p1_deriv', name: 'Dérivation', icon: '📈', type: 'p1_deriv' }
       ],
       Terminale: [
-        { id: 'term_limits', name: 'Limites de suites & fonctions', icon: '♾️', type: 'term_limits' },
-        { id: 'term_exp_ln', name: 'Exponentielle & Logarithme', icon: '📈', type: 'term_exp_ln' }
+        { id: 'term_lim', name: 'Limites & Fonctions', icon: '♾️', type: 'term_lim' }
       ]
     };
 
     const IS_MATERNELLE = (grade) => ['PS', 'MS', 'GS'].includes(grade);
 
-    // --- COMPOSANT DE SYNTHÈSE VOCALE ---
-    const speakText = (text) => {
+    const speak = (text) => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'fr-FR';
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'fr-FR';
+        u.rate = 0.9;
+        window.speechSynthesis.speak(u);
       }
     };
 
-    // --- RENDERER DE SCHÉMAS GÉOMÉTRIQUES & VISUELS SVG ---
-    function DynamicVisual({ type }) {
-      if (type === 'angle_right') {
+    // --- ILLUSTRATIONS SVG DYNAMIQUES SPÉCIFIQUES ---
+    function VisualGraphic({ type }) {
+      if (type === 'angle_droit') {
         return (
-          <svg className="w-36 h-36 mx-auto my-2" viewBox="0 0 100 100">
+          <svg className="w-32 h-32 mx-auto my-3" viewBox="0 0 100 100">
             <polyline points="20,10 20,80 90,80" fill="none" stroke="#818cf8" strokeWidth="6" strokeLinecap="round" />
             <rect x="20" y="66" width="14" height="14" fill="none" stroke="#f43f5e" strokeWidth="3" />
           </svg>
         );
       }
-      if (type === 'angle_acute') {
+      if (type === 'symmetry_yes') {
         return (
-          <svg className="w-36 h-36 mx-auto my-2" viewBox="0 0 100 100">
-            <polyline points="30,20 20,80 80,70" fill="none" stroke="#818cf8" strokeWidth="6" strokeLinecap="round" />
-            <path d="M 30,78 A 15,15 0 0,0 38,65" fill="none" stroke="#38bdf8" strokeWidth="3" />
-          </svg>
-        );
-      }
-      if (type === 'symmetry') {
-        return (
-          <svg className="w-40 h-32 mx-auto my-2" viewBox="0 0 120 80">
+          <svg className="w-36 h-28 mx-auto my-3" viewBox="0 0 120 80">
             <line x1="60" y1="5" x2="60" y2="75" stroke="#f43f5e" strokeWidth="3" strokeDasharray="4" />
             <polygon points="20,20 45,40 20,60" fill="#818cf8" opacity="0.8" />
             <polygon points="100,20 75,40 100,60" fill="#38bdf8" opacity="0.8" />
           </svg>
         );
       }
-      if (type === 'fraction_34') {
+      if (type === 'symmetry_no') {
         return (
-          <svg className="w-32 h-32 mx-auto my-2" viewBox="0 0 100 100">
+          <svg className="w-36 h-28 mx-auto my-3" viewBox="0 0 120 80">
+            <line x1="60" y1="5" x2="60" y2="75" stroke="#f43f5e" strokeWidth="3" strokeDasharray="4" />
+            <polygon points="20,20 45,40 20,60" fill="#818cf8" opacity="0.8" />
+            <polygon points="80,20 95,40 80,60" fill="#38bdf8" opacity="0.8" />
+          </svg>
+        );
+      }
+      if (type === 'fraction') {
+        return (
+          <svg className="w-28 h-28 mx-auto my-3" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="40" fill="#1e293b" stroke="#818cf8" strokeWidth="4" />
             <path d="M 50,50 L 50,10 A 40,40 0 1,1 10,50 Z" fill="#6366f1" />
             <line x1="50" y1="10" x2="50" y2="90" stroke="#0f172a" strokeWidth="3" />
@@ -153,7 +134,7 @@
       }
       if (type === 'pythagore') {
         return (
-          <svg className="w-40 h-32 mx-auto my-2" viewBox="0 0 120 90">
+          <svg className="w-36 h-28 mx-auto my-3" viewBox="0 0 120 90">
             <polygon points="20,80 100,80 20,20" fill="none" stroke="#38bdf8" strokeWidth="4" />
             <text x="15" y="55" fill="#a5b4fc" fontSize="12" fontWeight="bold">a</text>
             <text x="60" y="88" fill="#a5b4fc" fontSize="12" fontWeight="bold">b</text>
@@ -161,151 +142,268 @@
           </svg>
         );
       }
+      if (type === 'thales') {
+        return (
+          <svg className="w-36 h-32 mx-auto my-3" viewBox="0 0 100 100">
+            <polygon points="50,10 10,90 90,90" fill="none" stroke="#38bdf8" strokeWidth="3" />
+            <line x1="30" y1="50" x2="70" y2="50" stroke="#f43f5e" strokeWidth="3" strokeDasharray="3" />
+          </svg>
+        );
+      }
       return null;
     }
 
-    // --- MOTEUR D'EXERCICES AVEC CHRONO & GAMIFICATION ---
+    // --- MOTEUR DE GÉNÉRATION DE QUESTIONS (VRAI ALÉATOIRE & STRICTEMENT THÉMATIQUE) ---
     function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
-      const [q, setQ] = useState({ text: '', ans: '', options: [], visual: null, audioText: '' });
-      const [timer, setTimer] = useState(0);
+      const [q, setQ] = useState({ text: '', ans: '', options: [], visual: null });
+      const [timeLeft, setTimeLeft] = useState(25);
       const [feedback, setFeedback] = useState(null);
-      const isMaternelle = IS_MATERNELLE(grade);
+      const isMat = IS_MATERNELLE(grade);
 
-      // Gestion du Chronomètre (Exclus si Maternelle)
+      // Chronomètre DESCENDANT (absent en maternelle)
       useEffect(() => {
-        if (isMaternelle) return;
-        setTimer(0);
-        const interval = setInterval(() => setTimer(t => t + 1), 1000);
-        return () => clearInterval(interval);
-      }, [q, isMaternelle]);
+        if (isMat) return;
+        setTimeLeft(25);
+        const timerInterval = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev <= 1) {
+              handleAnswer(''); // Temps écoulé = mauvaise réponse
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearInterval(timerInterval);
+      }, [q, isMat]);
 
-      const generateQuestion = () => {
+      const generateNewQuestion = () => {
         setFeedback(null);
-        let text = '', ans = '', opts = [], visual = null, audioText = '';
+        let text = '', ans = '', opts = [], visual = null;
+        const type = module.type;
 
-        if (module.type === 'ps_shapes') {
+        // --- MATERNELLE ---
+        if (type === 'ps_shapes') {
+          const shapes = [
+            { name: "🔴 Rond", target: true },
+            { name: "🟦 Carré", target: false },
+            { name: "⭐ Étoile", target: false }
+          ].sort(() => Math.random() - 0.5);
           text = "Touche la forme parfaitement RONDE !";
           ans = "🔴 Rond";
-          opts = ["🔴 Rond", "🟦 Carré", "⭐ Étoile"];
-          audioText = "Touche la forme parfaitement ronde !";
-        } else if (module.type === 'ps_patterns') {
-          text = "Complète la suite : 🔴 🔵 🔴 🔵 ... ?";
-          ans = "🔴";
-          opts = ["🔴", "🔵", "🟡"];
-          audioText = "Complète la suite de couleurs : rouge, bleu, rouge, bleu... que vient-il après ?";
-        } else if (module.type === 'ms_count6') {
-          text = "Combien d'éléments vois-tu ? 🍎 🍎 🍎 🍎";
-          ans = "4";
-          opts = ["4", "3", "5", "6"];
-          audioText = "Combien de pommes vois-tu à l'écran ?";
-        } else if (module.type === 'ce1_tables') {
-          const a = Math.floor(Math.random() * 8) + 2;
-          const b = Math.floor(Math.random() * 8) + 2;
+          opts = shapes.map(s => s.name);
+        } else if (type === 'ps_patterns') {
+          text = "Quelle couleur vient après : 🔴 🔵 🔴 ... ?";
+          ans = "🔵";
+          opts = ["🔵", "🔴", "🟡"];
+        } else if (type === 'ps_count3') {
+          const n = Math.floor(Math.random() * 3) + 1;
+          text = `Combien d'étoiles vois-tu ? ${'⭐'.repeat(n)}`;
+          ans = `${n}`;
+          opts = ["1", "2", "3"].sort(() => Math.random() - 0.5);
+        } else if (type === 'ms_count6') {
+          const n = Math.floor(Math.random() * 5) + 2;
+          text = `Combien de pommes ? ${'🍎'.repeat(n)}`;
+          ans = `${n}`;
+          opts = Array.from(new Set([`${n}`, `${n === 6 ? 5 : n + 1}`, `${n > 1 ? n - 1 : 3}`, '4'])).sort(() => Math.random() - 0.5);
+        } else if (type === 'ms_compare') {
+          const a = Math.floor(Math.random() * 8) + 1;
+          const b = Math.floor(Math.random() * 8) + 1;
+          if (a === b) b += 1;
+        } else if (type === 'gs_num') {
+          const n = Math.floor(Math.random() * 9) + 2;
+          text = `Quel nombre vient juste après ${n - 1} ?`;
+          ans = `${n}`;
+          opts = [`${n}`, `${n + 1}`, `${n > 2 ? n - 2 : 1}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'gs_decomp') {
+          const n = Math.floor(Math.random() * 4) + 3;
+          const part = Math.floor(Math.random() * (n - 1)) + 1;
+          text = `${n} = ${part} + ... ?`;
+          ans = `${n - part}`;
+          opts = [`${n - part}`, `${n - part + 1}`, `${n - part > 0 ? n - part - 1 : 4}`].sort(() => Math.random() - 0.5);
+
+        // --- CYCLE 2 & 3 (CALCULS & TABLES ALÉATOIRES PURES) ---
+        } else if (type === 'cp_num100') {
+          const n = Math.floor(Math.random() * 90) + 10;
+          text = `Comment s'écrit ce nombre en chiffres : ${n} ? (Ou trouve son double/voisin)`;
+          ans = `${n}`;
+          opts = [`${n}`, `${n + 1}`, `${n > 15 ? n - 10 : n + 5}`, `${n + 10}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cp_add_sub') {
+          const a = Math.floor(Math.random() * 20) + 5;
+          const b = Math.floor(Math.random() * 10) + 1;
+          const isAdd = Math.random() > 0.5;
+          text = isAdd ? `Calculer : ${a} + ${b} = ... ?` : `Calculer : ${a} - ${b} = ... ?`;
+          ans = isAdd ? `${a + b}` : `${a - b}`;
+          opts = [`${ans}`, `${Number(ans) + 2}`, `${Number(ans) - 1}`, `${Number(ans) + 3}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'ce1_tables') {
+          // TABLES DE MULTIPLICATION TOTALEMENT AU HASARD (SANS NIVEAU FIGÉ)
+          const a = Math.floor(Math.random() * 9) + 2;
+          const b = Math.floor(Math.random() * 9) + 2;
           text = `Combien font ${a} × ${b} ?`;
           ans = `${a * b}`;
-          opts = [`${a * b}`, `${a * b + 2}`, `${a * b - 3}`, `${a * (b + 1)}`];
-        } else if (module.type === 'cm1_fractions') {
-          text = "Quelle fraction est représentée par la partie colorée ?";
-          ans = "3/4";
-          opts = ["3/4", "1/4", "1/2", "2/3"];
-          visual = 'fraction_34';
-        } else if (module.type === 'c6_angles' || module.type === 'cm1_lines_angles') {
-          text = "Quel type d'angle est illustré ci-dessous ?";
-          ans = "Angle droit (90°)";
-          opts = ["Angle droit (90°)", "Angle aigu", "Angle obtus"];
-          visual = 'angle_right';
-        } else if (module.type === 'ce1_symmetry') {
-          text = "La figure possède-t-elle un axe de symétrie valide ?";
-          ans = "Oui";
+          opts = [`${a * b}`, `${a * b + (Math.random() > 0.5 ? 2 : -3)}`, `${a * b + 4}`, `${a * (b + 1)}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'ce1_symmetry') {
+          const isValid = Math.random() > 0.5;
+          text = isValid ? "La ligne en pointillés est-elle un axe de symétrie ?" : "Cette coupe est-elle symétrique ?";
+          ans = isValid ? "Oui" : "Non";
           opts = ["Oui", "Non"];
-          visual = 'symmetry';
-        } else if (module.type === 'c4_pythagore') {
-          text = "D'après la figure, quelle relation est exacte ?";
+          visual = isValid ? 'symmetry_yes' : 'symmetry_no';
+        } else if (type === 'ce2_mult') {
+          const a = Math.floor(Math.random() * 30) + 12;
+          const b = Math.floor(Math.random() * 7) + 3;
+          text = `Calculer le produit posé : ${a} × ${b} = ... ?`;
+          ans = `${a * b}`;
+          opts = [`${a * b}`, `${a * b + 5}`, `${a * b - 4}`, `${a * b + 10}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'ce2_perimeters') {
+          const cote = Math.floor(Math.random() * 15) + 4;
+          text = `Quel est le périmètre d'un carré de côté ${cote} cm ?`;
+          ans = `${cote * 4} cm`;
+          opts = [`${cote * 4} cm`, `${cote * cote} cm`, `${cote * 2} cm`, `${cote * 4 + 2} cm`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cm1_fractions' || type === 'c6_fractions') {
+          text = "Quelle fraction représente la partie colorée en violet ?";
+          ans = "1/4";
+          opts = ["1/4", "1/2", "3/4", "2/3"].sort(() => Math.random() - 0.5);
+          visual = 'fraction';
+        } else if (type === 'cm1_decimals') {
+          const ent = Math.floor(Math.random() * 10) + 1;
+          const dec = Math.floor(Math.random() * 9) + 1;
+          text = `Écrire sous forme décimale : ${ent} + ${dec}/10 = ... ?`;
+          ans = `${ent}.${dec}`;
+          opts = [`${ent}.${dec}`, `${ent + 1}.${dec}`, `${ent}.${dec === 9 ? 1 : dec + 1}`, `${ent - 1}.${dec}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cm1_angles' || type === 'c6_angles') {
+          text = "Quel type d'angle mesure exactement 90 degrés ?";
+          ans = "Angle droit";
+          opts = ["Angle droit", "Angle aigu", "Angle obtus", "Angle plat"].sort(() => Math.random() - 0.5);
+          visual = 'angle_droit';
+        } else if (type === 'cm2_frac_ops') {
+          const d = Math.floor(Math.random() * 4) + 3;
+          const n1 = Math.floor(Math.random() * 3) + 1;
+          const n2 = Math.floor(Math.random() * 3) + 1;
+          text = `Calculer : ${n1}/${d} + ${n2}/${d} = ... ?`;
+          ans = `${n1 + n2}/${d}`;
+          opts = [`${n1 + n2}/${d}`, `${n1 + n2 + 1}/${d}`, `${n1 * n2}/${d}`, `1/${d}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cm2_prop') {
+          const p = Math.floor(Math.random() * 4) + 2;
+          text = `Si 2 kg de pommes coûtent ${2 * p} €, quel est le prix de 4 kg ?`;
+          ans = `${4 * p} €`;
+          opts = [`${4 * p} €`, `${2 * p + 2} €`, `${6 * p} €`, `${4 * p + 2} €`].sort(() => Math.random() - 0.5);
+
+        // --- COLLÈGE & LYCÈE (MATHS AVANCÉES STRICTEMENT Ciblées) ---
+        } else if (type === 'c5_relatifs') {
+          const a = Math.floor(Math.random() * 15) + 1;
+          const b = Math.floor(Math.random() * 15) + 1;
+          const isNeg = Math.random() > 0.5;
+          text = isNeg ? `Calculer : -${a} + ${b} = ... ?` : `Calculer : -${a} - ${b} = ... ?`;
+          ans = isNeg ? `${b - a}` : `-${a + b}`;
+          opts = [`${ans}`, `${Number(ans) * -1}`, `${Number(ans) + 2}`, `${Number(ans) - 3}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'c4_pythagore') {
+          text = "Dans un triangle rectangle, quelle est l'égalité de Pythagore ?";
           ans = "a² + b² = c²";
-          opts = ["a² + b² = c²", "a + b = c", "c² + a² = b²"];
+          opts = ["a² + b² = c²", "a + b = c", "c² + a² = b²", "a × b = c²"].sort(() => Math.random() - 0.5);
           visual = 'pythagore';
+        } else if (type === 'c3_thales') {
+          text = "Le théorème de Thalès permet de calculer :";
+          ans = "Des longueurs dans des triangles emboîtés";
+          opts = ["Des longueurs dans des triangles emboîtés", "Des angles", "Des aires de disques", "Des dérivées"].sort(() => Math.random() - 0.5);
+          visual = 'thales';
+        } else if (type === 'c3_trigo') {
+          text = "Dans un triangle rectangle, le cosinus d'un angle aigu c'est :";
+          ans = "Côté adjacent / Hypoténuse";
+          opts = ["Côté adjacent / Hypoténuse", "Côté opposé / Côté adjacent", "Hypoténuse / Côté opposé", "Côté opposé / Hypoténuse"].sort(() => Math.random() - 0.5);
+        } else if (type === 'sec_vect') {
+          text = "Soit un vecteur AB. Que vaut vecteur AB + vecteur BC ?";
+          ans = "Vecteur AC (Relation de Chasles)";
+          opts = ["Vecteur AC (Relation de Chasles)", "Vecteur CA", "Vecteur nul", "Vecteur BA"].sort(() => Math.random() - 0.5);
+        } else if (type === 'sec_func') {
+          text = "Si une fonction f est strictement croissante sur un intervalle, sa courbe représentative :";
+            ans = "Monte de gauche à droite";
+          opts = ["Monte de gauche à droite", "Descend de gauche à droite", "Est horizontale", "Est une parabole inversée"].sort(() => Math.random() - 0.5);
+        } else if (type === 'p1_deriv') {
+          text = "Quelle est la dérivée de la fonction f(x) = x² ?";
+          ans = "f'(x) = 2x";
+          opts = ["f'(x) = 2x", "f'(x) = x", "f'(x) = 2", "f'(x) = x²"].sort(() => Math.random() - 0.5);
+        } else if (type === 'term_lim') {
+          text = "Quelle est la limite de 1/x quand x tend vers +∞ ?";
+          ans = "0";
+          opts = ["0", "+∞", "1", "-∞"].sort(() => Math.random() - 0.5);
         } else {
-          const a = Math.floor(Math.random() * 12) + 2;
-          const b = Math.floor(Math.random() * 12) + 2;
-          text = `Calculer : ${a} + ${b} = ... ?`;
-          ans = `${a + b}`;
-          opts = [`${a + b}`, `${a + b + 1}`, `${a + b - 2}`, `${a + b + 3}`];
+          // Fallback ultra propre
+          const a = Math.floor(Math.random() * 10) + 1;
+          const b = Math.floor(Math.random() * 10) + 1;
+          text = `Résoudre l'opération : ${a} × ${b} = ... ?`;
+          ans = `${a * b}`;
+          opts = [`${a * b}`, `${a * b + 2}`, `${a * b - 1}`, `${a * b + 4}`].sort(() => Math.random() - 0.5);
         }
 
-        opts = Array.from(new Set(opts)).sort(() => Math.random() - 0.5);
-        const newQ = { text, ans, options: opts, visual, audioText: audioText || text };
-        setQ(newQ);
-
-        if (isMaternelle) {
-          speakText(newQ.audioText);
+        opts = Array.from(new Set(opts));
+        while(opts.length < 4) {
+          opts.push(`${Number(ans) + opts.length + 1}`);
         }
+        opts.sort(() => Math.random() - 0.5);
+
+        const generated = { text, ans, options: opts, visual };
+        setQ(generated);
+
+        if (isMat) speak(text);
       };
 
-      useEffect(() => { generateQuestion(); }, [module.type]);
+      useEffect(() => { generateNewQuestion(); }, [module.type]);
 
-      const handleAns = (val) => {
+      const handleAnswer = (val) => {
         if (val === q.ans) {
-          const bonusXP = isMaternelle ? 20 : Math.max(5, 30 - timer);
-          setFeedback({ success: true, msg: `Bravo ${userName} ! Excellent ! (+${bonusXP} XP)` });
-          if (isMaternelle) speakText(`Bravo ${userName} !`);
+          const xp = isMat ? 15 : Math.max(5, timeLeft);
+          setFeedback({ success: true, msg: `Bravo ${userName} ! Super ! (+${xp} XP)` });
+          if (isMat) speak(`Bravo ${userName} !`);
           setTimeout(() => {
-            onResult(true, bonusXP);
-            generateQuestion();
-          }, 1500);
+            onResult(xp);
+            generateNewQuestion();
+          }, 1300);
         } else {
-          setFeedback({ success: false, msg: `Oups ${userName}, essaie encore !` });
-          if (isMaternelle) speakText(`Essaie encore ${userName}`);
+          setFeedback({ success: false, msg: `Oups ${userName}, ce n'est pas la bonne réponse.` });
+          if (isMat) speak(`Réessaie ${userName}`);
         }
       };
 
       return (
-        <div className="bg-slate-900/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl text-center max-w-lg mx-auto relative border border-slate-800 shadow-2xl animate-pop">
-          <div className="flex justify-between items-center mb-6">
-            <button onClick={onBack} className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-black transition-all border border-slate-700">
+        <div className="bg-slate-900/90 p-6 sm:p-8 rounded-3xl text-center max-w-lg mx-auto border border-slate-800 shadow-2xl animate-pop">
+          <div className="flex justify-between items-center mb-4">
+            <button onClick={onBack} className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-black">
               ← RETOUR
             </button>
-            <span className="text-xs font-black text-indigo-400 uppercase tracking-widest bg-indigo-950/60 px-3 py-1.5 rounded-xl border border-indigo-800/40">
+            <span className="text-xs font-black text-indigo-400 bg-indigo-950 px-3 py-1.5 rounded-xl border border-indigo-800/40">
               {grade} • {module.name}
             </span>
-            {!isMaternelle && (
+            {!isMat && (
               <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/20">
-                ⏱️ {timer}s
+                ⏱️ {timeLeft}s
               </span>
             )}
           </div>
 
-          {/* Icone Vocale pour Maternelles */}
-          {isMaternelle && (
+          {isMat && (
             <button 
-              onClick={() => speakText(q.audioText)}
-              className="mb-4 bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-full shadow-lg shadow-indigo-600/30 transition-transform active:scale-95"
-              title="Répéter la consigne"
+              onClick={() => speak(q.text)}
+              className="mb-3 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg inline-flex items-center gap-2"
             >
-              🔊 Écouter la consigne
+              🔊 Réécouter la consigne
             </button>
           )}
 
-          {/* Schéma / Dessin SVG */}
-          {q.visual && <DynamicVisual type={q.visual} />}
+          {q.visual && <VisualGraphic type={q.visual} />}
 
-          <div className="text-xl sm:text-2xl font-black my-6 text-white leading-relaxed tracking-tight">
-            {q.text}
-          </div>
+          <h2 className="text-xl sm:text-2xl font-black my-5 text-white leading-relaxed">{q.text}</h2>
 
-          {/* Feedback interactif */}
           {feedback && (
-            <div className={`p-4 rounded-2xl mb-6 font-black text-sm animate-bounce ${feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
+            <div className={`p-3 rounded-xl mb-4 font-black text-sm ${feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
               {feedback.msg}
             </div>
           )}
 
-          {/* Boutons de réponses dynamiques */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3 mt-4">
             {q.options.map((opt, i) => (
               <button
                 key={i}
-                onClick={() => handleAns(opt)}
-                className="bg-slate-800/80 hover:bg-indigo-600 text-white py-4 px-2 rounded-2xl text-base font-black border border-slate-700/60 hover:border-indigo-400 transition-all active:scale-95 shadow-lg flex items-center justify-center min-h-[64px]"
+                onClick={() => handleAnswer(opt)}
+                className="bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-3 rounded-2xl border border-slate-700 hover:border-indigo-400 transition-all active:scale-95 text-base shadow-lg"
               >
                 {opt}
               </button>
@@ -315,7 +413,7 @@
       );
     }
 
-    // --- APPLICATION PRINCIPALE & ONBOARDING ---
+    // --- APPLICATION PRINCIPALE ---
     function App() {
       const [userName, setUserName] = useState('');
       const [selectedGrade, setSelectedGrade] = useState('CP');
@@ -325,65 +423,44 @@
 
       const handleStart = (e) => {
         e.preventDefault();
-        if (userName.trim()) {
-          setIsLoggedIn(true);
-        }
+        if (userName.trim()) setIsLoggedIn(true);
       };
 
-      const handleResult = (isCorrect, points) => {
-        if (isCorrect) setScore(prev => prev + points);
-      };
-
-      // ÉCRAN 1 : ONBOARDING / PROFIL (Prénom + Niveau)
       if (!isLoggedIn) {
         return (
-          <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
-            <div className="bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl max-w-md w-full border border-slate-800 shadow-2xl text-center animate-pop">
-              <div className="w-20 h-20 bg-indigo-600 rounded-3xl mx-auto flex items-center justify-center text-4xl shadow-xl shadow-indigo-600/30 mb-6">
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="bg-slate-900/90 p-8 rounded-3xl max-w-md w-full border border-slate-800 shadow-2xl text-center animate-pop">
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-lg shadow-indigo-600/30">
                 🎓
               </div>
-              <h1 className="text-3xl font-black bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-                MathsAcademy
-              </h1>
-              <p className="text-slate-400 text-xs font-semibold mb-8 uppercase tracking-wider">
-                Bienvenue ! Crée ton profil
-              </p>
-
-              <form onSubmit={handleStart} className="space-y-6">
-                <div className="text-left">
-                  <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-wider mb-2">
-                    Ton Prénom
-                  </label>
+              <h1 className="text-2xl font-black text-white mb-6">MathsAcademy</h1>
+              
+              <form onSubmit={handleStart} className="space-y-5 text-left">
+                <div>
+                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Prénom</label>
                   <input
                     type="text"
                     required
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     placeholder="Ex: Lucas, Emma..."
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-2xl px-4 py-3.5 text-white font-bold outline-none transition-all placeholder:text-slate-600"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500"
                   />
                 </div>
-
-                <div className="text-left">
-                  <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-wider mb-2">
-                    Ton Niveau Scolaire
-                  </label>
+                <div>
+                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Niveau Scolaire</label>
                   <select
                     value={selectedGrade}
                     onChange={(e) => setSelectedGrade(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-2xl px-4 py-3.5 text-white font-bold outline-none transition-all"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500"
                   >
-                    {Object.keys(CURRICULUM).map(grade => (
-                      <option key={grade} value={grade}>{grade}</option>
+                    {Object.keys(CURRICULUM).map(g => (
+                      <option key={g} value={g}>{g}</option>
                     ))}
                   </select>
                 </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 transition-all active:scale-95 text-base tracking-wide"
-                >
-                  C'EST PARTI ! 🚀
+                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 active:scale-95">
+                  COMMENCER LE JEU 🚀
                 </button>
               </form>
             </div>
@@ -391,76 +468,64 @@
         );
       }
 
-      // ÉCRAN 2 : TABLEAU DE BORD DU JOUEUR
       return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 p-4 font-sans">
-          <header className="max-w-4xl mx-auto flex justify-between items-center py-6 border-b border-slate-800 mb-8">
+        <div className="max-w-4xl mx-auto p-4">
+          <header className="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
             <div className="flex items-center gap-3">
-              <div className="bg-indigo-600 p-3 rounded-2xl text-2xl shadow-lg shadow-indigo-500/20">🎓</div>
+              <span className="text-3xl">🎓</span>
               <div>
                 <h1 className="text-lg font-black text-white">MathsAcademy</h1>
                 <p className="text-xs text-indigo-400 font-bold">Joueur : {userName} ({selectedGrade})</p>
               </div>
             </div>
-            <div className="bg-slate-900 px-4 py-2 rounded-2xl border border-indigo-500/30 flex items-center gap-2 shadow-inner">
-              <span className="text-xs text-slate-400 font-extrabold">XP</span>
+            <div className="bg-slate-900 px-4 py-2 rounded-2xl border border-indigo-500/30">
+              <span className="text-xs text-slate-400 font-extrabold mr-2">XP</span>
               <span className="text-lg font-black text-amber-400">{score}</span>
             </div>
           </header>
 
-          <main className="max-w-4xl mx-auto">
-            {!activeModule ? (
-              <>
-                {/* Sélecteur de niveaux */}
-                <nav className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-none">
-                  {Object.keys(CURRICULUM).map(grade => (
-                    <button
-                      key={grade}
-                      onClick={() => setSelectedGrade(grade)}
-                      className={`px-5 py-2.5 rounded-2xl font-black text-xs whitespace-nowrap transition-all ${
-                        selectedGrade === grade
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105'
-                          : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
-                      }`}
-                    >
-                      {grade}
-                    </button>
-                  ))}
-                </nav>
+          {!activeModule ? (
+            <>
+              <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+                {Object.keys(CURRICULUM).map(g => (
+                  <button
+                    key={g}
+                    onClick={() => setSelectedGrade(g)}
+                    className={`px-4 py-2 rounded-2xl font-black text-xs transition-all whitespace-nowrap ${
+                      selectedGrade === g ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
 
-                {/* Grille de modules ludiques */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {CURRICULUM[selectedGrade]?.map(module => (
-                    <button
-                      key={module.id}
-                      onClick={() => setActiveModule(module)}
-                      className="bg-slate-900/60 p-5 rounded-3xl text-left border border-slate-800/80 hover:border-indigo-500/60 hover:bg-indigo-950/20 transition-all group flex flex-col justify-between h-36 shadow-lg active:scale-98"
-                    >
-                      <span className="text-3xl p-2.5 bg-slate-950 rounded-2xl w-fit group-hover:scale-110 transition-transform shadow-inner border border-slate-800">
-                        {module.icon}
-                      </span>
-                      <span className="font-extrabold text-sm text-slate-200 group-hover:text-indigo-300 transition-colors">
-                        {module.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <ExerciseRunner
-                userName={userName}
-                grade={selectedGrade}
-                module={activeModule}
-                onBack={() => setActiveModule(null)}
-                onResult={handleResult}
-              />
-            )}
-          </main>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {CURRICULUM[selectedGrade]?.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setActiveModule(m)}
+                    className="bg-slate-900/80 p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/30 transition-all flex flex-col justify-between h-36 shadow-md"
+                  >
+                    <span className="text-3xl">{m.icon}</span>
+                    <span className="font-extrabold text-sm text-slate-200">{m.name}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <ExerciseRunner
+              userName={userName}
+              grade={selectedGrade}
+              module={activeModule}
+              onBack={() => setActiveModule(null)}
+              onResult={(xp) => setScore(s => s + xp)}
+            />
+          )}
         </div>
       );
     }
 
-    // Initialisation
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
