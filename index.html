@@ -1,597 +1,234 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Mathia - Pédagogie Mathématique Adaptative</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-  <style>
-    .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    .pop-in { animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    @keyframes popIn { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans select-none overflow-x-hidden">
-  <div id="root"></div>
+import React, { useState, useEffect } from 'react';
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+// --- CURRICULUM GLOBAL (PS À TERMINALE) ---
+const CURRICULUM = {
+  PS: [
+    { id: 'ps_shapes', name: 'Formes simples (Rond, Carré)', icon: '🔴', type: 'ps_shapes' },
+    { id: 'ps_sorting', name: 'Tri d\'objets (Couleurs & Formes)', icon: '🎨', type: 'ps_sorting' },
+    { id: 'ps_count3', name: 'Comptine numérique jusqu\'à 3', icon: '🔢', type: 'ps_count3' },
+    { id: 'ps_spatial', name: 'Repérage spatial (Sur/Sous, Dedans/Dehors)', icon: '📦', type: 'ps_spatial' },
+    { id: 'ps_patterns', name: 'Rythmes simples (Suites de couleurs)', icon: '🧩', type: 'ps_patterns' }
+  ],
+  MS: [
+    { id: 'ms_count6', name: 'Dénombrement jusqu\'à 5 ou 6', icon: '🖐️', type: 'ms_count6' },
+    { id: 'ms_compare', name: 'Comparaison de collections (Plus / Moins)', icon: '⚖️', type: 'ms_compare' },
+    { id: 'ms_triangle', name: 'Formes (Triangle, Carré, Rond)', icon: '🔺', type: 'ms_triangle' },
+    { id: 'ms_sizes', name: 'Tailles (Grand / Petit)', icon: '📏', type: 'ms_sizes' },
+    { id: 'ms_logic', name: 'Puzzles & Labyrinthes', icon: '🧩', type: 'ms_logic' }
+  ],
+  GS: [
+    { id: 'gs_num_writing', name: 'Chiffres & Nombres jusqu\'à 10', icon: '🔢', type: 'gs_num_writing' },
+    { id: 'gs_decomp', name: 'Décomposition des nombres (ex: 5 = 4 + 1)', icon: '🧩', type: 'gs_decomp' },
+    { id: 'gs_shapes_solids', name: 'Formes planes & Solides (Cube)', icon: '🧊', type: 'gs_shapes_solids' },
+    { id: 'gs_orientation', name: 'Orientation (Droite / Gauche)', icon: '↔️', type: 'gs_orientation' },
+    { id: 'gs_patterns', name: 'Algorithmes logiques complexes', icon: '🎨', type: 'gs_patterns' }
+  ],
+  CP: [
+    { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100' },
+    { id: 'cp_add_sub', name: 'Additions & Soustractions simples', icon: '➕', type: 'cp_add_sub' },
+    { id: 'cp_mental', name: 'Calcul mental (Compléments à 10)', icon: '🧠', type: 'cp_mental' },
+    { id: 'cp_money', name: 'Monnaie (Euros €)', icon: '💶', type: 'cp_money' },
+    { id: 'cp_length', name: 'Mesure de longueurs (cm)', icon: '📏', type: 'cp_length' },
+    { id: 'cp_shapes', name: 'Formes (Rectangle, Triangle, Carré)', icon: '🔷', type: 'cp_shapes' },
+    { id: 'cp_grid', name: 'Repérage sur quadrillage', icon: '🏁', type: 'cp_grid' }
+  ],
+  CE1: [
+    { id: 'ce1_num1000', name: 'Nombres jusqu\'à 1 000', icon: '🔢', type: 'ce1_num1000' },
+    { id: 'ce1_tables', name: 'Tables de multiplication (2, 3, 4, 5, 10)', icon: '✖️', type: 'ce1_tables' },
+    { id: 'ce1_sub_posed', name: 'Soustraction posée', icon: '➖', type: 'ce1_sub_posed' },
+    { id: 'ce1_double_half', name: 'Double et Moitié', icon: '⚖️', type: 'ce1_double_half' },
+    { id: 'ce1_measures', name: 'Masses (g, kg) & Temps (heures, min)', icon: '⏰', type: 'ce1_measures' },
+    { id: 'ce1_symmetry', name: 'Symétrie axiale', icon: '🪞', type: 'ce1_symmetry' }
+  ],
+  CE2: [
+    { id: 'ce2_num10000', name: 'Nombres jusqu\'à 10 000', icon: '🔢', type: 'ce2_num10000' },
+    { id: 'ce2_mult_posed', name: 'Multiplication posée', icon: '✖️', type: 'ce2_mult_posed' },
+    { id: 'ce2_division_intro', name: 'Approche de la division (Partages)', icon: '➗', type: 'ce2_division_intro' },
+    { id: 'ce2_capacity', name: 'Contenances (Litres)', icon: '🧪', type: 'ce2_capacity' },
+    { id: 'ce2_perimeters', name: 'Périmètres de figures', icon: '📏', type: 'ce2_perimeters' },
+    { id: 'ce2_solids', name: 'Solides (Cube, Pavé droit)', icon: '🧊', type: 'ce2_solids' },
+    { id: 'ce2_charts', name: 'Lecture de tableaux & graphiques', icon: '📊', type: 'ce2_charts' }
+  ],
+  CM1: [
+    { id: 'cm1_millions', name: 'Grands nombres (Millions)', icon: '🌌', type: 'cm1_millions' },
+    { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions' },
+    { id: 'cm1_decimals', name: 'Nombres décimaux (à virgule)', icon: '🎯', type: 'cm1_decimals' },
+    { id: 'cm1_div_posed', name: 'Division posée (à 1 chiffre)', icon: '➗', type: 'cm1_div_posed' },
+    { id: 'cm1_areas', name: 'Mesures d\'aires (cm², m²)', icon: '📐', type: 'cm1_areas' },
+    { id: 'cm1_lines_angles', name: 'Parallèles, Perpendiculaires & Angles droits', icon: '📏', type: 'cm1_lines_angles' }
+  ],
+  Terminale: [
+    { id: 'term_limits', name: 'Limites de suites & fonctions', icon: '♾️', type: 'term_limits' },
+    { id: 'term_exp_ln', name: 'Fonctions Exponentielle & Logarithme (ln)', icon: '📈', type: 'term_exp_ln' },
+    { id: 'term_integral', name: 'Calcul intégral & Aires', icon: '∫', type: 'term_integral' },
+    { id: 'term_geom_3d', name: 'Géométrie dans l\'espace (3D)', icon: '🧊', type: 'term_geom_3d' },
+    { id: 'term_combinatorics', name: 'Combinatoire & Dénombrement', icon: '🔢', type: 'term_combinatorics' },
+    { id: 'term_prob', name: 'Lois de probabilités & Grands nombres', icon: '🎲', type: 'term_prob' },
+    { id: 'term_diffeq', name: 'Équations différentielles', icon: '⚙️', type: 'term_diffeq' }
+  ]
+};
 
-    // --- BASE DE DONNÉES PÉDAGOGIQUE DU PROGRAMME OFFICIEL ---
-    const CURRICULUM = {
-      // CYCLES MATERNELLE
-      'PS': [
-        { id: 'ps_shapes', name: 'Formes simples (Rond, Carré)', icon: '🟡', type: 'choice' },
-        { id: 'ps_sorting', name: 'Tri d\'objets & Couleurs', icon: '🎨', type: 'choice' },
-        { id: 'ps_count3', name: 'Comptine numérique jusqu\'à 3', icon: '🍎', type: 'vocal_count', max: 3 },
-        { id: 'ps_spatial', name: 'Repérage spatial (Sur/Sous, Dedans/Dehors)', icon: '📦', type: 'choice' },
-        { id: 'ps_patterns', name: 'Suites de couleurs (Rythmes)', icon: '🔴', type: 'choice' }
-      ],
-      'MS': [
-        { id: 'ms_count6', name: 'Dénombrement jusqu\'à 5 ou 6', icon: '🎲', type: 'vocal_count', max: 6 },
-        { id: 'ms_compare', name: 'Comparaison (Plus que / Moins que)', icon: '⚖️', type: 'choice' },
-        { id: 'ms_shapes', name: 'Formes géométriques (Triangle)', icon: '🔺', type: 'choice' },
-        { id: 'ms_sizes', name: 'Tailles (Grand / Petit)', icon: '📏', type: 'choice' },
-        { id: 'ms_logic', name: 'Puzzles & Labyrinthes', icon: '🧩', type: 'choice' }
-      ],
-      'GS': [
-        { id: 'gs_writing', name: 'Écriture des chiffres & Nombres à 10', icon: '✍️', type: 'vocal_count', max: 10 },
-        { id: 'gs_decomp', name: 'Décomposition des nombres (ex: 5 = 4 + 1)', icon: '🧱', type: 'choice' },
-        { id: 'gs_solids', name: 'Formes planes & Solides (Cube)', icon: '🧊', type: 'choice' },
-        { id: 'gs_orient', name: 'Orientation (Droite / Gauche)', icon: '↔️', type: 'choice' },
-        { id: 'gs_algo', name: 'Algorithmes logiques complexes', icon: '🔄', type: 'choice' }
-      ],
-      // ELEMENTAIRE
-      'CP': [
-        { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'math_step' },
-        { id: 'cp_add_sub', name: 'Additions & Soustractions simples', icon: '➕', type: 'math_step' },
-        { id: 'cp_mental', name: 'Calcul mental & Double/Moitié', icon: '⚡', type: 'math_step' },
-        { id: 'cp_money', name: 'Monnaie (Euros)', icon: '💶', type: 'choice' },
-        { id: 'cp_geom', name: 'Longueurs (cm) & Quadrillage', icon: '📐', type: 'choice' }
-      ],
-      'CE1': [
-        { id: 'ce1_num1000', name: 'Nombres jusqu\'à 1 000', icon: '🔢', type: 'math_step' },
-        { id: 'ce1_tables', name: 'Tables de multiplication (2, 3, 4, 5, 10)', icon: '✖️', type: 'tables', available: [2,3,4,5,10] },
-        { id: 'ce1_sub_posee', name: 'Soustraction posée & Calcul', icon: '➖', type: 'math_step' },
-        { id: 'ce1_measures', name: 'Masses (g, kg) & Temps (h, min)', icon: '⏱️', type: 'choice' },
-        { id: 'ce1_sym', name: 'Symétrie axiale', icon: '🦋', type: 'choice' }
-      ],
-      'CE2': [
-        { id: 'ce2_num10k', name: 'Nombres jusqu\'à 10 000', icon: '🏛️', type: 'math_step' },
-        { id: 'ce2_mult_div', name: 'Multiplication posée & Partages', icon: '➗', type: 'math_step' },
-        { id: 'ce2_capacity', name: 'Contenances (L) & Périmètres', icon: '🧪', type: 'choice' },
-        { id: 'ce2_solids', name: 'Solides (Cube, Pavé)', icon: '📦', type: 'choice' },
-        { id: 'ce2_data', name: 'Tableaux & Graphiques', icon: '📊', type: 'choice' }
-      ],
-      'CM1': [
-        { id: 'cm1_millions', name: 'Grands nombres (Millions)', icon: '🌌', type: 'math_step' },
-        { id: 'cm1_frac_dec', name: 'Fractions simples & Décimaux', icon: '🍕', type: 'ten_questions' },
-        { id: 'cm1_div1', name: 'Division posée à 1 chiffre', icon: '➗', type: 'math_step' },
-        { id: 'cm1_measures', name: 'Mesures d\'aires & Angles droits', icon: '📐', type: 'choice' },
-        { id: 'cm1_lines', name: 'Droites parallèles & Perpendiculaires', icon: '📏', type: 'choice' }
-      ],
-      'CM2': [
-        { id: 'cm2_billions', name: 'Nombres jusqu\'au milliard', icon: '🪐', type: 'math_step' },
-        { id: 'cm2_op_dec', name: 'Opérations sur les décimaux', icon: '🏷️', type: 'math_step' },
-        { id: 'cm2_frac_perc', name: 'Fractions & Pourcentages (Série de 10)', icon: '📊', type: 'ten_questions' },
-        { id: 'cm2_div2', name: 'Division posée à 2 chiffres', icon: '📝', type: 'math_step' },
-        { id: 'cm2_prop', name: 'Proportionnalité, Durées & Volumes', icon: '⏳', type: 'choice' }
-      ],
-      // COLLEGE
-      '6ème': [
-        { id: '6_mental', name: 'Calcul mental & Nombres décimaux', icon: '⚡', type: 'math_step' },
-        { id: '6_frac', name: 'Fractions (Automate 10 questions)', icon: '🎯', type: 'ten_questions' },
-        { id: '6_geom', name: 'Angles, Périmètres & Aires', icon: '📐', type: 'choice' },
-        { id: '6_sym', name: 'Symétrie axiale', icon: '🪞', type: 'choice' },
-        { id: '6_data', name: 'Tableaux et diagrammes', icon: '📈', type: 'choice' }
-      ],
-      '5ème': [
-        { id: '5_relatifs', name: 'Nombres relatifs (Négatifs)', icon: '❄️', type: 'math_step' },
-        { id: '5_prio', name: 'Priorité des opérations & Calcul littéral', icon: '🧮', type: 'math_step' },
-        { id: '5_sym_c', name: 'Symétrie centrale & Triangles', icon: '🔄', type: 'choice' },
-        { id: '5_prop', name: 'Proportionnalité (Vitesse, Échelle)', icon: '🚗', type: 'choice' },
-        { id: '5_stats', name: 'Statistiques de base & Volumes', icon: '📊', type: 'choice' }
-      ],
-      '4ème': [
-        { id: '4_powers', name: 'Puissances de 10 & Fractions complexes', icon: '🚀', type: 'ten_questions' },
-        { id: '4_pyth', name: 'Théorème de Pythagore', icon: '📐', type: 'choice' },
-        { id: '4_eq', name: 'Équations du premier degré', icon: '⚖️', type: 'math_step' },
-        { id: '4_trans', name: 'Translations, Rotations & Aires de disques', icon: '🌀', type: 'choice' },
-        { id: '4_prob', name: 'Introduction aux probabilités', icon: '🎲', type: 'choice' }
-      ],
-      '3ème': [
-        { id: '3_arith', name: 'Arithmétique (Nombres premiers, PGCD)', icon: '🔍', type: 'math_step' },
-        { id: '3_func', name: 'Fonctions linéaires et affines', icon: '📈', type: 'math_step' },
-        { id: '3_thales', name: 'Théorème de Thalès & Trigonométrie', icon: '📐', type: 'choice' },
-        { id: '3_literal', name: 'Calcul littéral (Factorisation, Développement)', icon: '🧬', type: 'math_step' },
-        { id: '3_stats_adv', name: 'Probabilités avancées & Médiane/Étendue', icon: '📊', type: 'choice' }
-      ],
-      // LYCÉE
-      '2nde': [
-        { id: '2_sets', name: 'Ensembles de nombres & Variations de fonctions', icon: '📉', type: 'math_step' },
-        { id: '2_ref_func', name: 'Fonctions de référence (Carré, Inverse)', icon: '🔄', type: 'math_step' },
-        { id: '2_vectors', name: 'Géométrie repérée & Vecteurs du plan', icon: '↗️', type: 'choice' },
-        { id: '2_prob', name: 'Probabilités conditionnelles & Stats', icon: '🎲', type: 'choice' },
-        { id: '2_python', name: 'Initiation à la logique Python', icon: '🐍', type: 'choice' }
-      ],
-      '1ère': [
-        { id: '1_degree2', name: 'Équations du 2nd degré (ax² + bx + c)', icon: '🧮', type: 'math_step' },
-        { id: '1_deriv', name: 'Dérivation (Pentes de courbes)', icon: '📈', type: 'math_step' },
-        { id: '1_seq', name: 'Suites arithmétiques & géométriques', icon: '🔢', type: 'math_step' },
-        { id: '1_trig', name: 'Fonctions trigonométriques & Produit scalaire', icon: '🎯', type: 'choice' },
-        { id: '1_binom', name: 'Loi binomiale & Probabilités', icon: '📊', type: 'choice' }
-      ],
-      'Terminale': [
-        { id: 't_limits', name: 'Limites de suites et de fonctions', icon: '♾️', type: 'math_step' },
-        { id: 't_exp_ln', name: 'Fonctions Exponentielle (eˣ) & Logarithme (ln)', icon: '📉', type: 'math_step' },
-        { id: 't_integ', name: 'Calcul intégral (Aires sous une courbe)', icon: '∫', type: 'math_step' },
-        { id: 't_space', name: 'Géométrie dans l\'espace (Vecteurs 3D, Plans)', icon: '🧊', type: 'choice' },
-        { id: 't_diff', name: 'Équations différentielles & Combinatoire', icon: '🔬', type: 'choice' }
-      ]
-    };
+// --- MOTEUR DE GÉNÉRATION D'EXERCICES UNIFIÉ ---
+function ExerciseRunner({ grade, module, onBack, onResult }) {
+  const [q, setQ] = useState({ text: '', ans: '', options: [], sub: '' });
 
-    const ALL_GRADES = Object.keys(CURRICULUM);
+  const generateQuestion = () => {
+    let text = '', ans = '', opts = [], sub = module.name;
 
-    const speak = (text) => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'fr-FR';
-        msg.rate = 0.9;
-        window.speechSynthesis.speak(msg);
-      }
-    };
-
-    function App() {
-      const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('mathia_prof_v8') || 'null'));
-      const [coins, setCoins] = useState(() => parseInt(localStorage.getItem('mathia_coins_v8') || '0'));
-      const [currentGame, setCurrentGame] = useState(null);
-
-      useEffect(() => {
-        if (profile) localStorage.setItem('mathia_prof_v8', JSON.stringify(profile));
-        localStorage.setItem('mathia_coins_v8', coins);
-      }, [profile, coins]);
-
-      const handleResult = (isCorrect, earned = 15) => {
-        if (isCorrect) {
-          try {
-            confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
-          } catch(e){}
-          setCoins(c => c + earned);
-        }
-      };
-
-      if (!profile) return <ProfileSelector onSelect={setProfile} />;
-
-      return (
-        <div className="max-w-3xl mx-auto p-4 flex flex-col min-h-screen">
-          <header className="glass p-4 rounded-2xl mb-6 flex justify-between items-center">
-            <div>
-              <h1 className="font-black text-xl text-indigo-400">MATHIA</h1>
-              <div className="flex items-center gap-2">
-                <span className="text-xs bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full">{profile.name}</span>
-                <button onClick={() => { setProfile(null); setCurrentGame(null); }} className="text-xs text-slate-400 underline">
-                  Classe : {profile.grade} ✏️
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-full font-black text-amber-400">
-              <span>🪙</span>
-              <span>{coins}</span>
-            </div>
-          </header>
-
-          <main className="flex-1">
-            {currentGame ? (
-              <GameEngine grade={profile.grade} module={currentGame} onBack={() => setCurrentGame(null)} onResult={handleResult} />
-            ) : (
-              <Dashboard profile={profile} onSelectModule={setCurrentGame} />
-            )}
-          </main>
-        </div>
-      );
+    // Logique PS
+    if (module.type === 'ps_shapes') {
+      text = "Quelle forme est parfaitement RONDE ?"; ans = "Un rond 🔴"; opts = ["Un rond 🔴", "Un carré 🟦", "Une étoile ⭐"];
+    } else if (module.type === 'ps_patterns') {
+      text = "Complète la suite : 🔴 🔵 🔴 🔵 ... ?"; ans = "🔴"; opts = ["🔴", "🔵", "🟡"];
+    }
+    // Logique GS
+    else if (module.type === 'gs_num_writing') {
+      text = "Quel chiffre vient juste APRÈS le 7 ?"; ans = "8"; opts = ["8", "6", "9", "5"];
+    } else if (module.type === 'gs_decomp') {
+      text = "5 c'est 4 et ... ?"; ans = "1"; opts = ["1", "2", "3", "0"];
+    }
+    // Logique CP
+    else if (module.type === 'cp_add_sub') {
+      text = "Combien font 15 + 8 ?"; ans = "23"; opts = ["23", "22", "24", "21"];
+    } else if (module.type === 'cp_money') {
+      text = "2 pièces de 2€ et 1 billet de 5€. Total ?"; ans = "9 €"; opts = ["9 €", "7 €", "10 €", "8 €"];
+    }
+    // Logique CE1
+    else if (module.type === 'ce1_tables') {
+      text = "Combien font 4 × 6 ?"; ans = "24"; opts = ["24", "20", "28", "18"];
+    } else if (module.type === 'ce1_double_half') {
+      text = "Quel est le DOUBLE de 25 ?"; ans = "50"; opts = ["50", "40", "45", "60"];
+    }
+    // Logique CE2
+    else if (module.type === 'ce2_mult_posed') {
+      text = "Calculer : 142 × 3 = ... ?"; ans = "426"; opts = ["426", "416", "326", "436"];
+    } else if (module.type === 'ce2_perimeters') {
+      text = "Périmètre d'un carré de 6 cm de côté ?"; ans = "24 cm"; opts = ["24 cm", "36 cm", "12 cm", "18 cm"];
+    }
+    // Logique CM1
+    else if (module.type === 'cm1_fractions') {
+      text = "Quelle fraction représente 3 parts sur 4 ?"; ans = "3/4"; opts = ["3/4", "1/4", "4/3", "2/4"];
+    } else if (module.type === 'cm1_decimals') {
+      text = "Écriture décimale de 3/10 ?"; ans = "0,3"; opts = ["0,3", "0,03", "3,0", "0,33"];
+    }
+    // Logique Terminale
+    else if (module.type === 'term_limits') {
+      text = "Quelle est la limite en +∞ de f(x) = e^x / x ?"; ans = "+∞"; opts = ["+∞", "0", "1", "N'existe pas"];
+    } else if (module.type === 'term_exp_ln') {
+      text = "Simplifier : ln(e³) + e^(ln(2))"; ans = "5"; opts = ["5", "6", "e⁶", "ln(6)"];
+    } else if (module.type === 'term_integral') {
+      text = "Valeur de ∫_0^1 (2x) dx ?"; ans = "1"; opts = ["1", "2", "0", "0,5"];
+    } else if (module.type === 'term_diffeq') {
+      text = "Solutions de l'équation y' = 3y ?"; ans = "y(x) = C × e^(3x)"; opts = ["y(x) = C × e^(3x)", "y(x) = 3e^x + C", "y(x) = C × e^(-3x)"];
+    } 
+    // Fallback dynamique
+    else {
+      text = `Exercice guidé pour le module : ${module.name}`;
+      ans = "Bonne réponse";
+      opts = ["Bonne réponse", "Option A", "Option B", "Option C"];
     }
 
-    function ProfileSelector({ onSelect }) {
-      const [name, setName] = useState('');
-      const [grade, setGrade] = useState('CP');
+    opts = Array.from(new Set(opts)).sort(() => Math.random() - 0.5);
+    setQ({ text, ans, options: opts, sub });
+  };
 
-      return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="glass p-8 rounded-3xl max-w-md w-full text-center border-indigo-500/30 shadow-2xl">
-            <span className="text-6xl mb-3 block">🎓</span>
-            <h1 className="text-3xl font-black mb-1 text-white">MATHIA</h1>
-            <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-6">Pédagogie Conforme au Programme</p>
+  useEffect(() => { generateQuestion(); }, [module.type]);
 
-            <form onSubmit={(e) => { e.preventDefault(); if (name.trim()) onSelect({ name, grade }); }} className="space-y-4">
-              <input type="text" placeholder="Prénom de l'élève" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center font-bold text-lg focus:outline-none focus:border-indigo-500" required />
-              
-              <select value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 font-bold text-indigo-300 focus:outline-none focus:border-indigo-500">
-                <optgroup label="Maternelle (Cycle 1)">
-                  <option value="PS">Petite Section (PS)</option>
-                  <option value="MS">Moyenne Section (MS)</option>
-                  <option value="GS">Grande Section (GS)</option>
-                </optgroup>
-                <optgroup label="Élémentaire (Cycles 2 & 3)">
-                  <option value="CP">CP</option>
-                  <option value="CE1">CE1</option>
-                  <option value="CE2">CE2</option>
-                  <option value="CM1">CM1</option>
-                  <option value="CM2">CM2</option>
-                </optgroup>
-                <optgroup label="Collège (Cycles 3 & 4)">
-                  <option value="6ème">6ème</option>
-                  <option value="5ème">5ème</option>
-                  <option value="4ème">4ème</option>
-                  <option value="3ème">3ème</option>
-                </optgroup>
-                <optgroup label="Lycée">
-                  <option value="2nde">Seconde (2nde)</option>
-                  <option value="1ère">Première (1ère)</option>
-                  <option value="Terminale">Terminale</option>
-                </optgroup>
-              </select>
+  const handleAns = (val) => {
+    const correct = val === q.ans;
+    onResult(correct, correct ? 20 : 0);
+    generateQuestion();
+  };
 
-              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-xl shadow-lg transition">
-                COMMENCER LE PROGRAMME 🚀
-              </button>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    function Dashboard({ profile, onSelectModule }) {
-      const modules = CURRICULUM[profile.grade] || [];
-
-      return (
-        <div className="space-y-4">
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-extrabold text-white">Programme de {profile.grade}</h2>
-            <p className="text-xs text-slate-400">Sélectionne un module officiel pour commencer</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-3">
-            {modules.map(m => (
-              <div key={m.id} onClick={() => onSelectModule(m)} className="glass p-4 rounded-2xl cursor-pointer hover:border-indigo-500/50 transition flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-2xl shrink-0">
-                  {m.icon}
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-white">{m.name}</h3>
-                  <span className="text-xs text-indigo-400 font-bold">Lancer l'exercice ➔</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // --- MOTEUR DE JEU DYNAMIQUE ET ADAPTATIF ---
-    function GameEngine({ grade, module, onBack, onResult }) {
-      // 1) TABLES DE MULTIPLICATION AVEC CHOIX DU JOUEUR
-      if (module.type === 'tables') {
-        return <TablesModule grade={grade} module={module} onBack={onBack} onResult={onResult} />;
-      }
-      // 2) SÉRIE AUTOMATISÉE DE 10 QUESTIONS (Fractions, Puissances...)
-      if (module.type === 'ten_questions') {
-        return <TenQuestionsModule grade={grade} module={module} onBack={onBack} onResult={onResult} />;
-      }
-      // 3) NIVEAUX PROGRESSIFS (Opérations, Algèbre...)
-      if (module.type === 'math_step') {
-        return <MathStepModule grade={grade} module={module} onBack={onBack} onResult={onResult} />;
-      }
-      // 4) MATERNELLE COMPTINE VOCALE
-      if (module.type === 'vocal_count') {
-        return <VocalCountModule grade={grade} module={module} onBack={onBack} onResult={onResult} />;
-      }
-      // 5) MODULE GÉNÉRIQUE DE CHOIX MULTIPLES SUR LE PROGRAMME
-      return <GenericChoiceModule grade={grade} module={module} onBack={onBack} onResult={onResult} />;
-    }
-
-    /* --- MODULE : TABLES DE MULTIPLICATION (CONTROLES PAR LE JOUEUR) --- */
-    function TablesModule({ grade, module, onBack, onResult }) {
-      const available = module.available || [2, 3, 4, 5, 10];
-      const [selectedTable, setSelectedTable] = useState(available[0]);
-      const [step, setStep] = useState(1);
-      const [q, setQ] = useState({ n1: 2, n2: 1, ans: 2, options: [] });
-      const [isFinished, setIsFinished] = useState(false);
-
-      const generateQ = (t) => {
-        const n2 = Math.floor(Math.random() * 9) + 1;
-        const ans = t * n2;
-        const opts = Array.from(new Set([ans, ans + t, ans - 1, ans + 2])).sort(() => Math.random() - 0.5);
-        setQ({ n1: t, n2, ans, options: opts });
-      };
-
-      useEffect(() => { generateQ(selectedTable); }, [selectedTable]);
-
-      const handleAnswer = (val) => {
-        const correct = val === q.ans;
-        onResult(correct, correct ? 10 : 0);
-
-        if (step >= 10) {
-          setIsFinished(true);
-        } else {
-          setStep(s => s + 1);
-          generateQ(selectedTable);
-        }
-      };
-
-      if (isFinished) {
-        return (
-          <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto pop-in">
-            <span className="text-5xl mb-3 block">🎉</span>
-            <h2 className="text-xl font-black mb-2">Table de {selectedTable} terminée !</h2>
-            <p className="text-xs text-slate-300 mb-6">Tu as répondu aux 10 questions de cette table.</p>
-
-            <div className="space-y-3">
-              <button onClick={() => {
-                const idx = available.indexOf(selectedTable);
-                const next = available[(idx + 1) % available.length];
-                setSelectedTable(next); setStep(1); setIsFinished(false);
-              }} className="w-full bg-indigo-600 hover:bg-indigo-500 font-black py-3 rounded-xl text-sm">
-                Passer à la table suivante ➔
-              </button>
-              <button onClick={() => { setStep(1); setIsFinished(false); generateQ(selectedTable); }} className="w-full bg-slate-800 hover:bg-slate-700 font-bold py-3 rounded-xl text-xs">
-                Rejouer la table de {selectedTable} 🔄
-              </button>
-              <button onClick={onBack} className="w-full text-xs text-slate-400 py-2">Retour au menu</button>
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto relative">
-          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold">← Quitter</button>
-          
-          <div className="mt-4 mb-4 flex justify-between items-center text-xs font-bold">
-            <span className="text-indigo-400">Table de {selectedTable}</span>
-            <span className="text-amber-400">Question {step} / 10</span>
-          </div>
-
-          <div className="text-5xl font-black my-8 text-white">{q.n1} × {q.n2}</div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {q.options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-indigo-600/40 py-4 rounded-2xl text-2xl font-black border-indigo-500/30">
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    /* --- MODULE : SÉRIE AUTOMATISÉE DE 10 QUESTIONS --- */
-    function TenQuestionsModule({ grade, module, onBack, onResult }) {
-      const [step, setStep] = useState(1);
-      const [q, setQ] = useState({ text: '', ans: '', options: [] });
-      const [isFinished, setIsFinished] = useState(false);
-
-      const generateQ = (currentStep) => {
-        let text = '', ans = '', opts = [];
-
-        if (module.id.includes('frac') || module.id.includes('6_frac')) {
-          if (currentStep <= 3) {
-            text = "Valeur de 1/2 ?"; ans = "0,5"; opts = ["0,5", "0,2", "0,25", "1,2"];
-          } else if (currentStep <= 7) {
-            text = "Combien font 0,4 + 0,3 ?"; ans = "0,7"; opts = ["0,7", "0,8", "0,12", "0,07"];
-          } else {
-            text = "Calculer 25% de 80"; ans = "20"; opts = ["20", "25", "40", "10"];
-          }
-        } else {
-          text = `Question de niveau ${currentStep} / 10`; ans = "Vrai"; opts = ["Vrai", "Faux"];
-        }
-
-        opts = opts.sort(() => Math.random() - 0.5);
-        setQ({ text, ans, options: opts });
-      };
-
-      useEffect(() => { generateQ(1); }, []);
-
-      const handleAnswer = (val) => {
-        const correct = val === q.ans;
-        onResult(correct, correct ? 15 : 0);
-
-        if (step >= 10) {
-          setIsFinished(true);
-        } else {
-          const next = step + 1;
-          setStep(next);
-          generateQ(next);
-        }
-      };
-
-      if (isFinished) {
-        return (
-          <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto pop-in">
-            <span className="text-5xl mb-3 block">🏆</span>
-            <h2 className="text-xl font-black mb-2">Session terminée !</h2>
-            <p className="text-xs text-slate-300 mb-6">Tu as complété les 10 questions du module.</p>
-            <button onClick={onBack} className="w-full bg-indigo-600 hover:bg-indigo-500 font-black py-3 rounded-xl text-sm">Retour aux modules</button>
-          </div>
-        );
-      }
-
-      return (
-        <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto relative">
-          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold">← Quitter</button>
-
-          <div className="mt-4 mb-2 flex justify-between items-center text-xs font-bold">
-            <span className="text-cyan-400">{module.name}</span>
-            <span className="text-amber-400">{step} / 10</span>
-          </div>
-
-          <div className="w-full bg-slate-800 h-2 rounded-full mb-6 overflow-hidden">
-            <div className="bg-cyan-500 h-full transition-all" style={{ width: `${(step/10)*100}%` }}></div>
-          </div>
-
-          <div className="text-2xl font-extrabold my-8 text-white min-h-[60px] flex items-center justify-center">{q.text}</div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {q.options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-cyan-600/40 py-4 rounded-2xl text-xl font-black border-cyan-500/30">
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    /* --- MODULE : NIVEAUX PROGRESSIFS --- */
-    function MathStepModule({ grade, module, onBack, onResult }) {
-      const [level, setLevel] = useState(1);
-      const [q, setQ] = useState({ text: '', ans: '', options: [] });
-
-      const generateQ = (lvl) => {
-        let text = '', ans = '', opts = [];
-        if (grade === '1ère') {
-          text = `Résoudre x² - ${lvl * 4} = 0`;
-          ans = `x = ${lvl * 2} ou -${lvl * 2}`;
-          opts = [ans, `x = ${lvl}`, `x = 0`, `Impossible`].sort(() => Math.random() - 0.5);
-        } else if (grade === 'Terminale') {
-          text = `Dérivée de e^(${lvl}x) ?`;
-          ans = `${lvl}e^(${lvl}x)`;
-          opts = [ans, `e^(${lvl}x)`, `${lvl}/x`, `0`].sort(() => Math.random() - 0.5);
-        } else {
-          const a = lvl * 5;
-          const b = lvl * 3;
-          text = `${a} + ${b} = ?`;
-          ans = `${a + b}`;
-          opts = [ans, `${a + b + 1}`, `${a + b - 1}`, `${a + b + 2}`].sort(() => Math.random() - 0.5);
-        }
-        setQ({ text, ans, options: opts });
-      };
-
-      useEffect(() => { generateQ(level); }, [level]);
-
-      const handleAnswer = (val) => {
-        const correct = val === q.ans;
-        onResult(correct, correct ? 20 : 0);
-        if (correct) setLevel(l => l + 1);
-      };
-
-      return (
-        <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto relative">
-          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold">← Quitter</button>
-
-          <span className="text-xs font-bold text-emerald-400 block mt-4 uppercase">Niveau {level} • {module.name}</span>
-          <div className="text-2xl font-black my-8 text-white min-h-[60px] flex items-center justify-center">{q.text}</div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {q.options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-emerald-600/40 py-4 rounded-2xl text-lg font-black border-emerald-500/30">
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    /* --- MODULE : MATERNELLE COMPTINE VOCALE --- */
-    function VocalCountModule({ grade, module, onBack, onResult }) {
-      const max = module.max || 3;
-      const [target, setTarget] = useState(2);
-      const [count, setCount] = useState(0);
-
-      const init = () => {
-        const t = Math.floor(Math.random() * max) + 1;
-        setTarget(t);
-        setCount(0);
-        speak(`Donne ${t} pomme${t > 1 ? 's' : ''} !`);
-      };
-
-      useEffect(() => { init(); }, [max]);
-
-      const addApple = () => {
-        const n = count + 1;
-        setCount(n);
-        if (n === target) {
-          speak(`Bravo ! C'est exactement ${target} !`);
-          onResult(true, 10);
-          setTimeout(init, 1500);
-        }
-      };
-
-      return (
-        <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto relative">
-          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold">← Quitter</button>
-          <h2 className="text-lg font-extrabold mt-4 mb-2 text-indigo-300">{module.name}</h2>
-
-          <div className="text-6xl font-black text-amber-400 my-4">{target}</div>
-
-          <div className="flex justify-center gap-2 mb-6 min-h-[50px]">
-            {Array.from({ length: count }).map((_, i) => <span key={i} className="text-3xl pop-in">🍎</span>)}
-          </div>
-
-          <button onClick={addApple} className="w-full bg-emerald-600 hover:bg-emerald-500 font-black py-4 rounded-2xl text-lg shadow-lg">
-            Donner 1 pomme 🍎
+  return (
+    <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto relative pop-in">
+      <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition-all">
+        ← Retour
+      </button>
+      <span className="text-xs font-bold text-indigo-400 block mt-4 uppercase tracking-wider">{grade} • {q.sub}</span>
+      <div className="text-xl font-extrabold my-8 text-white min-h-[80px] flex items-center justify-center leading-relaxed">
+        {q.text}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {q.options.map((opt, i) => (
+          <button key={i} onClick={() => handleAns(opt)} className="glass hover:bg-indigo-600/40 text-white py-4 rounded-2xl text-base font-black border border-indigo-500/30 transition-all active:scale-95">
+            {opt}
           </button>
-        </div>
-      );
-    }
+        ))}
+      </div>
+    </div>
+  );
+}
 
-    /* --- MODULE : GÉNÉRIQUE DU PROGRAMME --- */
-    function GenericChoiceModule({ grade, module, onBack, onResult }) {
-      const [q, setQ] = useState({ text: '', ans: '', options: [] });
+// --- APPLICATION PRINCIPALE ---
+export default function App() {
+  const [selectedGrade, setSelectedGrade] = useState('CP');
+  const [activeModule, setActiveModule] = useState(null);
+  const [score, setScore] = useState(0);
 
-      const generateQ = () => {
-        const sampleQuestions = {
-          'ps_shapes': { text: 'Trouve le Rond !', ans: '🔴', opts: ['🔴', '🟩'] },
-          'ps_spatial': { text: 'Où est le chat ?', ans: 'Sur la table', opts: ['Sur la table', 'Sous la table'] },
-          'ms_compare': { text: 'Où y a-t-il le PLUS de pommes ?', ans: '🍎🍎🍎', opts: ['🍎🍎🍎', '🍎'] },
-          'gs_orient': { text: 'Montre la DROITE', ans: '➡️', opts: ['➡️', '⬅️'] },
-          '6_geom': { text: 'Un angle de 90° est un angle...', ans: 'Droit', opts: ['Aigu', 'Droit', 'Obtus'] },
-          '4_pyth': { text: 'Dans quel triangle s\'applique Pythagore ?', ans: 'Rectangle', opts: ['Isocèle', 'Rectangle', 'Équilatéral'] },
-          '3_thales': { text: 'Thalès s\'utilise avec des droites...', ans: 'Parallèles', opts: ['Parallèles', 'Perpendiculaires'] }
-        };
+  const handleResult = (isCorrect, points) => {
+    if (isCorrect) setScore(prev => prev + points);
+  };
 
-        const item = sampleQuestions[module.id] || {
-          text: `Exercice sur : ${module.name}`,
-          ans: 'Bonne Réponse',
-          opts: ['Bonne Réponse', 'Mauvaise Réponse 1', 'Mauvaise Réponse 2']
-        };
-
-        setQ({ text: item.text, ans: item.ans, options: item.opts.sort(() => Math.random() - 0.5) });
-      };
-
-      useEffect(() => { generateQ(); }, [module.id]);
-
-      const handleAnswer = (val) => {
-        const correct = val === q.ans;
-        onResult(correct, correct ? 15 : 0);
-        generateQ();
-      };
-
-      return (
-        <div className="glass p-6 rounded-3xl text-center max-w-md mx-auto relative">
-          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold">← Quitter</button>
-
-          <span className="text-xs font-bold text-indigo-400 block mt-4 uppercase">{grade} • {module.name}</span>
-          <div className="text-xl font-black my-8 text-white min-h-[60px] flex items-center justify-center">{q.text}</div>
-
-          <div className="grid grid-cols-1 gap-3">
-            {q.options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-indigo-600/40 py-4 rounded-2xl text-lg font-black border-indigo-500/30">
-                {opt}
-              </button>
-            ))}
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 font-sans antialiased selection:bg-indigo-500 selection:text-white">
+      <header className="max-w-4xl mx-auto flex justify-between items-center py-6 border-b border-slate-800/80 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="bg-indigo-600 p-2,5 rounded-2xl text-2xl shadow-lg shadow-indigo-500/20">🎓</div>
+          <div>
+            <h1 className="text-xl font-black bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">MathsAcademy</h1>
+            <p className="text-xs text-slate-400 font-medium">De la Maternelle à la Terminale</p>
           </div>
         </div>
-      );
-    }
+        <div className="glass px-4 py-2 rounded-2xl border border-indigo-500/20 flex items-center gap-2">
+          <span className="text-xs text-slate-400 uppercase font-bold">XP</span>
+          <span className="text-lg font-black text-indigo-400">{score}</span>
+        </div>
+      </header>
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+      <main className="max-w-4xl mx-auto">
+        {!activeModule ? (
+          <>
+            {/* SÉLECTEUR DE NIVEAU */}
+            <nav className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+              {Object.keys(CURRICULUM).map(grade => (
+                <button
+                  key={grade}
+                  onClick={() => setSelectedGrade(grade)}
+                  className={`px-5 py-2.5 rounded-2xl font-extrabold text-sm whitespace-nowrap transition-all ${
+                    selectedGrade === grade
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105'
+                      : 'glass text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  {grade}
+                </button>
+              ))}
+            </nav>
+
+            {/* GRILLE DES MODULES */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {CURRICULUM[selectedGrade]?.map(module => (
+                <button
+                  key={module.id}
+                  onClick={() => setActiveModule(module)}
+                  className="glass p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-950/20 transition-all group flex flex-col justify-between h-36"
+                >
+                  <span className="text-3xl p-2 bg-slate-900/50 rounded-2xl w-fit group-hover:scale-110 transition-transform">{module.icon}</span>
+                  <span className="font-bold text-sm text-slate-200 group-hover:text-indigo-300 transition-colors">{module.name}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <ExerciseRunner
+            grade={selectedGrade}
+            module={activeModule}
+            onBack={() => setActiveModule(null)}
+            onResult={handleResult}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
