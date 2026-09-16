@@ -3,1050 +3,385 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MathsAcademy — Parcours mathématiques</title>
+  <title>MathsAcademy</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    @keyframes popIn { 0% { transform: scale(.96); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
-    @keyframes gentlePulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.025) } }
-    .animate-pop { animation: popIn .25s ease-out forwards }
-    .gentle-pulse { animation: gentlePulse 1.8s ease-in-out infinite }
-    button:focus-visible, input:focus-visible, select:focus-visible {
-      outline: 3px solid #818cf8; outline-offset: 2px;
-    }
+    @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .animate-pop { animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
   </style>
 </head>
-
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-indigo-500">
+
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
-
-    /*
-      MATHSACADEMY
-      Principes pédagogiques :
-      - progression par âge/niveau et par concepts ;
-      - consignes courtes, manipulation/visualisation avant abstraction ;
-      - feedback immédiat, bienveillant et sans humiliation ;
-      - pas de chronomètre imposé en maternelle ;
-      - possibilité de demander un indice ;
-      - difficulté adaptative simple ;
-      - variété des représentations.
-    */
+    const { useState, useEffect } = React;
 
     const CURRICULUM = {
       PS: [
-        { id:'ps_shapes', name:'Formes : rond et carré', icon:'🔴', type:'ps_shapes' },
-        { id:'ps_sort', name:'Trier des objets', icon:'🧺', type:'ps_sort' },
-        { id:'ps_count3', name:'Comptine numérique jusqu’à 3', icon:'🔢', type:'ps_count3' },
-        { id:'ps_space', name:'Sur / sous • dedans / dehors', icon:'📦', type:'ps_space' },
-        { id:'ps_patterns', name:'Premiers rythmes de couleurs', icon:'🧩', type:'ps_patterns' }
+        { id: 'ps_shapes', name: 'Formes géométriques simples', icon: '🔴', type: 'ps_shapes' },
+        { id: 'ps_count3', name: 'Dénombrer jusqu\'à 3', icon: '🔢', type: 'ps_count3' }
       ],
       MS: [
-        { id:'ms_count6', name:'Dénombrer jusqu’à 6', icon:'🍎', type:'ms_count6' },
-        { id:'ms_compare', name:'Plus que / moins que', icon:'⚖️', type:'ms_compare' },
-        { id:'ms_triangle', name:'Reconnaître le triangle', icon:'🔺', type:'ms_triangle' },
-        { id:'ms_size', name:'Grand / petit', icon:'📏', type:'ms_size' },
-        { id:'ms_maze', name:'Puzzles et petits labyrinthes', icon:'🧩', type:'ms_maze' }
+        { id: 'ms_count6', name: 'Collections jusqu\'à 6', icon: '🍎', type: 'ms_count6' },
+        { id: 'ms_compare', name: 'Comparaison de tailles', icon: '⚖️', type: 'ms_compare' }
       ],
       GS: [
-        { id:'gs_digits', name:'Écriture des chiffres', icon:'✍️', type:'gs_digits' },
-        { id:'gs_num', name:'Nombres jusqu’à 10', icon:'🔢', type:'gs_num' },
-        { id:'gs_decomp', name:'Décomposer les nombres', icon:'🧩', type:'gs_decomp' },
-        { id:'gs_solids', name:'Formes planes et solides', icon:'🧊', type:'gs_solids' },
-        { id:'gs_direction', name:'Droite / gauche', icon:'↔️', type:'gs_direction' },
-        { id:'gs_algorithm', name:'Algorithmes logiques', icon:'🧠', type:'gs_algorithm' }
+        { id: 'gs_num', name: 'Chiffres et suite numérique', icon: '🔢', type: 'gs_num' },
+        { id: 'gs_decomp', name: 'Petites décompositions', icon: '🧩', type: 'gs_decomp' }
       ],
       CP: [
-        { id:'cp_num100', name:'Nombres jusqu’à 100', icon:'💯', type:'cp_num100' },
-        { id:'cp_add', name:'Additions simples', icon:'➕', type:'cp_add' },
-        { id:'cp_sub', name:'Soustractions', icon:'➖', type:'cp_sub' },
-        { id:'cp_mental', name:'Calcul mental', icon:'⚡', type:'cp_mental' },
-        { id:'cp_money', name:'Monnaie : euros', icon:'💶', type:'cp_money' },
-        { id:'cp_length', name:'Longueurs : cm', icon:'📏', type:'cp_length' },
-        { id:'cp_shapes', name:'Carré, rectangle, triangle', icon:'📐', type:'cp_shapes' },
-        { id:'cp_grid', name:'Repérage sur quadrillage', icon:'🗺️', type:'cp_grid' }
+        { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100' },
+        { id: 'cp_add_sub', name: 'Premières additions', icon: '➕', type: 'cp_add_sub' }
       ],
       CE1: [
-        { id:'ce1_num1000', name:'Nombres jusqu’à 1 000', icon:'🔢', type:'ce1_num1000' },
-        { id:'ce1_tables', name:'Tables × 2, 3, 4, 5, 10', icon:'✖️', type:'ce1_tables' },
-        { id:'ce1_sub', name:'Soustraction posée', icon:'➖', type:'ce1_sub' },
-        { id:'ce1_double', name:'Double et moitié', icon:'↔️', type:'ce1_double' },
-        { id:'ce1_mass', name:'Masses : g et kg', icon:'⚖️', type:'ce1_mass' },
-        { id:'ce1_time', name:'Heures et minutes', icon:'🕐', type:'ce1_time' },
-        { id:'ce1_symmetry', name:'Symétrie axiale', icon:'🪞', type:'ce1_symmetry' }
+        { id: 'ce1_tables', name: 'Tables de multiplication (Aléatoire)', icon: '✖️', type: 'ce1_tables' },
+        { id: 'ce1_symmetry', name: 'Reconnaissance axes symétrie', icon: '🪞', type: 'ce1_symmetry' }
       ],
       CE2: [
-        { id:'ce2_num10000', name:'Nombres jusqu’à 10 000', icon:'🔢', type:'ce2_num10000' },
-        { id:'ce2_mult', name:'Multiplication posée', icon:'✖️', type:'ce2_mult' },
-        { id:'ce2_div', name:'Division : partager', icon:'🍎', type:'ce2_div' },
-        { id:'ce2_capacity', name:'Contenances : litres', icon:'🫗', type:'ce2_capacity' },
-        { id:'ce2_perimeters', name:'Périmètres', icon:'📏', type:'ce2_perimeters' },
-        { id:'ce2_solids', name:'Cube et pavé', icon:'🧊', type:'ce2_solids' },
-        { id:'ce2_graphs', name:'Tableaux et graphiques', icon:'📊', type:'ce2_graphs' }
+        { id: 'ce2_mult', name: 'Multiplications en ligne', icon: '✖️', type: 'ce2_mult' },
+        { id: 'ce2_perimeters', name: 'Calculs de périmètres', icon: '📏', type: 'ce2_perimeters' }
       ],
       CM1: [
-        { id:'cm1_millions', name:'Grands nombres : millions', icon:'🏙️', type:'cm1_millions' },
-        { id:'cm1_fractions', name:'Fractions simples', icon:'🍕', type:'cm1_fractions' },
-        { id:'cm1_decimals', name:'Nombres décimaux', icon:'🎯', type:'cm1_decimals' },
-        { id:'cm1_div', name:'Division posée à 1 chiffre', icon:'➗', type:'cm1_div' },
-        { id:'cm1_area', name:'Mesures d’aires', icon:'🟦', type:'cm1_area' },
-        { id:'cm1_angles', name:'Angles droits', icon:'📐', type:'cm1_angles' },
-        { id:'cm1_lines', name:'Parallèles et perpendiculaires', icon:'📏', type:'cm1_lines' }
+        { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions' },
+        { id: 'cm1_decimals', name: 'Nombres décimaux (10ème)', icon: '🎯', type: 'cm1_decimals' }
       ],
       CM2: [
-        { id:'cm2_billion', name:'Nombres jusqu’au milliard', icon:'🌍', type:'cm2_billion' },
-        { id:'cm2_decimals', name:'Opérations sur les décimaux', icon:'➕', type:'cm2_decimals' },
-        { id:'cm2_fractions', name:'Fractions et pourcentages', icon:'🍰', type:'cm2_fractions' },
-        { id:'cm2_div', name:'Division posée à 2 chiffres', icon:'➗', type:'cm2_div' },
-        { id:'cm2_prop', name:'Proportionnalité', icon:'📈', type:'cm2_prop' },
-        { id:'cm2_duration', name:'Durées', icon:'⏱️', type:'cm2_duration' },
-        { id:'cm2_volume', name:'Volumes', icon:'📦', type:'cm2_volume' },
-        { id:'cm2_geometry', name:'Cercles et polygones', icon:'⭕', type:'cm2_geometry' }
+        { id: 'cm2_frac_ops', name: 'Additions de fractions', icon: '🍰', type: 'cm2_frac_ops' },
+        { id: 'cm2_prop', name: 'Proportionnalité de base', icon: '📈', type: 'cm2_prop' }
       ],
       '6ème': [
-        { id:'c6_mental', name:'Calcul mental', icon:'⚡', type:'c6_mental' },
-        { id:'c6_decimals', name:'Nombres décimaux', icon:'🔢', type:'c6_decimals' },
-        { id:'c6_fractions', name:'Fractions', icon:'🍕', type:'c6_fractions' },
-        { id:'c6_angles', name:'Angles', icon:'📐', type:'c6_angles' },
-        { id:'c6_area', name:'Périmètres et aires', icon:'📏', type:'c6_area' },
-        { id:'c6_symmetry', name:'Symétrie axiale', icon:'🪞', type:'c6_symmetry' },
-        { id:'c6_graphs', name:'Tableaux et diagrammes', icon:'📊', type:'c6_graphs' }
+        { id: 'c6_fractions', name: 'Fractions et écritures', icon: '🔢', type: 'c6_fractions' },
+        { id: 'c6_decimals', name: 'Ordre et comparaison de décimaux', icon: '📊', type: 'c6_decimals' },
+        { id: 'c6_divisions', name: 'Division euclidienne', icon: '➗', type: 'c6_divisions' }
       ],
       '5ème': [
-        { id:'c5_relative', name:'Nombres relatifs', icon:'🌡️', type:'c5_relative' },
-        { id:'c5_priority', name:'Priorité des opérations', icon:'🧮', type:'c5_priority' },
-        { id:'c5_literal', name:'Calcul littéral', icon:'🔤', type:'c5_literal' },
-        { id:'c5_symcentral', name:'Symétrie centrale', icon:'🔄', type:'c5_symcentral' },
-        { id:'c5_triangles', name:'Triangles', icon:'🔺', type:'c5_triangles' },
-        { id:'c5_volumes', name:'Volumes des solides', icon:'🧊', type:'c5_volumes' },
-        { id:'c5_prop', name:'Proportionnalité : vitesse / échelle', icon:'🚗', type:'c5_prop' },
-        { id:'c5_stats', name:'Statistiques de base', icon:'📊', type:'c5_stats' }
+        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs' },
+        { id: 'c5_fractions', name: 'Fractions (Quotients égaux)', icon: '🍰', type: 'c5_fractions' }
       ],
       '4ème': [
-        { id:'c4_powers', name:'Puissances de 10', icon:'🔟', type:'c4_powers' },
-        { id:'c4_fractions', name:'Fractions complexes', icon:'🍰', type:'c4_fractions' },
-        { id:'c4_pythagore', name:'Théorème de Pythagore', icon:'📐', type:'c4_pythagore' },
-        { id:'c4_equations', name:'Équations', icon:'⚖️', type:'c4_equations' },
-        { id:'c4_transform', name:'Translations et rotations', icon:'🔄', type:'c4_transform' },
-        { id:'c4_circle', name:'Aires de disques', icon:'⭕', type:'c4_circle' },
-        { id:'c4_probability', name:'Probabilités', icon:'🎲', type:'c4_probability' },
-        { id:'c4_percent', name:'Pourcentages et graphiques', icon:'📊', type:'c4_percent' }
+        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore' },
+        { id: 'c4_calcul_litteral', name: 'Réduction d\'expressions', icon: '🔤', type: 'c4_calcul_litteral' }
       ],
       '3ème': [
-        { id:'c3_arith', name:'Arithmétique : nombres premiers / PGCD', icon:'🔢', type:'c3_arith' },
-        { id:'c3_functions', name:'Fonctions linéaires et affines', icon:'📈', type:'c3_functions' },
-        { id:'c3_thales', name:'Théorème de Thalès', icon:'📐', type:'c3_thales' },
-        { id:'c3_trigo', name:'Trigonométrie', icon:'📊', type:'c3_trigo' },
-        { id:'c3_literal', name:'Développement et factorisation', icon:'🔤', type:'c3_literal' },
-        { id:'c3_probability', name:'Probabilités avancées', icon:'🎲', type:'c3_probability' },
-        { id:'c3_stats', name:'Médiane et étendue', icon:'📊', type:'c3_stats' }
+        { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales' },
+        { id: 'c3_trigo', name: 'Trigonométrie', icon: '📊', type: 'c3_trigo' }
       ],
       Seconde: [
-        { id:'sec_sets', name:'Ensembles de nombres', icon:'🔢', type:'sec_sets' },
-        { id:'sec_ref', name:'Fonctions de référence', icon:'📈', type:'sec_ref' },
-        { id:'sec_variation', name:'Variations de fonctions', icon:'📉', type:'sec_variation' },
-        { id:'sec_coord', name:'Coordonnées', icon:'📍', type:'sec_coord' },
-        { id:'sec_vect', name:'Vecteurs du plan', icon:'➡️', type:'sec_vect' },
-        { id:'sec_prob', name:'Probabilités conditionnelles', icon:'🎲', type:'sec_prob' },
-        { id:'sec_stats', name:'Statistiques descriptives', icon:'📊', type:'sec_stats' }
+        { id: 'sec_vect', name: 'Vecteurs et Chasles', icon: '➡️', type: 'sec_vect' },
+        { id: 'sec_func', name: 'Sens de variation des fonctions', icon: '📉', type: 'sec_func' }
       ],
       '1ère': [
-        { id:'p1_quad', name:'Équations du second degré', icon:'x²', type:'p1_quad' },
-        { id:'p1_deriv', name:'Dérivation', icon:'📈', type:'p1_deriv' },
-        { id:'p1_sequences', name:'Suites arithmétiques et géométriques', icon:'🔢', type:'p1_sequences' },
-        { id:'p1_trigo', name:'Fonctions trigonométriques', icon:'📐', type:'p1_trigo' },
-        { id:'p1_dot', name:'Produit scalaire', icon:'·', type:'p1_dot' },
-        { id:'p1_binomial', name:'Probabilités : loi binomiale', icon:'🎲', type:'p1_binomial' }
+        { id: 'p1_deriv', name: 'Nombre dérivé', icon: '📈', type: 'p1_deriv' }
       ],
       Terminale: [
-        { id:'term_limits', name:'Limites de suites et fonctions', icon:'♾️', type:'term_limits' },
-        { id:'term_ln', name:'Logarithme népérien et exponentielle', icon:'ln', type:'term_ln' },
-        { id:'term_integral', name:'Calcul intégral', icon:'∫', type:'term_integral' },
-        { id:'term_space', name:'Géométrie dans l’espace', icon:'🧊', type:'term_space' },
-        { id:'term_combi', name:'Combinatoire et dénombrement', icon:'🔢', type:'term_combi' },
-        { id:'term_prob', name:'Lois de probabilités', icon:'🎲', type:'term_prob' },
-        { id:'term_diff', name:'Équations différentielles', icon:'📈', type:'term_diff' }
+        { id: 'term_lim', name: 'Limites de fonctions', icon: '♾️', type: 'term_lim' }
       ]
     };
 
-    const IS_MATERNELLE = grade => ['PS','MS','GS'].includes(grade);
-    const SPEAK_LANG = 'fr-FR';
+    const IS_MATERNELLE = (grade) => ['PS', 'MS', 'GS'].includes(grade);
 
-    function shuffle(array) {
-      return [...array].sort(() => Math.random() - 0.5);
-    }
-
-    function makeOptions(answer, candidates) {
-      const opts = [];
-      [...candidates, answer].forEach(v => {
-        const s = String(v);
-        if (!opts.includes(s)) opts.push(s);
-      });
-      while (opts.length < 4) {
-        const n = Number(answer);
-        if (Number.isFinite(n)) {
-          let candidate = String(n + opts.length + 1);
-          if (!opts.includes(candidate)) opts.push(candidate);
-        } else {
-          const extra = ['Je ne sais pas', 'Essaie encore', 'Autre réponse'];
-          const candidate = extra.find(x => !opts.includes(x));
-          if (candidate) opts.push(candidate);
-          else break;
-        }
-      }
-      return shuffle(opts).slice(0,4);
-    }
-
-    function speak(text) {
+    const speak = (text) => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = SPEAK_LANG;
-        u.rate = 0.88;
+        u.lang = 'fr-FR';
+        u.rate = 0.9;
         window.speechSynthesis.speak(u);
       }
-    }
+    };
 
-    function VisualGraphic({ type, data={} }) {
-      if (type === 'circleSquare') return (
-        <div className="flex justify-center gap-8 my-5 text-7xl"><span>🔴</span><span>🟦</span></div>
-      );
-      if (type === 'triangle') return <div className="text-8xl text-center my-5">🔺</div>;
-      if (type === 'cube') return <div className="text-8xl text-center my-5">🧊</div>;
-      if (type === 'fraction') return (
-        <div className="mx-auto my-5 w-40 h-24 grid grid-cols-4 rounded-xl overflow-hidden border-4 border-slate-700">
-          {[0,1,2,3].map(i => <div key={i} className={i === 0 ? 'bg-indigo-500' : 'bg-slate-800'}></div>)}
-        </div>
-      );
-      if (type === 'angle') return (
-        <svg className="w-36 h-28 mx-auto my-4" viewBox="0 0 120 90">
-          <polyline points="20,15 20,70 95,70" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
-          <rect x="20" y="56" width="14" height="14" fill="none" stroke="#f43f5e" strokeWidth="3"/>
-        </svg>
-      );
-      if (type === 'symmetry') return (
-        <svg className="w-40 h-28 mx-auto my-4" viewBox="0 0 140 90">
-          <line x1="70" y1="5" x2="70" y2="85" stroke="#f43f5e" strokeWidth="3" strokeDasharray="5"/>
-          <polygon points="25,20 60,45 25,70" fill="#6366f1"/>
-          <polygon points="115,20 80,45 115,70" fill="#38bdf8"/>
-        </svg>
-      );
-      if (type === 'pythagore') return (
-        <svg className="w-44 h-32 mx-auto my-4" viewBox="0 0 150 100">
-          <polygon points="25,85 125,85 25,20" fill="none" stroke="currentColor" strokeWidth="4"/>
-          <text x="17" y="55" fontSize="14">a</text>
-          <text x="70" y="97" fontSize="14">b</text>
-          <text x="75" y="48" fontSize="14">c</text>
-        </svg>
-      );
-      if (type === 'clock') return <div className="text-8xl text-center my-5">🕐</div>;
-      if (type === 'money') return <div className="text-7xl text-center my-5">💶</div>;
-      if (type === 'grid') return (
-        <div className="grid grid-cols-4 w-48 h-48 mx-auto my-5 border border-slate-600">
-          {Array.from({length:16},(_,i)=><div key={i} className="border border-slate-700 flex items-center justify-center text-xs">{i+1}</div>)}
-        </div>
-      );
+    function VisualGraphic({ type }) {
+      if (type === 'fraction_c6') {
+        return (
+          <svg className="w-32 h-32 mx-auto my-3" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="#1e293b" stroke="#818cf8" strokeWidth="4" />
+            <path d="M 50,50 L 50,10 A 40,40 0 0,1 90,50 Z" fill="#6366f1" />
+            <path d="M 50,50 L 90,50 A 40,40 0 0,1 50,90 Z" fill="#6366f1" />
+            <line x1="50" y1="10" x2="50" y2="90" stroke="#0f172a" strokeWidth="3" />
+            <line x1="10" y1="50" x2="90" y2="50" stroke="#0f172a" strokeWidth="3" />
+          </svg>
+        );
+      }
+      if (type === 'pythagore') {
+        return (
+          <svg className="w-36 h-28 mx-auto my-3" viewBox="0 0 120 90">
+            <polygon points="20,80 100,80 20,20" fill="none" stroke="#38bdf8" strokeWidth="4" />
+            <text x="15" y="55" fill="#a5b4fc" fontSize="12" fontWeight="bold">AB</text>
+            <text x="55" y="88" fill="#a5b4fc" fontSize="12" fontWeight="bold">AC</text>
+            <text x="65" y="45" fill="#f43f5e" fontSize="12" fontWeight="bold">BC</text>
+          </svg>
+        );
+      }
+      if (type === 'thales') {
+        return (
+          <svg className="w-36 h-32 mx-auto my-3" viewBox="0 0 100 100">
+            <polygon points="50,10 10,90 90,90" fill="none" stroke="#38bdf8" strokeWidth="3" />
+            <line x1="30" y1="50" x2="70" y2="50" stroke="#f43f5e" strokeWidth="3" strokeDasharray="3" />
+          </svg>
+        );
+      }
       return null;
     }
 
-    function generateQuestion(type, difficulty=1) {
-      let text='', ans='', options=[], visual=null, hint='', explanation='';
-
-      // MATERNELLE
-      if (type === 'ps_shapes') {
-        text='Montre la forme parfaitement ronde.';
-        ans='🔴 Rond';
-        options=shuffle(['🔴 Rond','🟦 Carré','🔺 Triangle','⭐ Étoile']);
-        visual='circleSquare';
-        hint='Cherche la forme sans coin.';
-        explanation='Un rond n’a pas de coin.';
-
-      } else if (type === 'ps_sort') {
-        const target = Math.random()>.5 ? '🍎' : '🟦';
-        const items = target==='🍎' ? ['🍎','🟦','🍎','🔺','🍎'] : ['🟦','🍎','🟦','🔺','🟦'];
-        text=`Quel objet faut-il mettre avec les ${target} ?`;
-        ans=target;
-        options=shuffle(['🍎','🟦','🔺','⭐']);
-        hint='Regarde la famille d’objets qui se ressemble.';
-        explanation='Trier, c’est regrouper les objets qui ont une même caractéristique.';
-
-      } else if (type === 'ps_count3') {
-        const n=Math.floor(Math.random()*3)+1;
-        text=`Compte les étoiles : ${'⭐'.repeat(n)}`;
-        ans=String(n);
-        options=shuffle(['1','2','3']);
-        hint='Touche chaque étoile une seule fois en comptant.';
-        explanation=`Il y a ${n} étoile${n>1?'s':''}.`;
-
-      } else if (type === 'ps_space') {
-        const inside=Math.random()>.5;
-        text=inside ? 'Le petit rond est-il DANS la boîte ou DEHORS ?' : 'Le petit rond est-il SUR ou SOUS la boîte ?';
-        ans=inside ? 'Dans' : 'Sous';
-        options=inside ? shuffle(['Dans','Dehors','Sur','À côté']) : shuffle(['Sous','Sur','Dans','Dehors']);
-        hint=inside ? 'Regarde si le rond est entouré par la boîte.' : 'Regarde la position verticale.';
-        explanation=inside ? 'Dans signifie à l’intérieur.' : 'Sous signifie plus bas que la boîte.';
-
-      } else if (type === 'ps_patterns') {
-        text='Quelle couleur vient après : 🔴 🔵 🔴 🔵 ... ?';
-        ans='🔴';
-        options=shuffle(['🔴','🔵','🟡','🟢']);
-        hint='Le rythme recommence : rouge, bleu, rouge, bleu…';
-        explanation='Le motif alterne deux couleurs.';
-
-      // MS
-      } else if (type === 'ms_count6') {
-        const n=Math.floor(Math.random()*5)+2;
-        text=`Combien y a-t-il de pommes ? ${'🍎'.repeat(n)}`;
-        ans=String(n);
-        options=makeOptions(ans,[n-1,n+1,4,6]);
-        hint='Associe un seul nombre à chaque pomme.';
-        explanation=`Il y a ${n} pommes.`;
-
-      } else if (type === 'ms_compare') {
-        let a=Math.floor(Math.random()*5)+1, b=Math.floor(Math.random()*5)+1;
-        while(a===b) b=Math.floor(Math.random()*5)+1;
-        text=`Quelle collection a LE PLUS d’objets ?  ${'🟢'.repeat(a)}  ou  ${'🟣'.repeat(b)} ?`;
-        ans=a>b ? '🟢' : '🟣';
-        options=shuffle(['🟢','🟣']);
-        hint='Tu peux compter les deux collections ou faire des paires.';
-        explanation='La collection qui reste avec des objets non appariés est la plus grande.';
-
-      } else if (type === 'ms_triangle') {
-        text='Quelle forme a trois côtés ?';
-        ans='🔺 Triangle';
-        options=shuffle(['🔺 Triangle','🟦 Carré','🔴 Rond','⬭ Ovale']);
-        visual='triangle';
-        hint='Compte les côtés.';
-        explanation='Un triangle possède trois côtés.';
-
-      } else if (type === 'ms_size') {
-        text='Choisis le plus GRAND :';
-        ans='🐘';
-        options=shuffle(['🐘','🐭','🐜','🦋']);
-        hint='Compare les tailles.';
-        explanation='L’éléphant représente ici l’objet le plus grand.';
-
-      } else if (type === 'ms_maze') {
-        text='Pour sortir du petit labyrinthe, quelle direction choisir ?';
-        ans='Droite';
-        options=shuffle(['Droite','Gauche','Haut','Bas']);
-        hint='Observe le chemin libre.';
-        explanation='Dans ce petit modèle, le passage libre est à droite.';
-
-      // GS
-      } else if (type === 'gs_digits') {
-        const n=Math.floor(Math.random()*9)+1;
-        text=`Quel chiffre correspond à ${n} objet${n>1?'s':''} ? ${'●'.repeat(n)}`;
-        ans=String(n);
-        options=makeOptions(ans,[n-1,n+1,10]);
-        hint='Compte les points puis cherche le symbole correspondant.';
-        explanation=`Le nombre d’objets est ${n}.`;
-
-      } else if (type === 'gs_num') {
-        const n=Math.floor(Math.random()*9)+1;
-        text=`Quel nombre vient juste après ${n} ?`;
-        ans=String(n+1);
-        options=makeOptions(ans,[n,n+2,10]);
-        hint='Avance d’une unité.';
-        explanation=`Après ${n}, on trouve ${n+1}.`;
-
-      } else if (type === 'gs_decomp') {
-        const n=Math.floor(Math.random()*5)+4, a=Math.floor(Math.random()*(n-1))+1;
-        text=`${n} = ${a} + …`;
-        ans=String(n-a);
-        options=makeOptions(ans,[n-a-1,n-a+1,a]);
-        hint='Cherche ce qu’il faut ajouter à la première quantité pour obtenir le total.';
-        explanation=`${a} + ${n-a} = ${n}.`;
-
-      } else if (type === 'gs_solids') {
-        text='Lequel est un solide ?';
-        ans='🧊 Cube';
-        options=shuffle(['🧊 Cube','🔺 Triangle','🔴 Cercle','⬜ Carré']);
-        visual='cube';
-        hint='Un solide possède un volume : on peut le manipuler dans l’espace.';
-        explanation='Le cube est un solide ; les autres réponses sont des figures planes.';
-
-      } else if (type === 'gs_direction') {
-        text='Quelle direction est opposée à la droite ?';
-        ans='Gauche';
-        options=shuffle(['Gauche','Haut','Bas','Devant']);
-        hint='Imagine une ligne horizontale.';
-        explanation='Gauche et droite sont deux directions opposées.';
-
-      } else if (type === 'gs_algorithm') {
-        text='Complète le rythme : 🔴 🔵 🔵 🔴 🔵 🔵 …';
-        ans='🔴';
-        options=shuffle(['🔴','🔵','🟡','🟢']);
-        hint='Le bloc de trois couleurs est 🔴 🔵 🔵.';
-        explanation='Le motif se répète par groupes de trois.';
-
-      // CP
-      } else if (type === 'cp_num100') {
-        const n=Math.floor(Math.random()*90)+10;
-        text=`Quel nombre vient juste avant ${n} ?`;
-        ans=String(n-1);
-        options=makeOptions(ans,[n,n+1,n-10]);
-        hint='Recule d’une unité.';
-        explanation=`Le nombre juste avant ${n} est ${n-1}.`;
-
-      } else if (type === 'cp_add') {
-        const a=Math.floor(Math.random()*30)+5,b=Math.floor(Math.random()*20)+1;
-        text=`Calcule : ${a} + ${b} = ?`; ans=String(a+b);
-        options=makeOptions(ans,[a+b+1,a+b-1,a+b+10]);
-        hint='Tu peux décomposer le deuxième nombre.';
-        explanation=`${a} + ${b} = ${a+b}.`;
-
-      } else if (type === 'cp_sub') {
-        const a=Math.floor(Math.random()*40)+15,b=Math.floor(Math.random()*12)+1;
-        text=`Calcule : ${a} − ${b} = ?`; ans=String(a-b);
-        options=makeOptions(ans,[a-b+1,a-b-1,a+b]);
-        hint='Pars de '+a+' et enlève '+b+'.';
-        explanation=`${a} − ${b} = ${a-b}.`;
-
-      } else if (type === 'cp_mental') {
-        const a=Math.floor(Math.random()*9)+1;
-        text=`Calcul mental : ${a} + 10 = ?`; ans=String(a+10);
-        options=makeOptions(ans,[a,a+9,a+11]);
-        hint='Ajouter 10 fait avancer d’une dizaine.';
-        explanation=`${a} + 10 = ${a+10}.`;
-
-      } else if (type === 'cp_money') {
-        text='Deux pièces de 1 € valent ensemble combien ?';
-        ans='2 €'; options=shuffle(['2 €','1 €','5 €','10 €']); visual='money';
-        hint='1 € + 1 €.';
-        explanation='Deux euros font 2 €.';
-
-      } else if (type === 'cp_length') {
-        const x=Math.floor(Math.random()*8)+2;
-        text=`Une règle mesure ${x} cm. Une autre mesure ${x+3} cm. Laquelle est la plus longue ?`;
-        ans=`${x+3} cm`; options=shuffle([`${x+3} cm`,`${x} cm`,'Elles sont égales','Impossible']);
-        hint='Compare les nombres de centimètres.';
-        explanation=`${x+3} est supérieur à ${x}.`;
-
-      } else if (type === 'cp_shapes') {
-        text='Quelle figure possède quatre côtés ?';
-        ans='Carré'; options=shuffle(['Carré','Triangle','Cercle','Ovale']);
-        hint='Compte les côtés.';
-        explanation='Un carré possède quatre côtés égaux.';
-
-      } else if (type === 'cp_grid') {
-        text='Sur un quadrillage, pour aller de la case 6 à la case 7, on se déplace vers…';
-        ans='La droite'; options=shuffle(['La droite','La gauche','Le haut','Le bas']); visual='grid';
-        hint='Les nombres augmentent ici de gauche à droite.';
-        explanation='La case 7 est immédiatement à droite de la case 6.';
-
-      // CE1
-      } else if (type === 'ce1_num1000') {
-        const n=Math.floor(Math.random()*800)+100;
-        text=`Quel nombre vient après ${n} ?`; ans=String(n+1);
-        options=makeOptions(ans,[n-1,n+10,n+100]);
-        hint='Ajoute une unité.';
-        explanation=`${n}+1=${n+1}.`;
-
-      } else if (type === 'ce1_tables') {
-        const table=[2,3,4,5,10][Math.floor(Math.random()*5)], b=Math.floor(Math.random()*10)+1;
-        text=`Combien font ${table} × ${b} ?`; ans=String(table*b);
-        options=makeOptions(ans,[table*b+table,table*b-table,b]);
-        hint=`Utilise la table de ${table}.`;
-        explanation=`${table} × ${b} = ${table*b}.`;
-
-      } else if (type === 'ce1_sub') {
-        const b=Math.floor(Math.random()*300)+10, a=b+Math.floor(Math.random()*300)+10;
-        text=`Soustraction posée : ${a} − ${b} = ?`; ans=String(a-b);
-        options=makeOptions(ans,[a-b+10,a-b-10,a+b]);
-        hint='Aligne unités, dizaines et centaines.';
-        explanation=`${a} − ${b} = ${a-b}.`;
-
-      } else if (type === 'ce1_double') {
-        const n=Math.floor(Math.random()*30)+2;
-        text=`Quel est le double de ${n} ?`; ans=String(n*2);
-        options=makeOptions(ans,[n,n*2+2,n*2-2]);
-        hint='Le double, c’est deux fois la quantité.';
-        explanation=`${n} + ${n} = ${n*2}.`;
-
-      } else if (type === 'ce1_mass') {
-        text='1 kilogramme correspond à…'; ans='1 000 g';
-        options=shuffle(['1 000 g','100 g','10 g','10 000 g']);
-        hint='Le préfixe kilo indique mille.';
-        explanation='1 kg = 1 000 g.';
-
-      } else if (type === 'ce1_time') {
-        text='Combien de minutes y a-t-il dans 1 heure ?'; ans='60 minutes';
-        options=shuffle(['60 minutes','30 minutes','100 minutes','24 minutes']); visual='clock';
-        hint='Une heure se partage en 60 minutes.';
-        explanation='1 h = 60 min.';
-
-      } else if (type === 'ce1_symmetry') {
-        text='La ligne rouge est-elle un axe de symétrie de la figure ?';
-        ans='Oui'; options=shuffle(['Oui','Non']); visual='symmetry';
-        hint='Les deux moitiés doivent se correspondre comme dans un miroir.';
-        explanation='La figure représentée est symétrique par rapport à la ligne centrale.';
-
-      // CE2
-      } else if (type === 'ce2_num10000') {
-        const n=Math.floor(Math.random()*8000)+1000;
-        text=`Quel nombre vient juste avant ${n} ?`; ans=String(n-1);
-        options=makeOptions(ans,[n,n+1,n-10]);
-        hint='Recule d’une unité.';
-        explanation=`${n-1} est le nombre précédent.`;
-
-      } else if (type === 'ce2_mult') {
-        const a=Math.floor(Math.random()*80)+20,b=Math.floor(Math.random()*8)+2;
-        text=`Calcul : ${a} × ${b} = ?`; ans=String(a*b);
-        options=makeOptions(ans,[a*b+10,a*b-10,a+b]);
-        hint='Décompose le multiplicateur si besoin.';
-        explanation=`${a} × ${b} = ${a*b}.`;
-
-      } else if (type === 'ce2_div') {
-        const parts=Math.floor(Math.random()*8)+2, each=Math.floor(Math.random()*8)+2;
-        text=`On partage ${parts*each} objets entre ${parts} enfants. Combien chacun reçoit-il ?`;
-        ans=String(each); options=makeOptions(ans,[each+1,each-1,parts]);
-        hint='Cherche le nombre qui, multiplié par le nombre d’enfants, redonne le total.';
-        explanation=`${parts} × ${each} = ${parts*each}.`;
-
-      } else if (type === 'ce2_capacity') {
-        text='Combien de millilitres y a-t-il dans 1 litre ?'; ans='1 000 mL';
-        options=shuffle(['1 000 mL','100 mL','10 mL','10 000 mL']);
-        hint='Un litre contient mille millilitres.';
-        explanation='1 L = 1 000 mL.';
-
-      } else if (type === 'ce2_perimeters') {
-        const c=Math.floor(Math.random()*12)+4;
-        text=`Périmètre d’un carré de côté ${c} cm ?`; ans=`${4*c} cm`;
-        options=shuffle([`${4*c} cm`,`${c*c} cm`,`${2*c} cm`,`${4*c+2} cm`]);
-        hint='Un carré a quatre côtés de même longueur.';
-        explanation=`4 × ${c} = ${4*c} cm.`;
-
-      } else if (type === 'ce2_solids') {
-        text='Quel objet est un pavé droit ?';
-        ans='📦 Boîte'; options=shuffle(['📦 Boîte','🔴 Disque','🔺 Triangle','⭕ Cercle']); visual='cube';
-        hint='Pense à une boîte rectangulaire.';
-        explanation='Une boîte rectangulaire est un modèle de pavé droit.';
-
-      } else if (type === 'ce2_graphs') {
-        text='Dans un graphique, une barre plus haute représente généralement une quantité…';
-        ans='Plus grande'; options=shuffle(['Plus grande','Plus petite','Nulle','Toujours égale']);
-        hint='Compare les hauteurs des barres.';
-        explanation='Une barre plus haute correspond ici à une valeur plus élevée.';
-
-      // CM1
-      } else if (type === 'cm1_millions') {
-        text='Quel nombre correspond à 3 millions ?'; ans='3 000 000';
-        options=shuffle(['3 000 000','300 000','30 000','30 000 000']);
-        hint='Un million = 1 000 000.';
-        explanation='3 millions = 3 × 1 000 000 = 3 000 000.';
-
-      } else if (type === 'cm1_fractions') {
-        text='Quelle fraction représente une part sur quatre parts égales ?'; ans='1/4';
-        options=shuffle(['1/4','1/2','3/4','4/1']); visual='fraction';
-        hint='Une part sur quatre.';
-        explanation='Le numérateur indique 1 part choisie sur 4 parts égales.';
-
-      } else if (type === 'cm1_decimals') {
-        text='Écris 5 + 7/10 sous forme décimale.'; ans='5,7';
-        options=shuffle(['5,7','5,07','57','5,70']);
-        hint='Sept dixièmes = 0,7.';
-        explanation='5 + 0,7 = 5,7.';
-
-      } else if (type === 'cm1_div') {
-        text='Effectue : 84 ÷ 4 = ?'; ans='21';
-        options=shuffle(['21','20','24','16']);
-        hint='4 × ? = 84.';
-        explanation='4 × 21 = 84.';
-
-      } else if (type === 'cm1_area') {
-        text='Aire d’un rectangle de 6 cm sur 4 cm ?'; ans='24 cm²';
-        options=shuffle(['24 cm²','20 cm²','10 cm²','48 cm²']);
-        hint='Aire = longueur × largeur.';
-        explanation='6 × 4 = 24 cm².';
-
-      } else if (type === 'cm1_angles') {
-        text='Quel angle mesure exactement 90° ?'; ans='Angle droit';
-        options=shuffle(['Angle droit','Angle aigu','Angle obtus','Angle plat']); visual='angle';
-        hint='Pense au coin d’une feuille.';
-        explanation='Un angle droit mesure 90°.';
-
-      } else if (type === 'cm1_lines') {
-        text='Deux droites qui se coupent en formant un angle droit sont…';
-        ans='Perpendiculaires'; options=shuffle(['Perpendiculaires','Parallèles','Sécantes quelconques','Confondues']);
-        hint='90° est le mot-clé.';
-        explanation='Deux droites perpendiculaires forment un angle droit.';
-
-      // CM2
-      } else if (type === 'cm2_billion') {
-        text='Combien vaut 1 milliard ?'; ans='1 000 000 000';
-        options=shuffle(['1 000 000 000','100 000 000','10 000 000','10 000 000 000']);
-        hint='Un milliard contient neuf zéros.';
-        explanation='1 milliard = 1 000 000 000.';
-
-      } else if (type === 'cm2_decimals') {
-        text='Calcule : 2,5 + 1,75 = ?'; ans='4,25';
-        options=shuffle(['4,25','3,25','4,15','3,75']);
-        hint='Aligne les virgules.';
-        explanation='2,50 + 1,75 = 4,25.';
-
-      } else if (type === 'cm2_fractions') {
-        text='25 % correspond à quelle fraction simplifiée ?'; ans='1/4';
-        options=shuffle(['1/4','1/2','1/5','3/4']);
-        hint='25 % = 25 sur 100.';
-        explanation='25/100 se simplifie en 1/4.';
-
-      } else if (type === 'cm2_div') {
-        text='Effectue : 1 248 ÷ 24 = ?'; ans='52';
-        options=shuffle(['52','42','62','48']);
-        hint='24 × 50 = 1 200, puis ajoute 48.';
-        explanation='24 × 52 = 1 248.';
-
-      } else if (type === 'cm2_prop') {
-        text='Si 3 cahiers coûtent 6 €, combien coûtent 6 cahiers ?'; ans='12 €';
-        options=shuffle(['12 €','9 €','18 €','6 €']);
-        hint='Le nombre de cahiers est doublé.';
-        explanation='6 cahiers coûtent deux fois 6 €, donc 12 €.';
-
-      } else if (type === 'cm2_duration') {
-        text='Combien de minutes y a-t-il dans 2 h 30 ?'; ans='150 min';
-        options=shuffle(['150 min','120 min','130 min','180 min']);
-        hint='2 h = 120 min.';
-        explanation='120 + 30 = 150 min.';
-
-      } else if (type === 'cm2_volume') {
-        text='Volume d’un pavé de 3 cm × 4 cm × 5 cm ?'; ans='60 cm³';
-        options=shuffle(['60 cm³','12 cm³','20 cm³','45 cm³']);
-        hint='Volume = longueur × largeur × hauteur.';
-        explanation='3 × 4 × 5 = 60 cm³.';
-
-      } else if (type === 'cm2_geometry') {
-        text='Quel instrument utilise-t-on pour tracer un cercle ?'; ans='Compas';
-        options=shuffle(['Compas','Équerre','Règle seule','Rapporteur']);
-        hint='Il permet de garder un rayon constant.';
-        explanation='Le compas sert à tracer des cercles.';
-
-      // COLLÈGE
-      } else if (type === 'c6_mental') {
-        text='Calcul mental : 25 + 75 = ?'; ans='100';
-        options=shuffle(['100','90','110','125']);
-        hint='Cherche les compléments à 100.';
-        explanation='25 + 75 = 100.';
-
-      } else if (type === 'c6_decimals') {
-        text='Quel nombre est le plus grand : 3,45 ou 3,5 ?'; ans='3,5';
-        options=shuffle(['3,5','3,45','Ils sont égaux','Impossible']);
-        hint='Écris 3,5 sous la forme 3,50.';
-        explanation='3,50 > 3,45.';
-
-      } else if (type === 'c6_fractions') {
-        text='Laquelle est égale à 1/2 ?'; ans='2/4';
-        options=shuffle(['2/4','1/3','3/4','2/3']);
-        hint='Multiplie le numérateur et le dénominateur par 2.';
-        explanation='1/2 = 2/4.';
-
-      } else if (type === 'c6_angles') {
-        text='Un angle de 120° est…'; ans='Obtus';
-        options=shuffle(['Obtus','Aigu','Droit','Plat']);
-        hint='Entre 90° et 180°.';
-        explanation='Un angle obtus mesure plus de 90° et moins de 180°.';
-
-      } else if (type === 'c6_area') {
-        text='Aire d’un rectangle 8 cm × 3 cm ?'; ans='24 cm²';
-        options=shuffle(['24 cm²','22 cm²','11 cm²','48 cm²']);
-        hint='L × l.';
-        explanation='8 × 3 = 24 cm².';
-
-      } else if (type === 'c6_symmetry') {
-        text='Une symétrie axiale se fait par rapport à…'; ans='Une droite';
-        options=shuffle(['Une droite','Un point','Un cercle','Un segment quelconque']);
-        hint='C’est comme un miroir.';
-        explanation='L’axe de symétrie est une droite.';
-
-      } else if (type === 'c6_graphs') {
-        text='Dans un diagramme, 30 % signifie…'; ans='30 sur 100';
-        options=shuffle(['30 sur 100','3 sur 10 000','30 sur 10','300 sur 10']);
-        hint='% signifie « pour cent».';
-        explanation='30 % = 30/100.';
-
-      } else if (type === 'c5_relative') {
-        text='Calcule : −3 + 7 = ?'; ans='4';
-        options=shuffle(['4','−4','10','−10']);
-        hint='Pars de −3 et avance de 7.';
-        explanation='−3 + 7 = 4.';
-
-      } else if (type === 'c5_priority') {
-        text='Calcule : 3 + 2 × 5 = ?'; ans='13';
-        options=shuffle(['13','25','17','10']);
-        hint='La multiplication est prioritaire.';
-        explanation='2 × 5 = 10, puis 3 + 10 = 13.';
-
-      } else if (type === 'c5_literal') {
-        text='Si x = 4, combien vaut 3x + 2 ?'; ans='14';
-        options=shuffle(['14','10','12','18']);
-        hint='Remplace x par 4.';
-        explanation='3 × 4 + 2 = 14.';
-
-      } else if (type === 'c5_symcentral') {
-        text='Une symétrie centrale est une transformation de centre…'; ans='Un point';
-        options=shuffle(['Un point','Une droite','Un angle','Un cercle']);
-        hint='Le mot « centrale » renvoie au centre.';
-        explanation='La symétrie centrale est définie par rapport à un point centre.';
-
-      } else if (type === 'c5_triangles') {
-        text='La somme des angles d’un triangle vaut…'; ans='180°';
-        options=shuffle(['180°','90°','270°','360°']);
-        hint='Tous les triangles ont la même somme d’angles.';
-        explanation='La somme des angles d’un triangle est 180°.';
-
-      } else if (type === 'c5_volumes') {
-        text='Volume d’un cube de côté 3 cm ?'; ans='27 cm³';
-        options=shuffle(['27 cm³','9 cm³','18 cm³','12 cm³']);
-        hint='Côté × côté × côté.';
-        explanation='3 × 3 × 3 = 27 cm³.';
-
-      } else if (type === 'c5_prop') {
-        text='À vitesse constante, 2 h à 60 km/h représentent quelle distance ?'; ans='120 km';
-        options=shuffle(['120 km','62 km','30 km','180 km']);
-        hint='Distance = vitesse × durée.';
-        explanation='60 × 2 = 120 km.';
-
-      } else if (type === 'c5_stats') {
-        text='Dans 2, 4, 4, 7, la valeur la plus fréquente est…'; ans='4';
-        options=shuffle(['4','2','7','6']);
-        hint='Compte les occurrences.';
-        explanation='4 apparaît deux fois ; les autres une seule fois.';
-
-      } else if (type === 'c4_powers') {
-        text='10³ = ?'; ans='1 000';
-        options=shuffle(['1 000','100','10 000','30']);
-        hint='10 × 10 × 10.';
-        explanation='10³ = 1 000.';
-
-      } else if (type === 'c4_fractions') {
-        text='Simplifie 12/18.'; ans='2/3';
-        options=shuffle(['2/3','3/2','6/9','4/5']);
-        hint='Divise numérateur et dénominateur par 6.';
-        explanation='12/18 = 2/3.';
-
-      } else if (type === 'c4_pythagore') {
-        text='Dans un triangle rectangle, l’égalité de Pythagore est…'; ans='a² + b² = c²';
-        options=shuffle(['a² + b² = c²','a + b = c','a² + c² = b²','ab = c²']); visual='pythagore';
-        hint='c désigne l’hypoténuse.';
-        explanation='Le carré de l’hypoténuse est égal à la somme des carrés des deux autres côtés.';
-
-      } else if (type === 'c4_equations') {
-        text='Résous : 2x + 3 = 11.'; ans='x = 4';
-        options=shuffle(['x = 4','x = 7','x = 14','x = 3']);
-        hint='Enlève 3, puis divise par 2.';
-        explanation='2x = 8, donc x = 4.';
-
-      } else if (type === 'c4_transform') {
-        text='Une rotation se fait autour de…'; ans='Un centre';
-        options=shuffle(['Un centre','Une droite','Deux points fixes','Une parallèle']);
-        hint='Imagine une aiguille de montre.';
-        explanation='Une rotation est définie par un centre et un angle.';
-
-      } else if (type === 'c4_circle') {
-        text='Aire d’un disque de rayon r :'; ans='πr²';
-        options=shuffle(['πr²','2πr','πd','r²/π']);
-        hint='Ne confonds pas aire et périmètre.';
-        explanation='L’aire d’un disque de rayon r est πr².';
-
-      } else if (type === 'c4_probability') {
-        text='Avec un dé équilibré, la probabilité d’obtenir 6 est…'; ans='1/6';
-        options=shuffle(['1/6','1/2','1/3','6/1']);
-        hint='Une issue favorable parmi six issues équiprobables.';
-        explanation='P(6)=1/6.';
-
-      } else if (type === 'c4_percent') {
-        text='20 % de 50 = ?'; ans='10';
-        options=shuffle(['10','20','25','5']);
-        hint='20 % = 0,2.';
-        explanation='0,2 × 50 = 10.';
-
-      } else if (type === 'c3_arith') {
-        text='Quel nombre est premier ?'; ans='17';
-        options=shuffle(['17','21','27','33']);
-        hint='Un nombre premier a exactement deux diviseurs positifs.';
-        explanation='17 n’est divisible que par 1 et 17.';
-
-      } else if (type === 'c3_functions') {
-        text='Quelle expression représente une fonction linéaire ?'; ans='f(x)=3x';
-        options=shuffle(['f(x)=3x','f(x)=3x+2','f(x)=x²','f(x)=3/x']);
-        hint='Une fonction linéaire est de la forme ax.';
-        explanation='Une fonction linéaire s’écrit f(x)=ax.';
-
-      } else if (type === 'c3_thales') {
-        text='Le théorème de Thalès permet notamment de calculer…'; ans='Des longueurs proportionnelles';
-        options=shuffle(['Des longueurs proportionnelles','Des dérivées','Des probabilités','Des volumes uniquement']);
-        hint='Pense aux triangles et aux droites parallèles.';
-        explanation='Thalès établit des rapports de longueurs dans une configuration avec parallélisme.';
-
-      } else if (type === 'c3_trigo') {
-        text='Dans un triangle rectangle, cos(α) = ?'; ans='Adjacent / Hypoténuse';
-        options=shuffle(['Adjacent / Hypoténuse','Opposé / Hypoténuse','Opposé / Adjacent','Hypoténuse / Adjacent']);
-        hint='CAH : cos = adjacent / hypoténuse.';
-        explanation='Le cosinus d’un angle aigu est le rapport côté adjacent / hypoténuse.';
-
-      } else if (type === 'c3_literal') {
-        text='Développe : 3(x + 2).'; ans='3x + 6';
-        options=shuffle(['3x + 6','3x + 2','x + 6','6x + 3']);
-        hint='Distribue 3 à chaque terme.';
-        explanation='3(x+2)=3x+6.';
-
-      } else if (type === 'c3_probability') {
-        text='Une probabilité est toujours comprise entre…'; ans='0 et 1';
-        options=shuffle(['0 et 1','−1 et 1','0 et 100','1 et 2']);
-        hint='Une probabilité ne peut pas être négative ni dépasser 1.';
-        explanation='Pour tout événement, 0 ≤ P ≤ 1.';
-
-      } else if (type === 'c3_stats') {
-        text='Médiane de 2, 4, 5, 8, 10 ?'; ans='5';
-        options=shuffle(['5','4','8','29']);
-        hint='La série est déjà ordonnée et comporte 5 valeurs.';
-        explanation='La troisième valeur, 5, est la médiane.';
-
-      // SECONDE
-      } else if (type === 'sec_sets') {
-        text='Quel nombre appartient à l’ensemble des entiers relatifs ?'; ans='−3';
-        options=shuffle(['−3','2,5','√2','π']);
-        hint='Les entiers n’ont pas de partie décimale.';
-        explanation='−3 est un entier relatif.';
-
-      } else if (type === 'sec_ref') {
-        text='Quelle fonction est une fonction de référence du programme ?'; ans='f(x)=x²';
-        options=shuffle(['f(x)=x²','f(x)=7x+1 uniquement','f(x)=x+π/7','f(x)=42']);
-        hint='Pense aux fonctions carré et inverse.';
-        explanation='La fonction carré f(x)=x² est une fonction de référence.';
-
-      } else if (type === 'sec_variation') {
-        text='Sur un intervalle où f augmente quand x augmente, f est…'; ans='Croissante';
-        options=shuffle(['Croissante','Décroissante','Constante','Périodique nécessairement']);
-        hint='« Augmente » donne le mot-clé.';
-        explanation='Une fonction croissante conserve l’ordre : si x augmente, f(x) ne diminue pas.';
-
-      } else if (type === 'sec_coord') {
-        text='Les coordonnées d’un point du plan s’écrivent généralement…'; ans='(x ; y)';
-        options=shuffle(['(x ; y)','(x + y)','x/y','[x,y,z]']);
-        hint='Abscisse puis ordonnée.';
-        explanation='Un point du plan est repéré par son abscisse x et son ordonnée y.';
-
-      } else if (type === 'sec_vect') {
-        text='Si A, B et C sont des points, vecteur AB + vecteur BC = ?'; ans='vecteur AC';
-        options=shuffle(['vecteur AC','vecteur CA','vecteur BA','vecteur nul']);
-        hint='C’est la relation de Chasles.';
-        explanation='AB + BC = AC.';
-
-      } else if (type === 'sec_prob') {
-        text='Si A et B sont indépendants, P(A∩B) = ?'; ans='P(A)×P(B)';
-        options=shuffle(['P(A)×P(B)','P(A)+P(B)','P(A)−P(B)','P(A)/P(B)']);
-        hint='Indépendance = produit des probabilités.';
-        explanation='Pour des événements indépendants, P(A∩B)=P(A)P(B).';
-
-      } else if (type === 'sec_stats') {
-        text='Pour 2, 4, 6, la moyenne est…'; ans='4';
-        options=shuffle(['4','3','6','12']);
-        hint='Additionne puis divise par le nombre de valeurs.';
-        explanation='(2+4+6)/3=4.';
-
-      // PREMIÈRE
-      } else if (type === 'p1_quad') {
-        text='Dans ax²+bx+c, quel terme est indépendant de x ?'; ans='c';
-        options=shuffle(['c','a','b','x²']);
-        hint='C’est le terme constant.';
-        explanation='c est le terme constant de ax²+bx+c.';
-
-      } else if (type === 'p1_deriv') {
-        text='Quelle est la dérivée de f(x)=x² ?'; ans='f′(x)=2x';
-        options=shuffle(['f′(x)=2x','f′(x)=x','f′(x)=2','f′(x)=x²']);
-        hint='Règle : (x^n)′ = n x^(n−1).';
-        explanation='La dérivée de x² est 2x.';
-
-      } else if (type === 'p1_sequences') {
-        text='Suite arithmétique : u₀=3 et raison 2. u₁ = ?'; ans='5';
-        options=shuffle(['5','6','1','9']);
-        hint='Ajoute la raison.';
-        explanation='u₁=u₀+2=5.';
-
-      } else if (type === 'p1_trigo') {
-        text='Quelle identité trigonométrique fondamentale est correcte ?'; ans='sin²x + cos²x = 1';
-        options=shuffle(['sin²x + cos²x = 1','sin x + cos x = 1','tan x = sin x + cos x','sin²x − cos²x = 1']);
-        hint='C’est l’identité de Pythagore trigonométrique.';
-        explanation='Pour tout réel x, sin²x + cos²x = 1.';
-
-      } else if (type === 'p1_dot') {
-        text='Dans une base orthonormée, u·v = ?'; ans='x₁x₂ + y₁y₂';
-        options=shuffle(['x₁x₂ + y₁y₂','x₁+y₁+x₂+y₂','x₁/x₂+y₁/y₂','x₁x₂−y₁y₂']);
-        hint='Multiplie les coordonnées correspondantes puis additionne.';
-        explanation='u·v=x₁x₂+y₁y₂ en base orthonormée.';
-
-      } else if (type === 'p1_binomial') {
-        text='Pour X~B(n,p), l’espérance vaut…'; ans='np';
-        options=shuffle(['np','n+p','n/p','p−n']);
-        hint='C’est le produit du nombre d’épreuves par la probabilité de succès.';
-        explanation='E(X)=np pour une loi binomiale.';
-
-      // TERMINALE
-      } else if (type === 'term_limits') {
-        text='Limite de 1/x quand x → +∞ ?'; ans='0';
-        options=shuffle(['0','+∞','1','−∞']);
-        hint='Le dénominateur devient arbitrairement grand.';
-        explanation='1/x tend vers 0 lorsque x tend vers +∞.';
-
-      } else if (type === 'term_ln') {
-        text='Quelle propriété est correcte pour x>0 et y>0 ?'; ans='ln(xy)=ln(x)+ln(y)';
-        options=shuffle(['ln(xy)=ln(x)+ln(y)','ln(x+y)=ln(x)+ln(y)','ln(x/y)=ln(x)ln(y)','ln(x²)=ln(x)']);
-        hint='Le logarithme transforme un produit en somme.';
-        explanation='ln(xy)=ln(x)+ln(y).';
-
-      } else if (type === 'term_integral') {
-        text='Une intégrale définie peut représenter, sous certaines conditions, une…'; ans='Aire algébrique';
-        options=shuffle(['Aire algébrique','Moyenne uniquement','Longueur uniquement','Probabilité toujours']);
-        hint='Pense à l’aire située entre une courbe et l’axe.';
-        explanation='Une intégrale peut représenter une aire algébrique.';
-
-      } else if (type === 'term_space') {
-        text='Dans l’espace, un vecteur possède…'; ans='3 coordonnées';
-        options=shuffle(['3 coordonnées','2 coordonnées toujours','1 coordonnée','4 coordonnées']);
-        hint='Un point de l’espace est repéré par x, y, z.';
-        explanation='Dans un repère de l’espace, un vecteur peut être décrit par trois coordonnées.';
-
-      } else if (type === 'term_combi') {
-        text='Combien de façons de choisir 1 objet parmi 5 ?'; ans='5';
-        options=shuffle(['5','1','10','25']);
-        hint='Chaque objet est un choix possible.';
-        explanation='Il y a 5 choix possibles.';
-
-      } else if (type === 'term_prob') {
-        text='La somme des probabilités de toutes les issues d’un univers fini vaut…'; ans='1';
-        options=shuffle(['1','0','100','−1']);
-        hint='Une probabilité totale représente tout l’univers.';
-        explanation='La somme des probabilités des issues vaut 1.';
-
-      } else if (type === 'term_diff') {
-        text='Quelle fonction vérifie y′ = y ?'; ans='y = Ce^x';
-        options=shuffle(['y = Ce^x','y = Cx','y = C/x','y = C+x']);
-        hint='La dérivée de e^x est e^x.';
-        explanation='Les solutions de y′=y sont y=Ce^x.';
-      } else {
-        text='Calcule 7 × 8.'; ans='56';
-        options=shuffle(['56','54','64','48']);
-        hint='Utilise la table de 7 ou de 8.';
-        explanation='7 × 8 = 56.';
-      }
-
-      return { text, ans, options, visual, hint, explanation };
-    }
-
     function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
-      const isMat = IS_MATERNELLE(grade);
-      const [difficulty, setDifficulty] = useState(1);
-      const [q, setQ] = useState(() => generateQuestion(module.type, 1));
+      const [q, setQ] = useState({ text: '', ans: '', options: [], visual: null });
+      const [timeLeft, setTimeLeft] = useState(25);
       const [feedback, setFeedback] = useState(null);
-      const [showHint, setShowHint] = useState(false);
-      const [answered, setAnswered] = useState(false);
-
-      const nextQuestion = () => {
-        setFeedback(null);
-        setShowHint(false);
-        setAnswered(false);
-        setQ(generateQuestion(module.type, difficulty));
-      };
+      const isMat = IS_MATERNELLE(grade);
 
       useEffect(() => {
-        nextQuestion();
-      }, [module.type]);
+        if (isMat) return;
+        setTimeLeft(25);
+        const timerInterval = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev <= 1) {
+              handleAnswer('');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearInterval(timerInterval);
+      }, [q, isMat]);
 
-      const handleAnswer = val => {
-        if (answered) return;
-        setAnswered(true);
+      const generateNewQuestion = () => {
+        setFeedback(null);
+        let text = '', ans = '', opts = [], visual = null;
+        const type = module.type;
+
+        if (type === 'ps_shapes') {
+          text = "Où se trouve la forme parfaitement ronde ?";
+          ans = "🔴 Rond";
+          opts = ["🔴 Rond", "🟦 Carré", "⭐ Étoile"].sort(() => Math.random() - 0.5);
+        } else if (type === 'ps_count3') {
+          const n = Math.floor(Math.random() * 3) + 1;
+          text = `Combien y a-t-il d'éléments ? ${'⭐'.repeat(n)}`;
+          ans = `${n}`;
+          opts = ["1", "2", "3"].sort(() => Math.random() - 0.5);
+        } else if (type === 'ms_count6') {
+          const n = Math.floor(Math.random() * 4) + 3;
+          text = `Combien de pommes vois-tu ? ${'🍎'.repeat(n)}`;
+          ans = `${n}`;
+          opts = Array.from(new Set([`${n}`, `${n === 6 ? 5 : n + 1}`, `${n > 1 ? n - 1 : 2}`, '4'])).sort(() => Math.random() - 0.5);
+        } else if (type === 'ms_compare') {
+          const a = Math.floor(Math.random() * 5) + 5;
+          const b = Math.floor(Math.random() * 4) + 1;
+          text = `Quel est le plus grand nombre entre ${a} et ${b} ?`;
+          ans = `${Math.max(a, b)}`;
+          opts = [`${a}`, `${b}`, `${Math.max(a,b)+1}`, `${Math.max(a,b)-1}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'gs_num') {
+          const n = Math.floor(Math.random() * 7) + 3;
+          text = `Quel nombre vient immédiatement après ${n - 1} ?`;
+          ans = `${n}`;
+          opts = [`${n}`, `${n + 1}`, `${n - 2}`, `${n + 2}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'gs_decomp') {
+          const n = Math.floor(Math.random() * 3) + 3;
+          const p = Math.floor(Math.random() * (n - 1)) + 1;
+          text = `${n} c'est ${p} et ... ?`;
+          ans = `${n - p}`;
+          opts = [`${n - p}`, `${n - p + 1}`, `${n}`, `1`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cp_num100') {
+          const n = Math.floor(Math.random() * 70) + 20;
+          text = `Quel est le nombre qui vient juste avant ${n + 1} ?`;
+          ans = `${n}`;
+          opts = [`${n}`, `${n + 2}`, `${n - 1}`, `${n + 10}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cp_add_sub') {
+          const a = Math.floor(Math.random() * 10) + 5;
+          const b = Math.floor(Math.random() * 5) + 1;
+          text = `Calculer : ${a} + ${b} = ... ?`;
+          ans = `${a + b}`;
+          opts = [`${a + b}`, `${a + b + 1}`, `${a + b - 2}`, `${a + b + 3}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'ce1_tables') {
+          const a = Math.floor(Math.random() * 8) + 2;
+          const b = Math.floor(Math.random() * 8) + 2;
+          text = `Combien font ${a} × ${b} ?`;
+          ans = `${a * b}`;
+          opts = [`${a * b}`, `${a * b + (Math.random() > 0.5 ? 2 : -3)}`, `${a * b + 4}`, `${a * (b + 1)}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'ce1_symmetry') {
+          const ok = Math.random() > 0.5;
+          text = ok ? "Cette figure présente-t-elle un axe de symétrie valide ?" : "La ligne tracée est-elle un axe de symétrie correct ?";
+          ans = ok ? "Oui" : "Non";
+          opts = ["Oui", "Non"];
+        } else if (type === 'ce2_mult') {
+          const a = Math.floor(Math.random() * 20) + 10;
+          const b = Math.floor(Math.random() * 5) + 2;
+          text = `Calculer en ligne : ${a} × ${b} = ... ?`;
+          ans = `${a * b}`;
+          opts = [`${a * b}`, `${a * b + 5}`, `${a * b - 3}`, `${a * b + 10}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'ce2_perimeters') {
+          const c = Math.floor(Math.random() * 10) + 4;
+          text = `Quel est le périmètre d'un carré dont le côté mesure ${c} cm ?`;
+          ans = `${c * 4} cm`;
+          opts = [`${c * 4} cm`, `${c * c} cm`, `${c * 2} cm`, `${c * 4 + 2} cm`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cm1_fractions') {
+          text = "Comment s'écrit la fraction 'trois quarts' ?";
+          ans = "3/4";
+          opts = ["3/4", "4/3", "1/3", "3/1"].sort(() => Math.random() - 0.5);
+        } else if (type === 'cm1_decimals') {
+          const e = Math.floor(Math.random() * 5) + 1;
+          const d = Math.floor(Math.random() * 8) + 1;
+          text = `Écrire sous forme décimale : ${e} + ${d}/10 = ... ?`;
+          ans = `${e}.${d}`;
+          opts = [`${e}.${d}`, `${e + 1}.${d}`, `${e}.${d + 1}`, `${e - 1}.${d}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cm2_frac_ops') {
+          const d = Math.floor(Math.random() * 4) + 3;
+          const n1 = Math.floor(Math.random() * 2) + 1;
+          const n2 = Math.floor(Math.random() * 2) + 1;
+          text = `Calculer : ${n1}/${d} + ${n2}/${d} = ... ?`;
+          ans = `${n1 + n2}/${d}`;
+          opts = [`${n1 + n2}/${d}`, `${n1 + n2 + 1}/${d}`, `${n1 * n2}/${d}`, `1/${d}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cm2_prop') {
+          const p = Math.floor(Math.random() * 3) + 2;
+          text = `Si 2 cahiers coûtent ${2 * p} €, quel est le prix de 4 cahiers ?`;
+          ans = `${4 * p} €`;
+          opts = [`${4 * p} €`, `${2 * p + 2} €`, `${6 * p} €`, `${4 * p + 4} €`].sort(() => Math.random() - 0.5);
+        } else if (type === 'c6_fractions') {
+          text = "Quelle fraction représente la partie colorée (2 parts sur 4) ?";
+          ans = "2/4";
+          opts = ["2/4", "1/4", "3/4", "4/4"].sort(() => Math.random() - 0.5);
+          visual = 'fraction_c6';
+        } else if (type === 'c6_decimals') {
+          const n = Math.floor(Math.random() * 10) + 5;
+          text = `Quel nombre est le plus grand entre ${n},3 et ${n},15 ?`;
+          ans = `${n},3`;
+          opts = [`${n},3`, `${n},15`, `Ils sont égaux`, `${n},1`].sort(() => Math.random() - 0.5);
+        } else if (type === 'c6_divisions') {
+          const div = Math.floor(Math.random() * 5) + 4;
+          const quo = Math.floor(Math.random() * 6) + 5;
+          const rest = Math.floor(Math.random() * (div - 1));
+          const total = div * quo + rest;
+          text = `Dans la division euclidienne de ${total} par ${div}, quel est le quotient entier ?`;
+          ans = `${quo}`;
+          opts = [`${quo}`, `${quo + 1}`, `${quo - 1}`, `${quo + 2}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'c5_relatifs') {
+          const a = Math.floor(Math.random() * 10) + 3;
+          const b = Math.floor(Math.random() * 10) + 5;
+          text = `Calculer : -${a} + ${b} = ... ?`;
+          ans = `${b - a}`;
+          opts = [`${b - a}`, `-${a + b}`, `${a + b}`, `${b - a - 2}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'c5_fractions') {
+          text = "Par quel nombre non nul peut-on multiplier numérateur et dénominateur pour obtenir une fraction égale ?";
+          ans = "Un même nombre non nul";
+          opts = ["Un même nombre non nul", "Zéro", "Un nombre différent", "Par deux obligatoirement"].sort(() => Math.random() - 0.5);
+        } else if (type === 'c4_pythagore') {
+          text = "Dans un triangle ABC rectangle en A, quelle est l'égalité du théorème de Pythagore ?";
+          ans = "BC² = AB² + AC²";
+          opts = ["BC² = AB² + AC²", "AB² = BC² + AC²", "BC = AB + AC", "AC² = AB × BC"].sort(() => Math.random() - 0.5);
+          visual = 'pythagore';
+        } else if (type === 'c4_calcul_litteral') {
+          const x = Math.floor(Math.random() * 4) + 2;
+          text = `Réduire l'expression algébrique : 4x + 3x + ${x} = ... ?`;
+          ans = `7x + ${x}`;
+          opts = [`7x + ${x}`, `8x`, `${x}x + 7`, `7x`].sort(() => Math.random() - 0.5);
+        } else if (type === 'c3_thales') {
+          text = "Le théorème de Thalès permet de calculer :";
+          ans = "Des longueurs dans une configuration de triangles emboîtés ou en papillon";
+          opts = ["Des longueurs dans une configuration de triangles emboîtés ou en papillon", "Des angles", "Des aires de surfaces", "Des racines carrées complexes"].sort(() => Math.random() - 0.5);
+          visual = 'thales';
+        } else if (type === 'c3_trigo') {
+          text = "Dans un triangle rectangle, le cosinus d'un angle aigu est égal à :";
+          ans = "Côté adjacent / Hypoténuse";
+          opts = ["Côté adjacent / Hypoténuse", "Côté opposé / Hypoténuse", "Côté opposé / Côté adjacent", "Hypoténuse / Côté adjacent"].sort(() => Math.random() - 0.5);
+        } else if (type === 'sec_vect') {
+          text = "D'après la relation de Chasles, que vaut vecteur AB + vecteur BC ?";
+          ans = "vecteur AC";
+          opts = ["vecteur AC", "vecteur CA", "vecteur nul", "vecteur BA"].sort(() => Math.random() - 0.5);
+        } else if (type === 'sec_func') {
+          text = "Si une fonction est strictement croissante sur un intervalle, sa courbe représentative :";
+          ans = "Monte de gauche à droite";
+          opts = ["Monte de gauche à droite", "Descend de gauche à droite", "Est horizontale", "Forme un cercle"].sort(() => Math.random() - 0.5);
+        } else if (type === 'p1_deriv') {
+          text = "Quel est le nombre dérivé de la fonction f(x) = x² en x ?";
+          ans = "f'(x) = 2x";
+          opts = ["f'(x) = 2x", "f'(x) = x", "f'(x) = 2", "f'(x) = x²"].sort(() => Math.random() - 0.5);
+        } else if (type === 'term_lim') {
+          text = "Quelle est la limite de 1/x lorsque x tend vers +∞ ?";
+          ans = "0";
+          opts = ["0", "+∞", "1", "-∞"].sort(() => Math.random() - 0.5);
+        } else {
+          const a = Math.floor(Math.random() * 8) + 2;
+          const b = Math.floor(Math.random() * 8) + 2;
+          text = `Calculer : ${a} × ${b} = ... ?`;
+          ans = `${a * b}`;
+          opts = [`${a * b}`, `${a * b + 2}`, `${a * b - 1}`, `${a * b + 4}`].sort(() => Math.random() - 0.5);
+        }
+
+        opts = Array.from(new Set(opts));
+        while(opts.length < 4) {
+          opts.push(`${Number(ans) + opts.length + 1}`);
+        }
+        opts.sort(() => Math.random() - 0.5);
+
+        setQ({ text, ans, options: opts, visual });
+        if (isMat) speak(text);
+      };
+
+      useEffect(() => { generateNewQuestion(); }, [module.type]);
+
+      const handleAnswer = (val) => {
         if (val === q.ans) {
-          const xp = isMat ? 10 + difficulty * 2 : 10 + difficulty * 5;
-          setFeedback({ success:true, msg:`Bravo ${userName} ! Tu as trouvé. +${xp} XP` });
-          if (difficulty < 3) setDifficulty(d => d + 1);
+          const xp = isMat ? 15 : Math.max(5, timeLeft);
+          setFeedback({ success: true, msg: `Bravo ${userName} ! Super ! (+${xp} XP)` });
           if (isMat) speak(`Bravo ${userName} !`);
           setTimeout(() => {
             onResult(xp);
-            nextQuestion();
-          }, 1100);
+            generateNewQuestion();
+          }, 1300);
         } else {
-          setFeedback({
-            success:false,
-            msg:`Ce n’est pas ${val}. La bonne réponse est ${q.ans}.`
-          });
-          if (difficulty > 1) setDifficulty(d => d - 1);
-          if (isMat) speak(`Ce n’est pas grave. Regarde l’indice.`);
+          setFeedback({ success: false, msg: `Oups ${userName}, ce n'est pas la bonne réponse.` });
+          if (isMat) speak(`Réessaie ${userName}`);
         }
       };
 
       return (
-        <div className="bg-slate-900/90 p-5 sm:p-8 rounded-3xl max-w-2xl mx-auto border border-slate-800 shadow-2xl animate-pop">
-          <div className="flex justify-between items-center gap-3 mb-5">
-            <button onClick={onBack} className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-black">
+        <div className="bg-slate-900/90 p-6 sm:p-8 rounded-3xl text-center max-w-lg mx-auto border border-slate-800 shadow-2xl animate-pop">
+          <div className="flex justify-between items-center mb-4">
+            <button onClick={onBack} className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-black">
               ← RETOUR
             </button>
-            <span className="text-xs font-black text-indigo-300 bg-indigo-950 px-3 py-2 rounded-xl">
+            <span className="text-xs font-black text-indigo-400 bg-indigo-950 px-3 py-1.5 rounded-xl border border-indigo-800/40">
               {grade} • {module.name}
             </span>
-            <span className="text-xs font-bold text-slate-400">Niveau {difficulty}/3</span>
+            {!isMat && (
+              <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                ⏱️ {timeLeft}s
+              </span>
+            )}
           </div>
 
           {isMat && (
-            <button
+            <button 
               onClick={() => speak(q.text)}
-              className="mb-3 bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-full font-bold text-xs"
+              className="mb-3 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg inline-flex items-center gap-2"
             >
-              🔊 Réécouter
+              🔊 Réécouter la consigne
             </button>
           )}
 
           {q.visual && <VisualGraphic type={q.visual} />}
 
-          <div className="bg-slate-950/60 rounded-2xl p-5 mb-5">
-            <p className="text-xs uppercase tracking-wide text-indigo-400 font-black mb-2">À toi de chercher</p>
-            <h2 className="text-xl sm:text-2xl font-black leading-relaxed">{q.text}</h2>
-          </div>
+          <h2 className="text-xl sm:text-2xl font-black my-5 text-white leading-relaxed">{q.text}</h2>
 
           {feedback && (
-            <div className={`p-4 rounded-2xl mb-4 font-bold text-sm ${
-              feedback.success
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                : 'bg-amber-500/15 text-amber-200 border border-amber-500/30'
-            }`}>
+            <div className={`p-3 rounded-xl mb-4 font-black text-sm ${feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
               {feedback.msg}
-              {!feedback.success && (
-                <p className="mt-2 text-slate-300 font-medium">{q.explanation}</p>
-              )}
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 mt-4">
             {q.options.map((opt, i) => (
               <button
                 key={i}
-                disabled={answered}
                 onClick={() => handleAnswer(opt)}
-                className={`bg-slate-800 hover:bg-indigo-600 disabled:opacity-60 text-white font-black py-4 px-3 rounded-2xl border border-slate-700 transition-all active:scale-95 text-base ${
-                  opt === q.ans && answered ? 'ring-2 ring-emerald-400' : ''
-                }`}
+                className="bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-3 rounded-2xl border border-slate-700 hover:border-indigo-400 transition-all active:scale-95 text-base shadow-lg cursor-pointer"
               >
                 {opt}
               </button>
             ))}
-          </div>
-
-          <div className="mt-5">
-            <button
-              onClick={() => setShowHint(v => !v)}
-              className="text-sm font-bold text-indigo-300 hover:text-indigo-200"
-            >
-              💡 {showHint ? 'Masquer l’indice' : 'Besoin d’un indice ?'}
-            </button>
-            {showHint && (
-              <div className="mt-2 bg-indigo-950/50 border border-indigo-800/40 rounded-xl p-3 text-sm text-indigo-100">
-                {q.hint}
-              </div>
-            )}
           </div>
         </div>
       );
@@ -1059,7 +394,7 @@
       const [activeModule, setActiveModule] = useState(null);
       const [score, setScore] = useState(0);
 
-      const handleStart = e => {
+      const handleStart = (e) => {
         e.preventDefault();
         if (userName.trim()) setIsLoggedIn(true);
       };
@@ -1068,47 +403,37 @@
         return (
           <div className="min-h-screen flex items-center justify-center p-4">
             <div className="bg-slate-900/90 p-8 rounded-3xl max-w-md w-full border border-slate-800 shadow-2xl text-center animate-pop">
-              <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4">
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-lg shadow-indigo-600/30">
                 🎓
               </div>
-              <h1 className="text-2xl font-black mb-2">MathsAcademy</h1>
-              <p className="text-sm text-slate-400 mb-6">
-                Un parcours progressif : observer → manipuler → comprendre → s’entraîner.
-              </p>
-
+              <h1 className="text-2xl font-black text-white mb-6">MathsAcademy</h1>
+              
               <form onSubmit={handleStart} className="space-y-5 text-left">
                 <div>
-                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">
-                    Ton prénom
-                  </label>
+                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Prénom</label>
                   <input
                     type="text"
                     required
                     value={userName}
-                    onChange={e => setUserName(e.target.value)}
-                    placeholder="Ex. Lucas, Emma…"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 font-bold outline-none focus:border-indigo-500"
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Ex: Lucas, Emma..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">
-                    Ton niveau scolaire
-                  </label>
+                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Niveau Scolaire</label>
                   <select
                     value={selectedGrade}
-                    onChange={e => setSelectedGrade(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 font-bold outline-none focus:border-indigo-500"
+                    onChange={(e) => setSelectedGrade(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500 cursor-pointer"
                   >
-                    {Object.keys(CURRICULUM).map(g => <option key={g} value={g}>{g}</option>)}
+                    {Object.keys(CURRICULUM).map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
                   </select>
                 </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 font-black py-4 rounded-2xl shadow-lg active:scale-95"
-                >
-                  COMMENCER 🚀
+                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 active:scale-95 cursor-pointer">
+                  COMMENCER LE JEU 🚀
                 </button>
               </form>
             </div>
@@ -1117,15 +442,13 @@
       }
 
       return (
-        <div className="max-w-5xl mx-auto p-4">
-          <header className="flex justify-between items-center py-4 border-b border-slate-800 mb-6 gap-4">
+        <div className="max-w-4xl mx-auto p-4">
+          <header className="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
             <div className="flex items-center gap-3">
               <span className="text-3xl">🎓</span>
               <div>
-                <h1 className="text-lg font-black">MathsAcademy</h1>
-                <p className="text-xs text-indigo-400 font-bold">
-                  Joueur : {userName} • {selectedGrade}
-                </p>
+                <h1 className="text-lg font-black text-white">MathsAcademy</h1>
+                <p className="text-xs text-indigo-400 font-bold">Joueur : {userName} ({selectedGrade})</p>
               </div>
             </div>
             <div className="bg-slate-900 px-4 py-2 rounded-2xl border border-indigo-500/30">
@@ -1136,22 +459,13 @@
 
           {!activeModule ? (
             <>
-              <div className="mb-5">
-                <h2 className="text-2xl font-black mb-1">Choisis ton atelier</h2>
-                <p className="text-sm text-slate-400">
-                  Chaque atelier cible une compétence précise du niveau choisi.
-                </p>
-              </div>
-
-              <div className="flex gap-2 overflow-x-auto pb-4 mb-6">
+              <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
                 {Object.keys(CURRICULUM).map(g => (
                   <button
                     key={g}
                     onClick={() => setSelectedGrade(g)}
-                    className={`px-4 py-2 rounded-2xl font-black text-xs whitespace-nowrap ${
-                      selectedGrade === g
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                    className={`px-4 py-2 rounded-2xl font-black text-xs transition-all whitespace-nowrap cursor-pointer ${
+                      selectedGrade === g ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
                     }`}
                   >
                     {g}
@@ -1159,16 +473,15 @@
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {CURRICULUM[selectedGrade].map(m => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {CURRICULUM[selectedGrade]?.map(m => (
                   <button
                     key={m.id}
                     onClick={() => setActiveModule(m)}
-                    className="bg-slate-900/80 p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/30 transition-all flex flex-col justify-between min-h-40 shadow-md"
+                    className="bg-slate-900/80 p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/30 transition-all flex flex-col justify-between h-36 shadow-md cursor-pointer"
                   >
                     <span className="text-3xl">{m.icon}</span>
                     <span className="font-extrabold text-sm text-slate-200">{m.name}</span>
-                    <span className="text-[11px] text-slate-500 mt-2">Atelier ciblé</span>
                   </button>
                 ))}
               </div>
@@ -1179,7 +492,7 @@
               grade={selectedGrade}
               module={activeModule}
               onBack={() => setActiveModule(null)}
-              onResult={xp => setScore(s => s + xp)}
+              onResult={(xp) => setScore(s => s + xp)}
             />
           )}
         </div>
@@ -1188,285 +501,5 @@
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
-
-<!-- MODULE AJOUTÉ : Défis progressifs de calcul (CP → Terminale) -->
-<style>
-  .calc-challenge{
-    max-width:1100px;margin:28px auto;padding:24px;border-radius:22px;
-    background:#ffffff;color:#111827;border:1px solid #e5e7eb;
-    box-shadow:0 10px 30px rgba(0,0,0,.12);
-  }
-  .calc-challenge h2{color:#111827!important}
-  .calc-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
-  .calc-tabs button,.calc-actions button{
-    border:0;border-radius:12px;padding:10px 15px;font-weight:700;cursor:pointer;
-    background:#e0e7ff;color:#312e81;transition:.15s;
-  }
-  .calc-tabs button:hover,.calc-actions button:hover{background:#c7d2fe;transform:translateY(-1px)}
-  .calc-tabs button.active{background:#4f46e5;color:#fff}
-  .calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
-  .calc-card{border:1px solid #e5e7eb;border-radius:18px;padding:18px;background:#f8fafc;color:#111827}
-  .calc-question{font-size:34px;font-weight:800;text-align:center;margin:18px 0;color:#111827}
-  .calc-input{
-    display:block;width:100%;max-width:280px;margin:0 auto;padding:13px;
-    border:2px solid #cbd5e1;border-radius:12px;font-size:22px;text-align:center;
-    color:#111827;background:#fff;outline:none;
-  }
-  .calc-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.15)}
-  .calc-input::placeholder{color:#94a3b8}
-  .calc-timer{font-size:28px;font-weight:900;text-align:center;color:#111827}
-  .calc-progress{height:10px;border-radius:99px;background:#e5e7eb;overflow:hidden;margin:14px 0}
-  .calc-progress>div{height:100%;background:#4f46e5;transition:width .25s}
-  .calc-feedback{text-align:center;min-height:30px;font-weight:700;margin:12px 0;color:#111827}
-  .calc-level{font-weight:800;color:#111827}
-  .calc-muted{color:#64748b}
-  .calc-score{font-size:18px;font-weight:800;color:#334155}
-  .calc-challenge ul{color:#334155}
-  .calc-challenge li{margin:4px 0}
-  .calc-actions button:disabled{opacity:.5;cursor:not-allowed}
-  @media(max-width:600px){
-    .calc-challenge{margin:15px;padding:16px}
-    .calc-question{font-size:28px}
-  }
-</style>
-
-<section id="defis-calcul-progressifs" class="calc-challenge">
-  <h2>🧠 Défis de calcul progressifs</h2>
-  <p class="calc-muted">
-    À partir du CP : 10 questions par niveau. Une fois les 10 réussies,
-    le niveau suivant est débloqué. Le chronomètre est activé pour les défis.
-  </p>
-
-  <div class="calc-tabs">
-    <button class="active" data-calc-mode="tables">Tables de multiplication</button>
-    <button data-calc-mode="addsub">Additions &amp; soustractions</button>
-  </div>
-
-  <div class="calc-grid">
-    <div class="calc-card">
-      <div class="calc-level" id="calcLevelLabel">CP — Niveau 1</div>
-      <div class="calc-score" id="calcScore">Question 1 / 10 · Réussites : 0</div>
-      <div class="calc-progress"><div id="calcProgressBar" style="width:0%"></div></div>
-      <div class="calc-timer">⏱️ <span id="calcTimer">--</span></div>
-    </div>
-
-    <div class="calc-card">
-      <div class="calc-muted">Progression proposée</div>
-      <ul id="calcDifficultyList"></ul>
-    </div>
-  </div>
-
-  <div class="calc-card" style="margin-top:16px">
-    <div id="calcQuestion" class="calc-question">—</div>
-    <input id="calcAnswer" class="calc-input" type="number" inputmode="numeric" autocomplete="off"
-           placeholder="Ta réponse" aria-label="Réponse">
-    <div class="calc-actions" style="display:flex;justify-content:center;gap:10px;margin-top:14px">
-      <button id="calcValidate">Valider</button>
-      <button id="calcNext" style="display:none">Question suivante</button>
-      <button id="calcRestart">Recommencer</button>
-    </div>
-    <div id="calcFeedback" class="calc-feedback"></div>
-  </div>
-</section>
-
-<script>
-(function(){
-  const grades = [
-    {name:"CP", tableMax:2, addMax:10, subMax:10},
-    {name:"CE1", tableMax:5, addMax:50, subMax:50},
-    {name:"CE2", tableMax:10, addMax:100, subMax:100},
-    {name:"CM1", tableMax:10, addMax:1000, subMax:1000},
-    {name:"CM2", tableMax:10, addMax:10000, subMax:10000},
-    {name:"6ème", tableMax:10, addMax:100000, subMax:100000},
-    {name:"5ème", tableMax:10, addMax:1000000, subMax:1000000},
-    {name:"4ème", tableMax:10, addMax:10000000, subMax:10000000},
-    {name:"3ème", tableMax:10, addMax:100000000, subMax:100000000},
-    {name:"Seconde", tableMax:12, addMax:1000000000, subMax:1000000000},
-    {name:"1ère", tableMax:15, addMax:10000000000, subMax:10000000000},
-    {name:"Terminale", tableMax:20, addMax:100000000000, subMax:100000000000}
-  ];
-
-  const modeConfig = {
-    tables: {
-      label:"Tables de multiplication",
-      levels:[
-        "Tables 2 et 5 · produits directs",
-        "Tables 2, 5 et 10 · mélange",
-        "Tables 2 à 5 · mélange",
-        "Tables 2 à 10 · mélange",
-        "Tables 2 à 10 · calculs à trous",
-        "Tables 2 à 10 · facteurs inversés",
-        "Tables 2 à 10 · rapidité",
-        "Produits plus grands · pièges de calcul",
-        "Produits mélangés · niveau avancé",
-        "Défi expert · mélange complet"
-      ]
-    },
-    addsub: {
-      label:"Additions & soustractions",
-      levels:[
-        "Additions jusqu'à 10",
-        "Additions et soustractions jusqu'à 20",
-        "Jusqu'à 100 · sans retenue complexe",
-        "Jusqu'à 1 000 · retenues",
-        "Grands nombres · jusqu'à 10 000",
-        "Calculs en chaîne",
-        "Nombres relatifs",
-        "Priorités et expressions simples",
-        "Calcul littéral / nombres complexes",
-        "Défi avancé"
-      ]
-    }
-  };
-
-  let mode="tables", gradeIndex=0, level=0, qIndex=0, successes=0;
-  let current=null, timer=null, remaining=0, locked=false;
-
-  const $=id=>document.getElementById(id);
-  const levelLabel=$("calcLevelLabel"), score=$("calcScore"), progress=$("calcProgressBar"),
-        timerEl=$("calcTimer"), question=$("calcQuestion"), answer=$("calcAnswer"),
-        feedback=$("calcFeedback"), validate=$("calcValidate"), next=$("calcNext"),
-        restart=$("calcRestart"), difficultyList=$("calcDifficultyList");
-
-  function rand(n){return Math.floor(Math.random()*n);}
-  function randInt(a,b){return a+rand(b-a+1);}
-  function shuffle(a){return a.sort(()=>Math.random()-.5);}
-
-  function getTableQuestion(){
-    const g=grades[gradeIndex], L=level;
-    let a,b;
-    if(L===0){a=shuffle([2,5])[0]; b=randInt(1,5);}
-    else if(L===1){a=shuffle([2,5,10])[0]; b=randInt(1,10);}
-    else if(L===2){a=randInt(2,5); b=randInt(1,10);}
-    else {a=randInt(2,g.tableMax); b=randInt(1,10);}
-    if(L>=4 && Math.random()<.35) return {text:`${a} × ? = ${a*b}`, answer:b};
-    if(L>=5 && Math.random()<.25) return {text:`? × ${b} = ${a*b}`, answer:a};
-    return {text:`${a} × ${b} = ?`, answer:a*b};
-  }
-
-  function getAddSubQuestion(){
-    const g=grades[gradeIndex], L=level;
-    if(L<=1){
-      const max=L===0?10:20, a=randInt(0,max), b=randInt(0,max);
-      const sub=Math.random()<.45;
-      if(sub){const x=Math.max(a,b),y=Math.min(a,b);return {text:`${x} − ${y} = ?`,answer:x-y};}
-      return {text:`${a} + ${b} = ?`,answer:a+b};
-    }
-    if(L<=4){
-      const max=g.addMax, a=randInt(0,max), b=randInt(0,max);
-      const sub=Math.random()<.45;
-      if(sub){const x=Math.max(a,b),y=Math.min(a,b);return {text:`${x} − ${y} = ?`,answer:x-y};}
-      return {text:`${a} + ${b} = ?`,answer:a+b};
-    }
-    if(L===5){
-      const a=randInt(1,999), b=randInt(1,999), c=randInt(1,999);
-      return Math.random()<.5
-        ? {text:`${a} + ${b} − ${c} = ?`,answer:a+b-c}
-        : {text:`${a} − ${b} + ${c} = ?`,answer:a-b+c};
-    }
-    if(L===6){
-      const a=randInt(-50,50), b=randInt(-50,50);
-      return Math.random()<.5
-        ? {text:`(${a}) + (${b}) = ?`,answer:a+b}
-        : {text:`(${a}) − (${b}) = ?`,answer:a-b};
-    }
-    const a=randInt(1,99), b=randInt(1,99), c=randInt(1,20);
-    if(L>=8){
-      const d=randInt(1,20);
-      return {text:`${a} + ${b} − ${c} + ${d} = ?`,answer:a+b-c+d};
-    }
-    return {text:`${a} + ${b} − ${c} = ?`,answer:a+b-c};
-  }
-
-  function timeForLevel(){
-    // Le temps diminue progressivement, sans rendre le CP excessivement court.
-    return Math.max(12, 45 - level*3 - Math.floor(gradeIndex/3)*2);
-  }
-
-  function renderDifficulty(){
-    difficultyList.innerHTML="";
-    modeConfig[mode].levels.forEach((x,i)=>{
-      const li=document.createElement("li");
-      li.textContent=(i===level?"▶ ":"")+(i+1)+". "+x;
-      if(i<level) li.style.textDecoration="line-through";
-      difficultyList.appendChild(li);
-    });
-  }
-
-  function stopTimer(){ if(timer){clearInterval(timer);timer=null;} }
-
-  function startTimer(){
-    stopTimer(); remaining=timeForLevel(); timerEl.textContent=remaining+" s";
-    timer=setInterval(()=>{
-      remaining--; timerEl.textContent=remaining+" s";
-      if(remaining<=0){ stopTimer(); locked=true; feedback.textContent="⏰ Temps écoulé. La réponse était "+current.answer+"."; next.style.display="inline-block"; }
-    },1000);
-  }
-
-  function updateUI(){
-    levelLabel.textContent=grades[gradeIndex].name+" — Niveau "+(level+1)+" · "+modeConfig[mode].label;
-    score.textContent=`Question ${qIndex+1} / 10 · Réussites : ${successes}`;
-    progress.style.width=(Math.min(qIndex,10)/10*100)+"%";
-    renderDifficulty();
-  }
-
-  function newQuestion(){
-    stopTimer(); locked=false; next.style.display="none"; feedback.textContent="";
-    answer.value=""; answer.focus();
-    current=mode==="tables"?getTableQuestion():getAddSubQuestion();
-    question.textContent=current.text;
-    updateUI(); startTimer();
-  }
-
-  function advance(){
-    if(qIndex>=9){
-      stopTimer(); progress.style.width="100%";
-      if(successes===10){
-        feedback.textContent=`🎉 Niveau ${level+1} validé ! Passage au niveau suivant.`;
-        if(level<9) level++;
-        else if(gradeIndex<grades.length-1){gradeIndex++;level=0;}
-        qIndex=0; successes=0;
-      } else {
-        feedback.textContent=`Il faut 10 réussites sur 10 pour débloquer la suite. Recommence ce niveau.`;
-        qIndex=0; successes=0;
-      }
-      setTimeout(newQuestion,900);
-      return;
-    }
-    qIndex++; newQuestion();
-  }
-
-  function check(){
-    if(locked) return;
-    const v=Number(answer.value);
-    if(answer.value.trim()==="") return;
-    stopTimer(); locked=true;
-    if(v===current.answer){
-      successes++; feedback.textContent="✅ Correct !";
-    }else{
-      feedback.textContent=`❌ Pas encore. La bonne réponse est ${current.answer}.`;
-    }
-    score.textContent=`Question ${qIndex+1} / 10 · Réussites : ${successes}`;
-    next.style.display="inline-block";
-  }
-
-  document.querySelectorAll("[data-calc-mode]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      document.querySelectorAll("[data-calc-mode]").forEach(b=>b.classList.remove("active"));
-      btn.classList.add("active");
-      mode=btn.dataset.calcMode; gradeIndex=0; level=0; qIndex=0; successes=0; newQuestion();
-    });
-  });
-
-  validate.addEventListener("click",check);
-  next.addEventListener("click",advance);
-  restart.addEventListener("click",()=>{qIndex=0;successes=0;newQuestion();});
-  answer.addEventListener("keydown",e=>{if(e.key==="Enter"){if(!locked)check();else advance();}});
-
-  // Démarrage uniquement si le module est présent.
-  newQuestion();
-})();
-</script>
-
 </body>
 </html>
