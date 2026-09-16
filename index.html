@@ -20,11 +20,10 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- CURRICULUM STRICTEMENT THÉMATIQUE ---
+    // --- CURRICULUM STRICTEMENT THÉMATIQUE & COHÉRENT ---
     const CURRICULUM = {
       PS: [
-        { id: 'ps_shapes', name: 'Formes simples (Rond, Carré)', icon: '🔴', type: 'ps_shapes' },
-        { id: 'ps_patterns', name: 'Rythmes et Suites', icon: '🧩', type: 'ps_patterns' },
+        { id: 'ps_shapes', name: 'Formes simples', icon: '🔴', type: 'ps_shapes' },
         { id: 'ps_count3', name: 'Comptine jusqu\'à 3', icon: '🔢', type: 'ps_count3' }
       ],
       MS: [
@@ -57,14 +56,17 @@
         { id: 'cm2_prop', name: 'Proportionnalité', icon: '📈', type: 'cm2_prop' }
       ],
       '6ème': [
-        { id: 'c6_fractions', name: 'Fractions & Décimaux', icon: '🔢', type: 'c6_fractions' },
-        { id: 'c6_angles', name: 'Mesure d\'angles', icon: '📐', type: 'c6_angles' }
+        { id: 'c6_fractions', name: 'Fractions & Écritures', icon: '🔢', type: 'c6_fractions' },
+        { id: 'c6_decimals', name: 'Nombres décimaux & Ordre', icon: '📊', type: 'c6_decimals' },
+        { id: 'c6_divisions', name: 'Division euclidienne', icon: '➗', type: 'c6_divisions' }
       ],
       '5ème': [
-        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs' }
+        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs' },
+        { id: 'c5_fractions', name: 'Calculs sur fractions', icon: '🍰', type: 'c5_fractions' }
       ],
       '4ème': [
-        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore' }
+        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore' },
+        { id: 'c4_calcul_litteral', name: 'Calcul littéral', icon: '🔤', type: 'c4_calcul_litteral' }
       ],
       '3ème': [
         { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales' },
@@ -94,39 +96,14 @@
       }
     };
 
-    // --- ILLUSTRATIONS SVG DYNAMIQUES SPÉCIFIQUES ---
+    // --- ILLUSTRATIONS VISUELLES CIBLÉES ---
     function VisualGraphic({ type }) {
-      if (type === 'angle_droit') {
+      if (type === 'fraction_c6') {
         return (
           <svg className="w-32 h-32 mx-auto my-3" viewBox="0 0 100 100">
-            <polyline points="20,10 20,80 90,80" fill="none" stroke="#818cf8" strokeWidth="6" strokeLinecap="round" />
-            <rect x="20" y="66" width="14" height="14" fill="none" stroke="#f43f5e" strokeWidth="3" />
-          </svg>
-        );
-      }
-      if (type === 'symmetry_yes') {
-        return (
-          <svg className="w-36 h-28 mx-auto my-3" viewBox="0 0 120 80">
-            <line x1="60" y1="5" x2="60" y2="75" stroke="#f43f5e" strokeWidth="3" strokeDasharray="4" />
-            <polygon points="20,20 45,40 20,60" fill="#818cf8" opacity="0.8" />
-            <polygon points="100,20 75,40 100,60" fill="#38bdf8" opacity="0.8" />
-          </svg>
-        );
-      }
-      if (type === 'symmetry_no') {
-        return (
-          <svg className="w-36 h-28 mx-auto my-3" viewBox="0 0 120 80">
-            <line x1="60" y1="5" x2="60" y2="75" stroke="#f43f5e" strokeWidth="3" strokeDasharray="4" />
-            <polygon points="20,20 45,40 20,60" fill="#818cf8" opacity="0.8" />
-            <polygon points="80,20 95,40 80,60" fill="#38bdf8" opacity="0.8" />
-          </svg>
-        );
-      }
-      if (type === 'fraction') {
-        return (
-          <svg className="w-28 h-28 mx-auto my-3" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="40" fill="#1e293b" stroke="#818cf8" strokeWidth="4" />
-            <path d="M 50,50 L 50,10 A 40,40 0 1,1 10,50 Z" fill="#6366f1" />
+            <path d="M 50,50 L 50,10 A 40,40 0 0,1 90,50 Z" fill="#6366f1" />
+            <path d="M 50,50 L 90,50 A 40,40 0 0,1 50,90 Z" fill="#6366f1" />
             <line x1="50" y1="10" x2="50" y2="90" stroke="#0f172a" strokeWidth="3" />
             <line x1="10" y1="50" x2="90" y2="50" stroke="#0f172a" strokeWidth="3" />
           </svg>
@@ -153,7 +130,7 @@
       return null;
     }
 
-    // --- MOTEUR DE GÉNÉRATION DE QUESTIONS (VRAI ALÉATOIRE & STRICTEMENT THÉMATIQUE) ---
+    // --- MOTEUR DE GÉNÉRATION ALÉATOIRE STRICT ---
     function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
       const [q, setQ] = useState({ text: '', ans: '', options: [], visual: null });
       const [timeLeft, setTimeLeft] = useState(25);
@@ -167,7 +144,7 @@
         const timerInterval = setInterval(() => {
           setTimeLeft((prev) => {
             if (prev <= 1) {
-              handleAnswer(''); // Temps écoulé = mauvaise réponse
+              handleAnswer('');
               return 0;
             }
             return prev - 1;
@@ -183,18 +160,10 @@
 
         // --- MATERNELLE ---
         if (type === 'ps_shapes') {
-          const shapes = [
-            { name: "🔴 Rond", target: true },
-            { name: "🟦 Carré", target: false },
-            { name: "⭐ Étoile", target: false }
-          ].sort(() => Math.random() - 0.5);
+          const shapes = ["🔴 Rond", "🟦 Carré", "⭐ Étoile"].sort(() => Math.random() - 0.5);
           text = "Touche la forme parfaitement RONDE !";
           ans = "🔴 Rond";
-          opts = shapes.map(s => s.name);
-        } else if (type === 'ps_patterns') {
-          text = "Quelle couleur vient après : 🔴 🔵 🔴 ... ?";
-          ans = "🔵";
-          opts = ["🔵", "🔴", "🟡"];
+          opts = shapes;
         } else if (type === 'ps_count3') {
           const n = Math.floor(Math.random() * 3) + 1;
           text = `Combien d'étoiles vois-tu ? ${'⭐'.repeat(n)}`;
@@ -206,30 +175,32 @@
           ans = `${n}`;
           opts = Array.from(new Set([`${n}`, `${n === 6 ? 5 : n + 1}`, `${n > 1 ? n - 1 : 3}`, '4'])).sort(() => Math.random() - 0.5);
         } else if (type === 'ms_compare') {
-          const a = Math.floor(Math.random() * 8) + 1;
+          const a = Math.floor(Math.random() * 8) + 2;
           const b = Math.floor(Math.random() * 8) + 1;
-          if (a === b) b += 1;
+          text = `Quel est le plus grand nombre entre ${a} et ${b} ?`;
+          ans = `${Math.max(a, b)}`;
+          opts = [`${a}`, `${b}`, `${Math.max(a,b)+1}`, `${Math.max(a,b)-1}`].sort(() => Math.random() - 0.5);
         } else if (type === 'gs_num') {
-          const n = Math.floor(Math.random() * 9) + 2;
+          const n = Math.floor(Math.random() * 8) + 2;
           text = `Quel nombre vient juste après ${n - 1} ?`;
           ans = `${n}`;
-          opts = [`${n}`, `${n + 1}`, `${n > 2 ? n - 2 : 1}`].sort(() => Math.random() - 0.5);
+          opts = [`${n}`, `${n + 1}`, `${n > 2 ? n - 2 : 1}`, `${n + 2}`].sort(() => Math.random() - 0.5);
         } else if (type === 'gs_decomp') {
           const n = Math.floor(Math.random() * 4) + 3;
           const part = Math.floor(Math.random() * (n - 1)) + 1;
           text = `${n} = ${part} + ... ?`;
           ans = `${n - part}`;
-          opts = [`${n - part}`, `${n - part + 1}`, `${n - part > 0 ? n - part - 1 : 4}`].sort(() => Math.random() - 0.5);
+          opts = [`${n - part}`, `${n - part + 1}`, `${n - part > 0 ? n - part - 1 : 4}`, `${n}`].sort(() => Math.random() - 0.5);
 
-        // --- CYCLE 2 & 3 (CALCULS & TABLES ALÉATOIRES PURES) ---
+        // --- CYCLE 2 & 3 ---
         } else if (type === 'cp_num100') {
-          const n = Math.floor(Math.random() * 90) + 10;
-          text = `Comment s'écrit ce nombre en chiffres : ${n} ? (Ou trouve son double/voisin)`;
+          const n = Math.floor(Math.random() * 80) + 15;
+          text = `Quel nombre vient avant ${n + 1} ?`;
           ans = `${n}`;
-          opts = [`${n}`, `${n + 1}`, `${n > 15 ? n - 10 : n + 5}`, `${n + 10}`].sort(() => Math.random() - 0.5);
+          opts = [`${n}`, `${n + 2}`, `${n - 1}`, `${n + 10}`].sort(() => Math.random() - 0.5);
         } else if (type === 'cp_add_sub') {
-          const a = Math.floor(Math.random() * 20) + 5;
-          const b = Math.floor(Math.random() * 10) + 1;
+          const a = Math.floor(Math.random() * 15) + 5;
+          const b = Math.floor(Math.random() * 8) + 1;
           const isAdd = Math.random() > 0.5;
           text = isAdd ? `Calculer : ${a} + ${b} = ... ?` : `Calculer : ${a} - ${b} = ... ?`;
           ans = isAdd ? `${a + b}` : `${a - b}`;
@@ -243,37 +214,34 @@
           opts = [`${a * b}`, `${a * b + (Math.random() > 0.5 ? 2 : -3)}`, `${a * b + 4}`, `${a * (b + 1)}`].sort(() => Math.random() - 0.5);
         } else if (type === 'ce1_symmetry') {
           const isValid = Math.random() > 0.5;
-          text = isValid ? "La ligne en pointillés est-elle un axe de symétrie ?" : "Cette coupe est-elle symétrique ?";
+          text = isValid ? "Cette figure présente-t-elle un axe de symétrie correct ?" : "L'axe tracé sépare-t-il la figure symétriquement ?";
           ans = isValid ? "Oui" : "Non";
           opts = ["Oui", "Non"];
-          visual = isValid ? 'symmetry_yes' : 'symmetry_no';
         } else if (type === 'ce2_mult') {
-          const a = Math.floor(Math.random() * 30) + 12;
-          const b = Math.floor(Math.random() * 7) + 3;
-          text = `Calculer le produit posé : ${a} × ${b} = ... ?`;
+          const a = Math.floor(Math.random() * 25) + 12;
+          const b = Math.floor(Math.random() * 6) + 3;
+          text = `Calculer : ${a} × ${b} = ... ?`;
           ans = `${a * b}`;
           opts = [`${a * b}`, `${a * b + 5}`, `${a * b - 4}`, `${a * b + 10}`].sort(() => Math.random() - 0.5);
         } else if (type === 'ce2_perimeters') {
-          const cote = Math.floor(Math.random() * 15) + 4;
-          text = `Quel est le périmètre d'un carré de côté ${cote} cm ?`;
-          ans = `${cote * 4} cm`;
-          opts = [`${cote * 4} cm`, `${cote * cote} cm`, `${cote * 2} cm`, `${cote * 4 + 2} cm`].sort(() => Math.random() - 0.5);
-        } else if (type === 'cm1_fractions' || type === 'c6_fractions') {
-          text = "Quelle fraction représente la partie colorée en violet ?";
-          ans = "1/4";
-          opts = ["1/4", "1/2", "3/4", "2/3"].sort(() => Math.random() - 0.5);
-          visual = 'fraction';
+          const c = Math.floor(Math.random() * 12) + 5;
+          text = `Quel est le périmètre d'un carré de côté ${c} cm ?`;
+          ans = `${c * 4} cm`;
+          opts = [`${c * 4} cm`, `${c * c} cm`, `${c * 2} cm`, `${c * 4 + 4} cm`].sort(() => Math.random() - 0.5);
+        } else if (type === 'cm1_fractions') {
+          text = "Quelle fraction représente 3 parts sur un total de 4 parts égales ?";
+          ans = "3/4";
+          opts = ["3/4", "1/4", "1/2", "4/3"].sort(() => Math.random() - 0.5);
         } else if (type === 'cm1_decimals') {
-          const ent = Math.floor(Math.random() * 10) + 1;
+          const ent = Math.floor(Math.random() * 8) + 1;
           const dec = Math.floor(Math.random() * 9) + 1;
           text = `Écrire sous forme décimale : ${ent} + ${dec}/10 = ... ?`;
           ans = `${ent}.${dec}`;
           opts = [`${ent}.${dec}`, `${ent + 1}.${dec}`, `${ent}.${dec === 9 ? 1 : dec + 1}`, `${ent - 1}.${dec}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'cm1_angles' || type === 'c6_angles') {
-          text = "Quel type d'angle mesure exactement 90 degrés ?";
+        } else if (type === 'cm1_angles') {
+          text = "Comment appelle-t-on un angle qui mesure exactement 90° ?";
           ans = "Angle droit";
           opts = ["Angle droit", "Angle aigu", "Angle obtus", "Angle plat"].sort(() => Math.random() - 0.5);
-          visual = 'angle_droit';
         } else if (type === 'cm2_frac_ops') {
           const d = Math.floor(Math.random() * 4) + 3;
           const n1 = Math.floor(Math.random() * 3) + 1;
@@ -283,52 +251,84 @@
           opts = [`${n1 + n2}/${d}`, `${n1 + n2 + 1}/${d}`, `${n1 * n2}/${d}`, `1/${d}`].sort(() => Math.random() - 0.5);
         } else if (type === 'cm2_prop') {
           const p = Math.floor(Math.random() * 4) + 2;
-          text = `Si 2 kg de pommes coûtent ${2 * p} €, quel est le prix de 4 kg ?`;
+          text = `Si 2 kg de clémentines coûtent ${2 * p} €, quel est le prix de 4 kg ?`;
           ans = `${4 * p} €`;
           opts = [`${4 * p} €`, `${2 * p + 2} €`, `${6 * p} €`, `${4 * p + 2} €`].sort(() => Math.random() - 0.5);
 
-        // --- COLLÈGE & LYCÈE (MATHS AVANCÉES STRICTEMENT Ciblées) ---
+        // --- 6ÈME (SANS CALCUL MENTAL HORS-SUJET, SANS AIRE/PÉRIMÈTRE/SYMÉTRIE) ---
+        } else if (type === 'c6_fractions') {
+          const num = Math.floor(Math.random() * 3) + 1;
+          const den = 4;
+          text = `Quelle écriture fractionnaire correspond à la partie colorée (2 parts sur 4) ?`;
+          ans = `2/4`;
+          opts = [`2/4`, `1/4`, `3/4`, `4/4`].sort(() => Math.random() - 0.5);
+          visual = 'fraction_c6';
+        } else if (type === 'c6_decimals') {
+          const a = Math.floor(Math.random() * 20) + 1;
+          const b = Math.floor(Math.random() * 9) + 1;
+          text = `Quel est le plus grand nombre entre ${a},${b} et ${a + 1},1 ?`;
+          ans = `${a + 1},1`;
+          opts = [`${a + 1},1`, `${a},${b}`, `${a},${b}5`, `${a}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'c6_divisions') {
+          const diviseur = Math.floor(Math.random() * 6) + 3;
+          const quotient = Math.floor(Math.random() * 8) + 4;
+          const reste = Math.floor(Math.random() * (diviseur - 1));
+          const dividende = diviseur * quotient + reste;
+          text = `Dans la division euclidienne de ${dividende} par ${diviseur}, quel est le quotient entier ?`;
+          ans = `${quotient}`;
+          opts = [`${quotient}`, `${quotient + 1}`, `${quotient - 1}`, `${quotient + 2}`].sort(() => Math.random() - 0.5);
+
+        // --- COLLÈGE & LYCÈE ---
         } else if (type === 'c5_relatifs') {
-          const a = Math.floor(Math.random() * 15) + 1;
-          const b = Math.floor(Math.random() * 15) + 1;
-          const isNeg = Math.random() > 0.5;
-          text = isNeg ? `Calculer : -${a} + ${b} = ... ?` : `Calculer : -${a} - ${b} = ... ?`;
-          ans = isNeg ? `${b - a}` : `-${a + b}`;
-          opts = [`${ans}`, `${Number(ans) * -1}`, `${Number(ans) + 2}`, `${Number(ans) - 3}`].sort(() => Math.random() - 0.5);
+          const a = Math.floor(Math.random() * 12) + 2;
+          const b = Math.floor(Math.random() * 12) + 2;
+          text = `Calculer : -${a} + ${b} = ... ?`;
+          ans = `${b - a}`;
+          opts = [`${b - a}`, `${a + b}`, `-${a + b}`, `${a - b}`].sort(() => Math.random() - 0.5);
+        } else if (type === 'c5_fractions') {
+          const d = Math.floor(Math.random() * 5) + 3;
+          const n = Math.floor(Math.random() * 4) + 1;
+          text = `Simplifier ou calculer : ${n * 2}/${d * 2} (fraction équivalente)`;
+          ans = `${n}/${d}`;
+          opts = [`${n}/${d}`, `${n + 1}/${d}`, `${n}/${d + 1}`, `1/${d}`].sort(() => Math.random() - 0.5);
         } else if (type === 'c4_pythagore') {
-          text = "Dans un triangle rectangle, quelle est l'égalité de Pythagore ?";
-          ans = "a² + b² = c²";
-          opts = ["a² + b² = c²", "a + b = c", "c² + a² = b²", "a × b = c²"].sort(() => Math.random() - 0.5);
+          text = "Dans un triangle ABC rectangle en A, quelle est l'égalité de Pythagore ?";
+          ans = "BC² = AB² + AC²";
+          opts = ["BC² = AB² + AC²", "AB² = BC² + AC²", "BC = AB + AC", "AC² = AB² × BC²"].sort(() => Math.random() - 0.5);
           visual = 'pythagore';
+        } else if (type === 'c4_calcul_litteral') {
+          const x = Math.floor(Math.random() * 5) + 2;
+          text = `Réduire l'expression : 3x + 2x + ${x} = ... ?`;
+          ans = `5x + ${x}`;
+          opts = [`5x + ${x}`, `6x`, `${x}x + 5`, `5x`].sort(() => Math.random() - 0.5);
         } else if (type === 'c3_thales') {
-          text = "Le théorème de Thalès permet de calculer :";
-          ans = "Des longueurs dans des triangles emboîtés";
-          opts = ["Des longueurs dans des triangles emboîtés", "Des angles", "Des aires de disques", "Des dérivées"].sort(() => Math.random() - 0.5);
+          text = "Le théorème de Thalès s'applique dans quelle configuration géométrique ?";
+          ans = "Des droites parallèles coupées par des sécantes (triangles emboîtés)";
+          opts = ["Des droites parallèles coupées par des sécantes (triangles emboîtés)", "Un triangle rectangle uniquement", "Un cercle trigonométrique", "Des droites perpendiculaires"].sort(() => Math.random() - 0.5);
           visual = 'thales';
         } else if (type === 'c3_trigo') {
-          text = "Dans un triangle rectangle, le cosinus d'un angle aigu c'est :";
-          ans = "Côté adjacent / Hypoténuse";
-          opts = ["Côté adjacent / Hypoténuse", "Côté opposé / Côté adjacent", "Hypoténuse / Côté opposé", "Côté opposé / Hypoténuse"].sort(() => Math.random() - 0.5);
+          text = "Dans un triangle rectangle, le sinus d'un angle aigu est égal à :";
+          ans = "Côté opposé / Hypoténuse";
+          opts = ["Côté opposé / Hypoténuse", "Côté adjacent / Hypoténuse", "Côté opposé / Côté adjacent", "Hypoténuse / Côté opposé"].sort(() => Math.random() - 0.5);
         } else if (type === 'sec_vect') {
-          text = "Soit un vecteur AB. Que vaut vecteur AB + vecteur BC ?";
-          ans = "Vecteur AC (Relation de Chasles)";
-          opts = ["Vecteur AC (Relation de Chasles)", "Vecteur CA", "Vecteur nul", "Vecteur BA"].sort(() => Math.random() - 0.5);
+          text = "D'après la relation de Chasles, vecteur AB + vecteur BC est égal à :";
+          ans = "vecteur AC";
+          opts = ["vecteur AC", "vecteur CA", "vecteur nul", "vecteur BA"].sort(() => Math.random() - 0.5);
         } else if (type === 'sec_func') {
-          text = "Si une fonction f est strictement croissante sur un intervalle, sa courbe représentative :";
-            ans = "Monte de gauche à droite";
-          opts = ["Monte de gauche à droite", "Descend de gauche à droite", "Est horizontale", "Est une parabole inversée"].sort(() => Math.random() - 0.5);
+          text = "Si une fonction f est strictement décroissante sur un intervalle, sa courbe :";
+          ans = "Descend de gauche à droite";
+          opts = ["Descend de gauche à droite", "Monte de gauche à droite", "Est strictement horizontale", "Est symétrique"].sort(() => Math.random() - 0.5);
         } else if (type === 'p1_deriv') {
-          text = "Quelle est la dérivée de la fonction f(x) = x² ?";
-          ans = "f'(x) = 2x";
-          opts = ["f'(x) = 2x", "f'(x) = x", "f'(x) = 2", "f'(x) = x²"].sort(() => Math.random() - 0.5);
+          text = "Quelle est la dérivée de la fonction f(x) = x³ ?";
+          ans = "f'(x) = 3x²";
+          opts = ["f'(x) = 3x²", "f'(x) = x²", "f'(x) = 3x", "f'(x) = 6x"].sort(() => Math.random() - 0.5);
         } else if (type === 'term_lim') {
-          text = "Quelle est la limite de 1/x quand x tend vers +∞ ?";
+          text = "Quelle est la limite de e^x quand x tend vers -∞ ?";
           ans = "0";
           opts = ["0", "+∞", "1", "-∞"].sort(() => Math.random() - 0.5);
         } else {
-          // Fallback ultra propre
-          const a = Math.floor(Math.random() * 10) + 1;
-          const b = Math.floor(Math.random() * 10) + 1;
+          const a = Math.floor(Math.random() * 10) + 2;
+          const b = Math.floor(Math.random() * 10) + 2;
           text = `Résoudre l'opération : ${a} × ${b} = ... ?`;
           ans = `${a * b}`;
           opts = [`${a * b}`, `${a * b + 2}`, `${a * b - 1}`, `${a * b + 4}`].sort(() => Math.random() - 0.5);
