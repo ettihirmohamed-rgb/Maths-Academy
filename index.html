@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Mathia - L'Aventure Mathématique Ultime</title>
+  <title>Mathia - L'Aventure Mathématique du C1 à la Terminale</title>
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#020617" />
   <link rel="apple-touch-icon" href="icon-192.png" />
@@ -28,15 +28,22 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=2').then(reg => {
-          reg.update();
-        }).catch((err) => console.log('Erreur SW:', err));
+        navigator.serviceWorker.register('./sw.js?v=6').then(reg => reg.update()).catch((err) => console.log('SW:', err));
       });
     }
   </script>
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
+
+    const ALL_GRADES = [
+      'PS', 'MS', 'GS',
+      'CP', 'CE1', 'CE2', 'CM1', 'CM2',
+      '6ème', '5ème', '4ème', '3ème',
+      '2nde', '1ère', 'Terminale'
+    ];
+
+    const MATERNELLE_GRADES = ['PS', 'MS', 'GS'];
 
     const AVATARS = [
       { id: 'fox', name: 'Renard Astro', emoji: '🦊', price: 0 },
@@ -48,31 +55,35 @@
     ];
 
     const ALL_GAMES = [
-      { id: 'vocal', name: 'Nourris le Dino (Dénombrement)', grades: ['Maternelle'], icon: '🦖', color: 'from-pink-500 to-rose-500' },
-      { id: 'mental_easy', name: 'Calcul Simple (+ / -)', grades: ['Maternelle', 'CP-CE1'], icon: '🐣', color: 'from-emerald-500 to-teal-500' },
-      { id: 'money', name: 'La Caisse Enregistreuse (€)', grades: ['CP-CE1', 'CE2-CM1', 'CM2-6ème'], icon: '🪙', color: 'from-amber-500 to-yellow-500' },
-      { id: 'mental_tables', name: 'Tables de Multiplication', grades: ['CE2-CM1', 'CM2-6ème'], icon: '⚡', color: 'from-indigo-500 to-purple-500' },
-      { id: 'algebra', name: 'Équations & Algèbre (x)', grades: ['5ème-4ème', '3ème-Lycée'], icon: '⚖️', color: 'from-rose-500 to-red-600' }
+      { id: 'vocal', name: 'Nourris le Dino (Chiffres & Comptine)', grades: ['PS', 'MS', 'GS'], icon: '🦖', color: 'from-pink-500 to-rose-500' },
+      { id: 'spatial_patterns', name: 'Logique, Formes & Rythmes', grades: ['PS', 'MS', 'GS'], icon: '🧩', color: 'from-purple-500 to-indigo-500' },
+      { id: 'operations', name: 'Calculs & Opérations', grades: ALL_GRADES, icon: '🧮', color: 'from-emerald-500 to-teal-500' },
+      { id: 'fractions_decimals', name: 'Fractions & Décimaux', grades: ['CM1', 'CM2', '6ème', '5ème', '4ème'], icon: '🎯', color: 'from-cyan-500 to-blue-600' },
+      { id: 'money_measures', name: 'Monnaie & Mesures', grades: ['CP', 'CE1', 'CE2', 'CM1', 'CM2'], icon: '💶', color: 'from-amber-500 to-yellow-500' },
+      { id: 'mental_tables', name: 'Tables de Multiplication', grades: ['CE1', 'CE2', 'CM1', 'CM2', '6ème', '5ème', '4ème', '3ème'], icon: '⚡', color: 'from-indigo-500 to-purple-500' },
+      { id: 'algebra_advanced', name: 'Algèbre, Équations & Fonctions', grades: ['5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale'], icon: '⚖️', color: 'from-rose-500 to-red-600' }
     ];
 
     const TIMER_RULES = {
-      'Maternelle': null,
-      'CP-CE1': 15,
-      'CE2-CM1': 12,
-      'CM2-6ème': 10,
-      '5ème-4ème': 8,
-      '3ème-Lycée': 6
+      'PS': null, 'MS': null, 'GS': null,
+      'CP': 15, 'CE1': 15, 'CE2': 12, 'CM1': 12, 'CM2': 10,
+      '6ème': 10, '5ème': 8, '4ème': 8, '3ème': 6,
+      '2nde': 6, '1ère': 5, 'Terminale': 5
     };
 
     const COINS_LIST = [
-      { value: 0.01, label: '1c' },
-      { value: 0.02, label: '2c' },
-      { value: 0.05, label: '5c' },
-      { value: 0.10, label: '10c' },
-      { value: 0.20, label: '20c' },
-      { value: 0.50, label: '50c' },
-      { value: 1.00, label: '1€' },
-      { value: 2.00, label: '2€' }
+      { value: 0.01, label: '1c', type: 'coin' },
+      { value: 0.02, label: '2c', type: 'coin' },
+      { value: 0.05, label: '5c', type: 'coin' },
+      { value: 0.10, label: '10c', type: 'coin' },
+      { value: 0.20, label: '20c', type: 'coin' },
+      { value: 0.50, label: '50c', type: 'coin' },
+      { value: 1.00, label: '1€', type: 'coin' },
+      { value: 2.00, label: '2€', type: 'coin' },
+      { value: 5.00, label: '5€', type: 'bill' },
+      { value: 10.00, label: '10€', type: 'bill' },
+      { value: 20.00, label: '20€', type: 'bill' },
+      { value: 50.00, label: '50€', type: 'bill' }
     ];
 
     const speak = (text) => {
@@ -80,7 +91,7 @@
         window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(text);
         msg.lang = 'fr-FR';
-        msg.rate = 0.9;
+        msg.rate = 0.85;
         window.speechSynthesis.speak(msg);
       }
     };
@@ -125,25 +136,25 @@
     };
 
     function App() {
-      const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('mathia_profile_v2') || 'null'));
-      const [coins, setCoins] = useState(() => parseInt(localStorage.getItem('mathia_coins_v2') || '0'));
-      const [level, setLevel] = useState(() => parseInt(localStorage.getItem('mathia_level_v2') || '1'));
-      const [stats, setStats] = useState(() => JSON.parse(localStorage.getItem('mathia_stats_v2') || '{"played":0, "success":0}'));
+      const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('mathia_profile_v6') || 'null'));
+      const [coins, setCoins] = useState(() => parseInt(localStorage.getItem('mathia_coins_v6') || '0'));
+      const [level, setLevel] = useState(() => parseInt(localStorage.getItem('mathia_level_v6') || '1'));
+      const [stats, setStats] = useState(() => JSON.parse(localStorage.getItem('mathia_stats_v6') || '{"played":0, "success":0}'));
       const [combo, setCombo] = useState(1);
-      const [unlockedAvatars, setUnlockedAvatars] = useState(() => JSON.parse(localStorage.getItem('mathia_unlocked_avatars_v2') || '["fox"]'));
-      const [currentAvatar, setCurrentAvatar] = useState(() => JSON.parse(localStorage.getItem('mathia_current_avatar_v2') || '{"id":"fox","name":"Renard Astro","emoji":"🦊","price":0}'));
+      const [unlockedAvatars, setUnlockedAvatars] = useState(() => JSON.parse(localStorage.getItem('mathia_unlocked_avatars_v6') || '["fox"]'));
+      const [currentAvatar, setCurrentAvatar] = useState(() => JSON.parse(localStorage.getItem('mathia_current_avatar_v6') || '{"id":"fox","name":"Renard Astro","emoji":"🦊","price":0}'));
       
       const [activeMode, setActiveMode] = useState('menu');
       const [currentGame, setCurrentGame] = useState(null);
       const [praiseMessage, setPraiseMessage] = useState(null);
 
       useEffect(() => {
-        if (profile) localStorage.setItem('mathia_profile_v2', JSON.stringify(profile));
-        localStorage.setItem('mathia_coins_v2', coins);
-        localStorage.setItem('mathia_level_v2', level);
-        localStorage.setItem('mathia_stats_v2', JSON.stringify(stats));
-        localStorage.setItem('mathia_unlocked_avatars_v2', JSON.stringify(unlockedAvatars));
-        localStorage.setItem('mathia_current_avatar_v2', JSON.stringify(currentAvatar));
+        if (profile) localStorage.setItem('mathia_profile_v6', JSON.stringify(profile));
+        localStorage.setItem('mathia_coins_v6', coins);
+        localStorage.setItem('mathia_level_v6', level);
+        localStorage.setItem('mathia_stats_v6', JSON.stringify(stats));
+        localStorage.setItem('mathia_unlocked_avatars_v6', JSON.stringify(unlockedAvatars));
+        localStorage.setItem('mathia_current_avatar_v6', JSON.stringify(currentAvatar));
       }, [profile, coins, level, stats, unlockedAvatars, currentAvatar]);
 
       const resetData = () => {
@@ -170,8 +181,7 @@
             `Bravo ${profile.name} ! 🌟`,
             `Super ${profile.name} ! 🚀`,
             `Incroyable ${profile.name} ! 🔥`,
-            `Génial ${profile.name} ! 🎉`,
-            `Champion(ne) ${profile.name} ! 🏆`
+            `Génial ${profile.name} ! 🎉`
           ];
           const chosenPraise = compliments[Math.floor(Math.random() * compliments.length)];
           
@@ -207,8 +217,9 @@
       };
 
       if (!profile) return <ProfileSelector onSelect={setProfile} />;
-      if (activeMode === 'duel') return <DuelMode profile={profile} onBack={() => setActiveMode('menu')} />;
       if (activeMode === 'parents') return <ParentsSpace stats={stats} onReset={resetData} onBack={() => setActiveMode('menu')} />;
+
+      const isMaternelle = MATERNELLE_GRADES.includes(profile.grade);
 
       return (
         <div className="max-w-4xl mx-auto p-4 flex flex-col min-h-screen relative">
@@ -251,13 +262,17 @@
             </div>
           </header>
 
-          <div className="grid grid-cols-3 gap-2 mb-6">
+          <div className={`grid ${isMaternelle ? 'grid-cols-2' : 'grid-cols-3'} gap-3 mb-6`}>
             <button onClick={() => { setActiveMode('menu'); setCurrentGame(null); setCombo(1); }} className={`py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition ${activeMode === 'menu' && !currentGame ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'glass text-slate-400'}`}>
-              🎮 Jeux
+              🎮 Exercices
             </button>
-            <button onClick={() => setActiveMode('duel')} className="glass hover:bg-rose-900/30 text-rose-400 font-black text-sm py-3 rounded-xl border-rose-500/30 flex items-center justify-center gap-2 transition">
-              ⚔️ Mode Duel
-            </button>
+            
+            {!isMaternelle && (
+              <button onClick={() => { setActiveMode('duel'); setCurrentGame(null); }} className={`py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition ${activeMode === 'duel' ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/30' : 'glass text-slate-400'}`}>
+                ⚔️ Mode Duel
+              </button>
+            )}
+
             <button onClick={() => setActiveMode('shop')} className={`py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition ${activeMode === 'shop' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/30' : 'glass text-slate-400'}`}>
               🎁 Boutique
             </button>
@@ -266,6 +281,8 @@
           <main className="flex-1">
             {activeMode === 'shop' ? (
               <Shop coins={coins} unlockedAvatars={unlockedAvatars} currentAvatar={currentAvatar} onBuy={buyAvatar} onSelect={selectAvatar} />
+            ) : activeMode === 'duel' ? (
+              <DuelMode profile={profile} onBack={() => setActiveMode('menu')} />
             ) : currentGame ? (
               <GameContainer profile={profile} game={currentGame} onBack={() => setCurrentGame(null)} onResult={recordResult} />
             ) : (
@@ -278,7 +295,7 @@
 
     function ProfileSelector({ onSelect }) {
       const [name, setName] = useState('');
-      const [grade, setGrade] = useState('CP-CE1');
+      const [grade, setGrade] = useState('CP');
 
       const handleSubmit = (e) => {
         e.preventDefault();
@@ -290,28 +307,45 @@
           <div className="glass p-8 rounded-3xl max-w-md w-full shadow-2xl text-center border-indigo-500/30">
             <div className="text-7xl mb-4 animate-bounce">🦄</div>
             <h1 className="text-4xl font-black mb-2 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">MATHIA</h1>
-            <p className="text-slate-400 mb-6 text-xs uppercase tracking-widest font-semibold">Choisis ton niveau</p>
+            <p className="text-slate-400 mb-6 text-xs uppercase tracking-widest font-semibold">Du Cycle 1 à la Terminale</p>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-left text-xs font-bold text-slate-400 mb-1 ml-1">PRÉNOM DE L'ENFANT</label>
+                <label className="block text-left text-xs font-bold text-slate-400 mb-1 ml-1">PRÉNOM DE L'ÉLÈVE</label>
                 <input type="text" placeholder="Ex: Thomas, Sarah..." value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-center text-lg font-bold focus:outline-none focus:border-indigo-500 transition" required />
               </div>
 
               <div>
                 <label className="block text-left text-xs font-bold text-slate-400 mb-1 ml-1">NIVEAU SCOLAIRE</label>
                 <select value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-center text-base font-bold focus:outline-none focus:border-indigo-500 transition text-indigo-300">
-                  <option value="Maternelle">🐣 Maternelle (3-5 ans)</option>
-                  <option value="CP-CE1">🌱 CP - CE1</option>
-                  <option value="CE2-CM1">🌿 CE2 - CM1</option>
-                  <option value="CM2-6ème">🚀 CM2 - 6ème</option>
-                  <option value="5ème-4ème">⚡ 5ème - 4ème</option>
-                  <option value="3ème-Lycée">🎓 3ème - Lycée</option>
+                  <optgroup label="🐣 Maternelle (Cycle 1)">
+                    <option value="PS">Petite Section (PS)</option>
+                    <option value="MS">Moyenne Section (MS)</option>
+                    <option value="GS">Grande Section (GS)</option>
+                  </optgroup>
+                  <optgroup label="🌱 Élémentaire (Cycles 2 & 3)">
+                    <option value="CP">CP</option>
+                    <option value="CE1">CE1</option>
+                    <option value="CE2">CE2</option>
+                    <option value="CM1">CM1</option>
+                    <option value="CM2">CM2</option>
+                  </optgroup>
+                  <optgroup label="🚀 Collège (Cycles 3 & 4)">
+                    <option value="6ème">6ème</option>
+                    <option value="5ème">5ème</option>
+                    <option value="4ème">4ème</option>
+                    <option value="3ème">3ème</option>
+                  </optgroup>
+                  <optgroup label="🎓 Lycée">
+                    <option value="2nde">Seconde (2nde)</option>
+                    <option value="1ère">Première (1ère)</option>
+                    <option value="Terminale">Terminale</option>
+                  </optgroup>
                 </select>
               </div>
 
               <button type="submit" className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-black py-4 rounded-xl shadow-xl transform active:scale-95 transition mt-2">
-                VALIDER MES EXERCICES 🚀
+                DÉMARRER MON PARCOURS 🚀
               </button>
             </form>
           </div>
@@ -325,7 +359,7 @@
       return (
         <div className="space-y-4">
           <div className="text-center mb-4">
-            <span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Programme adapté : {profile.grade}</span>
+            <span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Programme Officiel • {profile.grade}</span>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             {filteredGames.map(g => (
@@ -346,31 +380,197 @@
 
     function GameContainer({ profile, game, onBack, onResult }) {
       if (game.id === 'vocal') return <VocalGame profile={profile} onBack={onBack} onResult={onResult} />;
-      if (game.id === 'mental_easy') return <MentalEasyGame profile={profile} onBack={onBack} onResult={onResult} />;
-      if (game.id === 'money') return <MoneyGame profile={profile} onBack={onBack} onResult={onResult} />;
+      if (game.id === 'spatial_patterns') return <SpatialPatternsGame profile={profile} onBack={onBack} onResult={onResult} />;
+      if (game.id === 'operations') return <OperationsGame profile={profile} onBack={onBack} onResult={onResult} />;
+      if (game.id === 'fractions_decimals') return <FractionsDecimalsGame profile={profile} onBack={onBack} onResult={onResult} />;
+      if (game.id === 'money_measures') return <MoneyMeasuresGame profile={profile} onBack={onBack} onResult={onResult} />;
       if (game.id === 'mental_tables') return <MentalTablesGame profile={profile} onBack={onBack} onResult={onResult} />;
-      if (game.id === 'algebra') return <AlgebraGame profile={profile} onBack={onBack} onResult={onResult} />;
+      if (game.id === 'algebra_advanced') return <AlgebraAdvancedGame profile={profile} onBack={onBack} onResult={onResult} />;
       return null;
     }
 
-    function MentalEasyGame({ profile, onBack, onResult }) {
-      const maxTime = TIMER_RULES[profile.grade];
-      const [q, setQ] = useState({ n1: 2, n2: 3, op: '+', ans: 5 });
-      const [timeLeft, setTimeLeft] = useState(maxTime);
-      const [options, setOptions] = useState([]);
+    /* --- MATERNELLE : CHIFFRES & COMPTINE (PS, MS, GS) --- */
+    function VocalGame({ profile, onBack, onResult }) {
+      const [target, setTarget] = useState(1);
+      const [count, setCount] = useState(0);
+
+      const maxNum = profile.grade === 'PS' ? 3 : profile.grade === 'MS' ? 6 : 10;
+
+      const init = () => {
+        const t = Math.floor(Math.random() * maxNum) + 1;
+        setTarget(t);
+        setCount(0);
+        speak(`${profile.name}, voici le chiffre ${t}. Donne ${t} pomme${t > 1 ? 's' : ''} au dinosaure !`);
+      };
+
+      useEffect(() => { init(); }, [profile.grade]);
+
+      const addApple = () => {
+        const newCount = count + 1;
+        setCount(newCount);
+        if (newCount === target) {
+          speak(`Bravo ${profile.name} ! C'est exactement le chiffre ${target} !`);
+          onResult(true, 10);
+          setTimeout(init, 1600);
+        }
+      };
+
+      return (
+        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
+          <h2 className="text-xl font-extrabold mb-1 mt-4">🦖 Reconnaissance & Dénombrement</h2>
+          <p className="text-xs text-indigo-300 font-bold mb-3">Comptine numérique jusqu'à {maxNum}</p>
+
+          <button onClick={() => speak(`C'est le chiffre ${target}. Donne ${target} pommes !`)} className="bg-indigo-600/30 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold mb-4">
+            🔊 Réécouter
+          </button>
+
+          <div className="bg-gradient-to-b from-indigo-500/20 to-purple-500/20 border-2 border-indigo-400/40 p-4 rounded-3xl mb-4">
+            <div className="text-xs text-slate-400 font-bold uppercase mb-1">Chiffre :</div>
+            <div className="text-7xl font-black text-amber-400 drop-shadow-lg">{target}</div>
+          </div>
+
+          <div className="text-5xl mb-4 animate-pulse">🦖</div>
+
+          <div className="flex justify-center flex-wrap gap-2 mb-6 min-h-[50px] bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+            {Array.from({ length: count }).map((_, i) => <span key={i} className="text-3xl pop-in">🍎</span>)}
+            {count === 0 && <span className="text-xs text-slate-500 self-center">Touche le bouton pour donner une pomme</span>}
+          </div>
+
+          <button onClick={addApple} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-lg font-black py-4 rounded-2xl shadow-xl active:scale-95 transition flex items-center justify-center gap-2">
+            <span>Donner 1 pomme</span> 🍎
+          </button>
+        </div>
+      );
+    }
+
+    /* --- MATERNELLE : FORMES, REPÉRAGE SPATIAL & ALGORITHMES --- */
+    function SpatialPatternsGame({ profile, onBack, onResult }) {
+      const [q, setQ] = useState({ title: '', question: '', options: [], ans: '' });
 
       const generateQuestion = () => {
-        const isPlus = Math.random() > 0.5;
-        const n1 = Math.floor(Math.random() * 8) + 2;
-        const n2 = Math.floor(Math.random() * 5) + 1;
-        const ans = isPlus ? n1 + n2 : n1 - n2;
-        const opts = [ans, ans + 1, ans - 1, ans + 2].filter(v => v >= 0).sort(() => Math.random() - 0.5);
-        setQ({ n1, n2, op: isPlus ? '+' : '-', ans });
-        setOptions(opts);
+        if (profile.grade === 'PS') {
+          // PS : Formes simples + spatialisation de base
+          const isSpatial = Math.random() > 0.5;
+          if (isSpatial) {
+            const positions = [
+              { q: "Où est le chat ?", target: "SUR", opt: ["SUR la table", "SOUS la table"], visual: "🐱 🔝 🪑" },
+              { q: "Où est le poisson ?", target: "DEDANS", opt: ["DEDANS le bocal", "DEHORS du bocal"], visual: "🐟 🫙" }
+            ];
+            const item = positions[Math.floor(Math.random() * positions.length)];
+            setQ({ title: "Repérage Spatial", question: item.q, options: item.opt, ans: item.target === "SUR" ? "SUR la table" : "DEDANS le bocal", visual: item.visual });
+          } else {
+            const forms = [
+              { name: "Rond", emoji: "🔴" },
+              { name: "Carré", emoji: "🟩" }
+            ];
+            const chosen = forms[Math.floor(Math.random() * forms.length)];
+            setQ({ title: "Formes Simples", question: `Trouve le ${chosen.name} !`, options: ["🔴", "🟩"], ans: chosen.emoji, visual: "🔍" });
+          }
+        } else if (profile.grade === 'MS') {
+          // MS : Triangle, Tailles, Comparaison (plus que / moins que)
+          const type = Math.floor(Math.random() * 3);
+          if (type === 0) {
+            setQ({ title: "Formes Géométriques", question: "Où est le Triangle ?", options: ["🔺", "🔴", "🟩"], ans: "🔺", visual: "📐" });
+          } else if (type === 1) {
+            setQ({ title: "Tailles", question: "Touche le GRAND animal !", options: ["🐘 Grand", "🐭 Petit"], ans: "🐘 Grand", visual: "📏" });
+          } else {
+            setQ({ title: "Comparaison de collections", question: "Où y a-t-il LE PLUS d'étoiles ?", options: ["⭐ ⭐ ⭐", "⭐ ⭐"], ans: "⭐ ⭐ ⭐", visual: "⚖️" });
+          }
+        } else {
+          // GS : Algorithmes logiques, Décomposition, Solides
+          const type = Math.floor(Math.random() * 2);
+          if (type === 0) {
+            setQ({ title: "Suites Logiques (Algorithme)", question: "Complète la suite : 🔴 🔵 🔴 🔵 ... ?", options: ["🔴", "🔵", "🟢"], ans: "🔴", visual: "🔄" });
+          } else {
+            const n = Math.floor(Math.random() * 3) + 3; // 3 à 5
+            const part1 = Math.floor(Math.random() * (n - 1)) + 1;
+            const part2 = n - part1;
+            setQ({ title: "Décomposition du Nombre", question: `${n} c'est ${part1} et combien ?`, options: [part2.toString(), (part2 + 1).toString(), (Math.max(1, part2 - 1)).toString()].filter((v,i,a)=>a.indexOf(v)===i), ans: part2.toString(), visual: "🧩" });
+          }
+        }
+      };
+
+      useEffect(() => { generateQuestion(); }, [profile.grade]);
+
+      const handleAnswer = (val) => {
+        const correct = val === q.ans;
+        onResult(correct, correct ? 15 : 0);
+        generateQuestion();
+      };
+
+      return (
+        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
+          <span className="text-xs text-purple-400 font-bold uppercase tracking-wider mt-4 block">{q.title}</span>
+          <h2 className="text-xl font-extrabold mb-4">{q.question}</h2>
+
+          <div className="text-6xl mb-6 py-4 bg-slate-900/60 rounded-2xl border border-slate-800">{q.visual}</div>
+
+          <div className="grid grid-cols-1 gap-3">
+            {q.options.map((opt, i) => (
+              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-purple-600/40 py-4 rounded-2xl text-xl font-black border-purple-500/30 active:scale-95 transition">
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* --- CALCULS PAR NIVEAU --- */
+    function OperationsGame({ profile, onBack, onResult }) {
+      const maxTime = TIMER_RULES[profile.grade];
+      const [q, setQ] = useState({ expr: '', ans: 0, options: [], visual1: 0, visual2: 0 });
+      const [timeLeft, setTimeLeft] = useState(maxTime);
+
+      const generateQuestion = () => {
+        let expr = '';
+        let ans = 0;
+        let v1 = 0, v2 = 0;
+
+        if (profile.grade === 'PS') {
+          v1 = Math.floor(Math.random() * 2) + 1; v2 = 1;
+          ans = v1 + v2; expr = `${v1} + ${v2}`;
+        } else if (profile.grade === 'MS') {
+          v1 = Math.floor(Math.random() * 3) + 1; v2 = Math.floor(Math.random() * 2) + 1;
+          ans = v1 + v2; expr = `${v1} + ${v2}`;
+        } else if (profile.grade === 'GS') {
+          v1 = Math.floor(Math.random() * 4) + 1; v2 = Math.floor(Math.random() * 3) + 1;
+          ans = v1 + v2; expr = `${v1} + ${v2}`;
+        } else if (profile.grade === 'CP') {
+          const n1 = Math.floor(Math.random() * 15) + 5;
+          const n2 = Math.floor(Math.random() * 10) + 1;
+          expr = `${n1} + ${n2}`; ans = n1 + n2;
+        } else if (profile.grade === 'CE1' || profile.grade === 'CE2') {
+          const isPlus = Math.random() > 0.5;
+          const n1 = Math.floor(Math.random() * 40) + 10;
+          const n2 = Math.floor(Math.random() * 20) + 5;
+          expr = isPlus ? `${n1} + ${n2}` : `${n1 + n2} - ${n1}`;
+          ans = isPlus ? n1 + n2 : n2;
+        } else if (profile.grade === 'CM1' || profile.grade === 'CM2') {
+          const op = Math.random() > 0.5 ? '×' : '+';
+          const n1 = Math.floor(Math.random() * 25) + 5;
+          const n2 = Math.floor(Math.random() * 12) + 2;
+          expr = `${n1} ${op} ${n2}`; ans = op === '×' ? n1 * n2 : n1 + n2;
+        } else if (['6ème', '5ème'].includes(profile.grade)) {
+          const n1 = (Math.floor(Math.random() * 12) + 1) * (Math.random() > 0.5 ? 1 : -1);
+          const n2 = (Math.floor(Math.random() * 8) + 1) * (Math.random() > 0.5 ? 1 : -1);
+          expr = `(${n1}) × (${n2})`; ans = n1 * n2;
+        } else if (['4ème', '3ème'].includes(profile.grade)) {
+          const a = Math.floor(Math.random() * 8) + 2;
+          expr = `${a}² - 5`; ans = (a * a) - 5;
+        } else { // Lycée
+          const a = Math.floor(Math.random() * 5) + 2;
+          expr = `√(${a * a}) + 10`; ans = a + 10;
+        }
+
+        const opts = [ans, ans + 1, ans - 1, ans + 2].filter((v, idx, arr) => arr.indexOf(v) === idx).sort(() => Math.random() - 0.5);
+        setQ({ expr, ans, options: opts, visual1: v1, visual2: v2 });
         if (maxTime) setTimeLeft(maxTime);
       };
 
-      useEffect(() => { generateQuestion(); }, []);
+      useEffect(() => { generateQuestion(); }, [profile.grade]);
 
       useEffect(() => {
         if (!maxTime) return;
@@ -389,20 +589,40 @@
         generateQuestion();
       };
 
+      const isMaternelle = MATERNELLE_GRADES.includes(profile.grade);
+
       return (
         <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
           <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
           
           <div className="mt-4 mb-2 flex justify-between items-center px-2">
-            <span className="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Calcul Simple</span>
+            <span className="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Opérations</span>
             {maxTime && <span className={`text-base font-black ${timeLeft <= 2 ? 'text-rose-500 animate-ping' : 'text-amber-400'}`}>⏱️ {timeLeft}s</span>}
           </div>
 
-          <div className="text-6xl font-black mb-8 text-white tracking-tight">{q.n1} {q.op} {q.n2}</div>
+          {isMaternelle ? (
+            <div className="my-6 bg-slate-900/80 p-4 rounded-3xl border border-indigo-500/30">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <div className="bg-indigo-950/60 p-2 rounded-2xl border border-indigo-500/30">
+                  <div className="text-3xl font-black text-amber-400 mb-1">{q.visual1}</div>
+                  <div className="text-xl">{Array.from({ length: q.visual1 }).map((_, i) => '🍎')}</div>
+                </div>
+                <span className="text-3xl font-black text-pink-400">+</span>
+                <div className="bg-indigo-950/60 p-2 rounded-2xl border border-indigo-500/30">
+                  <div className="text-3xl font-black text-amber-400 mb-1">{q.visual2}</div>
+                  <div className="text-xl">{Array.from({ length: q.visual2 }).map((_, i) => '🍎')}</div>
+                </div>
+                <span className="text-3xl font-black text-emerald-400">=</span>
+                <span className="text-3xl font-black text-white">?</span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-5xl font-black my-8 text-white tracking-tight">{q.expr} = ?</div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
-            {options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-indigo-600/50 active:bg-indigo-500 py-5 rounded-2xl text-3xl font-black border-indigo-500/30 active:scale-95 transition">
+            {q.options.map((opt, i) => (
+              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-indigo-600/50 py-5 rounded-2xl text-3xl font-black border-indigo-500/30 active:scale-95 transition">
                 {opt}
               </button>
             ))}
@@ -411,76 +631,38 @@
       );
     }
 
-    function MentalTablesGame({ profile, onBack, onResult }) {
+    /* --- FRACTIONS & DÉCIMAUX (CM1 A 4EME) --- */
+    function FractionsDecimalsGame({ profile, onBack, onResult }) {
       const maxTime = TIMER_RULES[profile.grade];
-      const [q, setQ] = useState({ n1: 6, n2: 7, ans: 42 });
+      const [q, setQ] = useState({ text: '', ans: '', options: [] });
       const [timeLeft, setTimeLeft] = useState(maxTime);
-      const [options, setOptions] = useState([]);
 
       const generateQuestion = () => {
-        const n1 = Math.floor(Math.random() * 8) + 2;
-        const n2 = Math.floor(Math.random() * 8) + 2;
-        const ans = n1 * n2;
-        const opts = [ans, ans + 2, ans - 2, ans + 10].sort(() => Math.random() - 0.5);
-        setQ({ n1, n2, ans });
-        setOptions(opts);
-        if (maxTime) setTimeLeft(maxTime);
-      };
+        const type = Math.floor(Math.random() * 3);
+        let text = '', ans = '', opts = [];
 
-      useEffect(() => { generateQuestion(); }, []);
-
-      useEffect(() => {
-        if (!maxTime) return;
-        if (timeLeft <= 0) {
-          onResult(false, 0);
-          generateQuestion();
-          return;
+        if (type === 0) {
+          // Addition de décimaux
+          const a = (Math.floor(Math.random() * 80) + 10) / 10;
+          const b = (Math.floor(Math.random() * 50) + 5) / 10;
+          const val = Math.round((a + b) * 10) / 10;
+          text = `${a.toString().replace('.', ',')} + ${b.toString().replace('.', ',')} = ?`;
+          ans = val.toString().replace('.', ',');
+          opts = [val, val + 0.1, val - 0.1, val + 1.0].map(v => Math.round(v * 10) / 10).map(v => v.toString().replace('.', ','));
+        } else if (type === 1) {
+          // Fraction simple vers pourcentage / décimal
+          text = "Quelle est l'écriture décimale de 1/2 ?";
+          ans = "0,5";
+          opts = ["0,5", "0,2", "0,25", "1,2"];
+        } else {
+          // Pourcentage simple
+          text = "Que vaut 50% de 80 ?";
+          ans = "40";
+          opts = ["40", "50", "20", "60"];
         }
-        const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
-        return () => clearTimeout(timer);
-      }, [timeLeft, maxTime]);
 
-      const handleAnswer = (val) => {
-        const correct = val === q.ans;
-        onResult(correct, correct ? 15 : 0);
-        generateQuestion();
-      };
-
-      return (
-        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
-          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
-          
-          <div className="mt-4 mb-2 flex justify-between items-center px-2">
-            <span className="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Tables</span>
-            {maxTime && <span className={`text-base font-black ${timeLeft <= 2 ? 'text-rose-500 animate-ping' : 'text-amber-400'}`}>⏱️ {timeLeft}s</span>}
-          </div>
-
-          <div className="text-6xl font-black mb-8 text-white tracking-tight">{q.n1} × {q.n2}</div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-indigo-600/50 active:bg-indigo-500 py-5 rounded-2xl text-3xl font-black border-indigo-500/30 active:scale-95 transition">
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    function AlgebraGame({ profile, onBack, onResult }) {
-      const maxTime = TIMER_RULES[profile.grade];
-      const [q, setQ] = useState({ expr: '2x + 4 = 10', ans: 3, options: [2, 3, 4, 5] });
-      const [timeLeft, setTimeLeft] = useState(maxTime);
-
-      const generateQuestion = () => {
-        const a = Math.floor(Math.random() * 4) + 2;
-        const x = Math.floor(Math.random() * 8) + 1;
-        const b = Math.floor(Math.random() * 9) + 1;
-        const c = a * x + b;
-        const expr = `${a}x + ${b} = ${c}`;
-        const opts = [x, x + 1, x - 1, x + 2].filter(v => v >= 0).sort(() => Math.random() - 0.5);
-        setQ({ expr, ans: x, options: opts });
+        opts = Array.from(new Set(opts)).sort(() => Math.random() - 0.5);
+        setQ({ text, ans, options: opts });
         if (maxTime) setTimeLeft(maxTime);
       };
 
@@ -508,17 +690,16 @@
           <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
           
           <div className="mt-4 mb-2 flex justify-between items-center px-2">
-            <span className="text-xs font-extrabold text-indigo-400 uppercase">{profile.grade} • Équations</span>
+            <span className="text-xs font-extrabold text-cyan-400 uppercase">{profile.grade} • Fractions & Décimaux</span>
             {maxTime && <span className="text-base font-black text-amber-400">⏱️ {timeLeft}s</span>}
           </div>
 
-          <div className="text-sm font-bold text-slate-400 mb-2">Trouve la valeur de x :</div>
-          <div className="text-4xl font-black mb-8 text-indigo-300 tracking-wide">{q.expr}</div>
+          <div className="text-2xl font-extrabold my-8 text-white">{q.text}</div>
 
           <div className="grid grid-cols-2 gap-4">
             {q.options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-purple-600/50 py-4 rounded-2xl text-2xl font-black border-purple-500/30 active:scale-95 transition">
-                x = {opt}
+              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-cyan-600/50 py-4 rounded-2xl text-2xl font-black border-cyan-500/30 active:scale-95 transition">
+                {opt}
               </button>
             ))}
           </div>
@@ -526,12 +707,85 @@
       );
     }
 
-    function MoneyGame({ profile, onBack, onResult }) {
+    function MentalTablesGame({ profile, onBack, onResult }) {
+      const maxTime = TIMER_RULES[profile.grade];
+      const [step, setStep] = useState(1);
+      const [tableLevel, setTableLevel] = useState(2);
+      const [q, setQ] = useState({ n1: 2, n2: 1, ans: 2 });
+      const [timeLeft, setTimeLeft] = useState(maxTime);
+      const [options, setOptions] = useState([]);
+
+      const generateQuestion = (currentStep, table) => {
+        const n2 = Math.floor(Math.random() * 9) + 1;
+        const ans = table * n2;
+        const opts = [ans, ans + table, ans - 1, ans + 2].filter((v, i, a) => v >= 0 && a.indexOf(v) === i).sort(() => Math.random() - 0.5);
+        setQ({ n1: table, n2, ans });
+        setOptions(opts);
+        if (maxTime) setTimeLeft(maxTime);
+      };
+
+      useEffect(() => { generateQuestion(1, tableLevel); }, []);
+
+      useEffect(() => {
+        if (!maxTime) return;
+        if (timeLeft <= 0) {
+          onResult(false, 0);
+          generateQuestion(step, tableLevel);
+          return;
+        }
+        const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+        return () => clearTimeout(timer);
+      }, [timeLeft, maxTime]);
+
+      const handleAnswer = (val) => {
+        const correct = val === q.ans;
+        onResult(correct, correct ? 15 : 0);
+
+        if (step >= 10) {
+          alert(`🎉 Bravo ! Tu as validé la table de ${tableLevel} !`);
+          const nextTable = tableLevel + 1;
+          setTableLevel(nextTable);
+          setStep(1);
+          generateQuestion(1, nextTable);
+        } else {
+          setStep(s => s + 1);
+          generateQuestion(step + 1, tableLevel);
+        }
+      };
+
+      return (
+        <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
+          
+          <div className="mt-4 mb-2 flex justify-between items-center px-2">
+            <span className="text-xs font-extrabold text-indigo-400 uppercase">Table de {tableLevel} • Q. {step}/10</span>
+            {maxTime && <span className="text-base font-black text-amber-400">⏱️ {timeLeft}s</span>}
+          </div>
+
+          <div className="w-full bg-slate-800 h-2 rounded-full mb-6 overflow-hidden">
+            <div className="bg-indigo-500 h-full transition-all duration-300" style={{ width: `${(step / 10) * 100}%` }}></div>
+          </div>
+
+          <div className="text-6xl font-black mb-8 text-white tracking-tight">{q.n1} × {q.n2}</div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {options.map((opt, i) => (
+              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-indigo-600/50 py-5 rounded-2xl text-3xl font-black border-indigo-500/30 active:scale-95 transition">
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* --- MONNAIE & MESURES (CP A CM2) --- */
+    function MoneyMeasuresGame({ profile, onBack, onResult }) {
       const [targetMoney, setTargetMoney] = useState(3.50);
       const [currentTotal, setCurrentTotal] = useState(0);
 
       const init = () => {
-        const targets = [0.85, 1.40, 2.75, 3.20, 4.50, 5.80];
+        const targets = [0.85, 2.40, 5.75, 12.50, 18.20, 24.50];
         setTargetMoney(targets[Math.floor(Math.random() * targets.length)]);
         setCurrentTotal(0);
       };
@@ -557,12 +811,12 @@
         <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
           <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
           
-          <h2 className="text-xl font-black mb-2 mt-4">🪙 Caisse Enregistreuse</h2>
-          <p className="text-slate-300 mb-1">Montant à payer :</p>
+          <h2 className="text-xl font-black mb-2 mt-4">💶 Caisse Enregistreuse & Mesures</h2>
+          <p className="text-slate-300 mb-1">Montant à composer :</p>
           <div className="text-3xl font-black text-amber-400 mb-4">{targetMoney.toFixed(2)} €</div>
           
-          <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 mb-6">
-            <span className="text-xs text-slate-400 font-bold block mb-1">Total déposé dans la caisse :</span>
+          <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 mb-4">
+            <span className="text-xs text-slate-400 font-bold block mb-1">Total déposé :</span>
             <span className={`text-2xl font-black ${currentTotal > targetMoney ? 'text-rose-400' : 'text-indigo-300'}`}>
               {currentTotal.toFixed(2)} €
             </span>
@@ -570,8 +824,8 @@
 
           <div className="grid grid-cols-4 gap-2 mb-6">
             {COINS_LIST.map((coin, i) => (
-              <button key={i} onClick={() => addCoin(coin.value)} className="glass hover:bg-amber-500/20 active:scale-95 p-3 rounded-2xl font-black text-sm border-amber-500/20 text-amber-300 flex flex-col items-center gap-1">
-                <span className="text-xl">🪙</span>
+              <button key={i} onClick={() => addCoin(coin.value)} className={`glass active:scale-95 p-2 rounded-xl font-black text-xs border flex flex-col items-center justify-center gap-1 ${coin.type === 'bill' ? 'bg-emerald-900/30 border-emerald-500/40 text-emerald-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'}`}>
+                <span className="text-lg">{coin.type === 'bill' ? '💵' : '🪙'}</span>
                 <span>{coin.label}</span>
               </button>
             ))}
@@ -582,104 +836,152 @@
               🗑️ Vider
             </button>
             <button onClick={validatePayment} className="w-2/3 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-black text-sm shadow-lg active:scale-95 transition">
-              PAYER ➔
+              VALIDER ➔
             </button>
           </div>
         </div>
       );
     }
 
-    function VocalGame({ profile, onBack, onResult }) {
-      const [target, setTarget] = useState(3);
-      const [count, setCount] = useState(0);
+    /* --- ALGÈBRE & PROGRAMME SECONDAIRE / LYCÉE --- */
+    function AlgebraAdvancedGame({ profile, onBack, onResult }) {
+      const maxTime = TIMER_RULES[profile.grade];
+      const [q, setQ] = useState({ expr: '', ans: '', options: [] });
+      const [timeLeft, setTimeLeft] = useState(maxTime);
 
-      const init = () => {
-        const t = Math.floor(Math.random() * 4) + 1;
-        setTarget(t);
-        setCount(0);
-        speak(`${profile.name}, donne ${t} pommes au dinosaure !`);
+      const generateQuestion = () => {
+        let expr = '', ans = '', opts = [];
+
+        if (['5ème', '4ème', '3ème'].includes(profile.grade)) {
+          // Équations premier degré / Pythagore simple
+          const a = Math.floor(Math.random() * 4) + 2;
+          const x = Math.floor(Math.random() * 8) + 1;
+          const b = Math.floor(Math.random() * 9) + 1;
+          const c = a * x + b;
+          expr = `Résous : ${a}x + ${b} = ${c}`;
+          ans = `x = ${x}`;
+          opts = [`x = ${x}`, `x = ${x + 1}`, `x = ${Math.max(0, x - 1)}`, `x = ${x + 2}`];
+        } else if (profile.grade === '2nde') {
+          // Fonctions carré / coordonnées
+          const x = Math.floor(Math.random() * 6) - 3;
+          expr = `Si f(x) = x², que vaut f(${x}) ?`;
+          ans = (x * x).toString();
+          opts = [(x * x).toString(), (x * 2).toString(), (x * x + 1).toString(), (Math.abs(x) + 2).toString()];
+        } else if (profile.grade === '1ère') {
+          // Second degré / Dérivées simples
+          expr = "Quelle est la dérivée de f(x) = x² ?";
+          ans = "2x";
+          opts = ["2x", "x", "2", "x²"];
+        } else { // Terminale
+          // Exponentielle / Logarithme
+          expr = "Que vaut e^(ln(5)) ?";
+          ans = "5";
+          opts = ["5", "1", "e", "0"];
+        }
+
+        opts = Array.from(new Set(opts)).sort(() => Math.random() - 0.5);
+        setQ({ expr, ans, options: opts });
+        if (maxTime) setTimeLeft(maxTime);
       };
 
-      useEffect(() => { init(); }, []);
+      useEffect(() => { generateQuestion(); }, [profile.grade]);
 
-      const addApple = () => {
-        const newCount = count + 1;
-        setCount(newCount);
-        if (newCount === target) {
-          speak(`Bravo ${profile.name} !`);
-          onResult(true, 10);
-          setTimeout(init, 1500);
+      useEffect(() => {
+        if (!maxTime) return;
+        if (timeLeft <= 0) {
+          onResult(false, 0);
+          generateQuestion();
+          return;
         }
+        const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+        return () => clearTimeout(timer);
+      }, [timeLeft, maxTime]);
+
+      const handleAnswer = (val) => {
+        const correct = val === q.ans;
+        onResult(correct, correct ? 20 : 0);
+        generateQuestion();
       };
 
       return (
         <div className="glass p-6 rounded-3xl text-center relative max-w-md mx-auto">
           <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">← Retour</button>
-          <h2 className="text-2xl font-extrabold mb-2 mt-4">🦖 Nourris le Dino</h2>
-          <button onClick={() => speak(`${profile.name}, donne ${target} pommes au dinosaure !`)} className="bg-indigo-600/30 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold mb-6">
-            🔊 Écouter la consigne
-          </button>
-
-          <div className="text-6xl mb-6 animate-pulse">🦖</div>
-          <div className="flex justify-center gap-2 mb-8 min-h-[40px]">
-            {Array.from({ length: count }).map((_, i) => <span key={i} className="text-4xl">🍎</span>)}
+          
+          <div className="mt-4 mb-2 flex justify-between items-center px-2">
+            <span className="text-xs font-extrabold text-rose-400 uppercase">{profile.grade} • Algèbre & Analyse</span>
+            {maxTime && <span className="text-base font-black text-amber-400">⏱️ {timeLeft}s</span>}
           </div>
 
-          <button onClick={addApple} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-black px-8 py-4 rounded-2xl shadow-xl active:scale-95 transition">
-            Donner une pomme 🍎
-          </button>
+          <div className="text-2xl font-black mb-8 text-indigo-300 tracking-wide mt-4">{q.expr}</div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {q.options.map((opt, i) => (
+              <button key={i} onClick={() => handleAnswer(opt)} className="glass hover:bg-rose-600/50 py-4 rounded-2xl text-xl font-black border-rose-500/30 active:scale-95 transition">
+                {opt}
+              </button>
+            ))}
+          </div>
         </div>
       );
     }
 
     function DuelMode({ profile, onBack }) {
-      const [scoreP1, setScoreP1] = useState(0);
-      const [scoreP2, setScoreP2] = useState(0);
-      const [q, setQ] = useState({ n1: 3, n2: 4, ans: 12 });
+      const [score1, setScore1] = useState(0);
+      const [score2, setScore2] = useState(0);
+      const [q, setQ] = useState({ expr: '5 + 3', ans: 8, options: [7, 8, 9, 10] });
 
-      const nextQ = () => {
-        const n1 = Math.floor(Math.random() * 8) + 2;
-        const n2 = Math.floor(Math.random() * 8) + 2;
-        setQ({ n1, n2, ans: n1 * n2 });
+      const generateQ = () => {
+        const a = Math.floor(Math.random() * 9) + 2;
+        const b = Math.floor(Math.random() * 9) + 2;
+        const ans = a + b;
+        const opts = [ans, ans + 1, ans - 1, ans + 2].sort(() => Math.random() - 0.5);
+        setQ({ expr: `${a} + ${b}`, ans, options: opts });
       };
 
-      const answer = (player, val) => {
-        if (val === q.ans) {
-          playSound('success');
-          if (player === 1) setScoreP1(s => s + 1);
-          else setScoreP2(s => s + 1);
-          nextQ();
-        } else {
-          playSound('error');
-        }
+      useEffect(() => { generateQ(); }, []);
+
+      const handleP1 = (val) => {
+        if (val === q.ans) setScore1(s => s + 1);
+        generateQ();
+      };
+
+      const handleP2 = (val) => {
+        if (val === q.ans) setScore2(s => s + 1);
+        generateQ();
       };
 
       return (
-        <div className="min-h-screen flex flex-col justify-between p-4 bg-slate-950">
-          <div className="glass p-4 rounded-3xl text-center transform rotate-180 border-rose-500/30">
+        <div className="glass p-4 rounded-3xl relative max-w-lg mx-auto flex flex-col gap-6">
+          <button onClick={onBack} className="absolute top-4 left-4 bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold z-10">← Quitter</button>
+
+          <div className="rotate-180 bg-rose-950/40 p-4 rounded-2xl border border-rose-500/30 text-center">
             <div className="flex justify-between items-center mb-2">
-              <span className="font-black text-rose-400">JOUEUR 2</span>
-              <span className="text-xl font-black">Score : {scoreP2}</span>
+              <span className="text-xs font-bold text-rose-400">Joueur 2 🔴</span>
+              <span className="text-xl font-black text-rose-300">Score: {score2}</span>
             </div>
-            <div className="text-3xl font-black mb-4">{q.n1} × {q.n2} = ?</div>
-            <div className="flex justify-center gap-2">
-              {[q.ans, q.ans + 2, q.ans - 3].sort(() => Math.random() - 0.5).map((opt, i) => (
-                <button key={i} onClick={() => answer(2, opt)} className="bg-rose-600/40 hover:bg-rose-600 px-6 py-3 rounded-xl font-bold text-xl">{opt}</button>
+            <div className="text-2xl font-black mb-3">{q.expr} = ?</div>
+            <div className="grid grid-cols-2 gap-2">
+              {q.options.map((opt, i) => (
+                <button key={i} onClick={() => handleP2(opt)} className="bg-rose-600/30 hover:bg-rose-600 text-white font-bold py-3 rounded-xl border border-rose-500/40 text-lg">
+                  {opt}
+                </button>
               ))}
             </div>
           </div>
 
-          <button onClick={onBack} className="mx-auto bg-slate-800 px-4 py-2 rounded-full text-xs font-bold my-4">Quitter le Duel</button>
+          <div className="text-center font-black text-xs text-slate-500 uppercase tracking-widest">⚔️ DUEL 1 CONTRE 1 ⚔️</div>
 
-          <div className="glass p-4 rounded-3xl text-center border-indigo-500/30">
+          <div className="bg-indigo-950/40 p-4 rounded-2xl border border-indigo-500/30 text-center">
             <div className="flex justify-between items-center mb-2">
-              <span className="font-black text-indigo-400">{profile.name} (P1)</span>
-              <span className="text-xl font-black">Score : {scoreP1}</span>
+              <span className="text-xs font-bold text-indigo-400">Joueur 1 🔵 ({profile.name})</span>
+              <span className="text-xl font-black text-indigo-300">Score: {score1}</span>
             </div>
-            <div className="text-3xl font-black mb-4">{q.n1} × {q.n2} = ?</div>
-            <div className="flex justify-center gap-2">
-              {[q.ans, q.ans + 1, q.ans - 2].sort(() => Math.random() - 0.5).map((opt, i) => (
-                <button key={i} onClick={() => answer(1, opt)} className="bg-indigo-600/40 hover:bg-indigo-600 px-6 py-3 rounded-xl font-bold text-xl">{opt}</button>
+            <div className="text-2xl font-black mb-3">{q.expr} = ?</div>
+            <div className="grid grid-cols-2 gap-2">
+              {q.options.map((opt, i) => (
+                <button key={i} onClick={() => handleP1(opt)} className="bg-indigo-600/30 hover:bg-indigo-600 text-white font-bold py-3 rounded-xl border border-indigo-500/40 text-lg">
+                  {opt}
+                </button>
               ))}
             </div>
           </div>
@@ -708,12 +1010,12 @@
       return (
         <div className="glass p-6 rounded-3xl max-w-lg mx-auto">
           <button onClick={onBack} className="bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold mb-4">← Retour</button>
-          <h2 className="text-2xl font-black mb-4 flex items-center gap-2">🔒 Tableau de bord Parents</h2>
+          <h2 className="text-2xl font-black mb-4 flex items-center gap-2">🔒 Espace Parents</h2>
           
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
-              <span className="text-xs text-slate-400 font-bold uppercase">Questions Jouées</span>
-              <div className="text-3xl font-black text-white mt-1">{stats.played}</div>
+              <span className="text-xs text-slate-400 font-bold uppercase">Questions Réussies</span>
+              <div className="text-3xl font-black text-white mt-1">{stats.success}</div>
             </div>
             <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
               <span className="text-xs text-slate-400 font-bold uppercase">Taux de Réussite</span>
@@ -726,12 +1028,12 @@
             <div className="flex justify-center mb-3">
               <div ref={qrRef} className="p-2 bg-white rounded-xl shadow-lg"></div>
             </div>
-            <p className="text-xs text-slate-400">Flashez ce QR Code avec un autre téléphone pour l'installer.</p>
+            <p className="text-xs text-slate-400">Scannez ce QR Code pour ouvrir l'application sur un autre appareil.</p>
           </div>
 
           <div className="border-t border-slate-800 pt-4 text-center">
             <button onClick={() => { if(confirm("Attention : supprimer la progression ?")) onReset(); }} className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-2 rounded-xl text-xs font-bold transition">
-              🗑️ Réinitialiser la partie
+              🗑️ Réinitialiser le profil
             </button>
           </div>
         </div>
