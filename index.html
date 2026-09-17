@@ -1,521 +1,383 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MathsAcademy – Maternelle Montessori</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    @keyframes popIn {
-      0% { transform: scale(0.85); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    @keyframes bounceHappy {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.15); }
-    }
-    @keyframes confetti {
-      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(-80px) rotate(360deg); opacity: 0; }
-    }
-    .animate-pop { animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    .animate-happy { animation: bounceHappy 0.5s ease; }
-    .confetti-piece {
-      position: absolute;
-      font-size: 1.5rem;
-      animation: confetti 1s ease-out forwards;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathsAcademy Montessori</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .animate-pop { animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+  @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+  .confetti { position: fixed; top: 0; width: 12px; height: 12px; animation: confetti-fall 2.5s linear forwards; z-index: 100; pointer-events: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+</style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-pink-400">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-indigo-500">
+<div id="root"></div>
 
-  <div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
 
-  <script type="text/babel">
-    const { useState, useEffect, useCallback, useRef } = React;
+const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+const IS_MATERNELLE = (grade) => ['PS', 'MS', 'GS'].includes(grade);
 
-    // ======================================================
-    // CURRICULUM MATERNELLE – Pédagogie Montessori
-    // ======================================================
-    const CURRICULUM = {
-      PS: [
-        { id: 'ps_formes', name: 'Les formes (rond)', icon: '🔴', type: 'ps_formes', domain: 'Sensoriel' },
-        { id: 'ps_count3', name: 'Compter jusqu\'à 3', icon: '⭐', type: 'ps_count3', domain: 'Nombres' },
-        { id: 'ps_tailles', name: 'Petit et Grand', icon: '🐘', type: 'ps_tailles', domain: 'Grandeurs' },
-        { id: 'ps_espace', name: 'Haut et Bas', icon: '☁️', type: 'ps_espace', domain: 'Espace' }
-      ],
-      MS: [
-        { id: 'ms_count6', name: 'Compter jusqu\'à 6', icon: '🍎', type: 'ms_count6', domain: 'Nombres' },
-        { id: 'ms_associer', name: 'Chiffre et quantité', icon: '🔢', type: 'ms_associer', domain: 'Nombres' },
-        { id: 'ms_formes', name: 'Carré et Triangle', icon: '🟦', type: 'ms_formes', domain: 'Sensoriel' },
-        { id: 'ms_rythme', name: 'Les rythmes', icon: '🔵🔴', type: 'ms_rythme', domain: 'Logique' },
-        { id: 'ms_comparer', name: 'Plus et Moins', icon: '⚖️', type: 'ms_comparer', domain: 'Nombres' }
-      ],
-      GS: [
-        { id: 'gs_chaine', name: 'Compter jusqu\'à 10', icon: '🔟', type: 'gs_chaine', domain: 'Nombres' },
-        { id: 'gs_decomp', name: 'Décomposer les nombres', icon: '🧩', type: 'gs_decomp', domain: 'Nombres' },
-        { id: 'gs_formes', name: 'Toutes les formes', icon: '▭', type: 'gs_formes', domain: 'Sensoriel' },
-        { id: 'gs_espace', name: 'Droite et Gauche', icon: '👈👉', type: 'gs_espace', domain: 'Espace' },
-        { id: 'gs_masse', name: 'Lourd et Léger', icon: '🏋️', type: 'gs_masse', domain: 'Grandeurs' }
-      ],
-      // Les autres niveaux restent disponibles
-      CP: [
-        { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100', domain: 'Nombres' },
-        { id: 'cp_add', name: 'Additions', icon: '➕', type: 'cp_add', domain: 'Calcul' }
-      ],
-      CE1: [
-        { id: 'ce1_tables', name: 'Tables de multiplication', icon: '✖️', type: 'ce1_tables', domain: 'Calcul' }
-      ],
-      CE2: [
-        { id: 'ce2_mult', name: 'Multiplications', icon: '✖️', type: 'ce2_mult', domain: 'Calcul' }
-      ],
-      CM1: [
-        { id: 'cm1_fractions', name: 'Fractions', icon: '🍕', type: 'cm1_fractions', domain: 'Nombres' }
-      ],
-      CM2: [
-        { id: 'cm2_proportionnalite', name: 'Proportionnalité', icon: '📈', type: 'cm2_proportionnalite', domain: 'Proportionnalité' }
-      ],
-      '6ème': [
-        { id: 'c6_fractions', name: 'Fractions', icon: '🔢', type: 'c6_fractions', domain: 'Nombres' }
-      ],
-      '5ème': [
-        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs', domain: 'Nombres' }
-      ],
-      '4ème': [
-        { id: 'c4_pythagore', name: 'Pythagore', icon: '📐', type: 'c4_pythagore', domain: 'Géométrie' }
-      ],
-      '3ème': [
-        { id: 'c3_thales', name: 'Thalès', icon: '📐', type: 'c3_thales', domain: 'Géométrie' }
-      ],
-      Seconde: [
-        { id: 'sec_vecteurs', name: 'Vecteurs', icon: '➡️', type: 'sec_vecteurs', domain: 'Géométrie' }
-      ],
-      '1ère': [
-        { id: 'p1_derivee', name: 'Dérivée', icon: '📈', type: 'p1_derivee', domain: 'Analyse' }
-      ],
-      Terminale: [
-        { id: 'term_limites', name: 'Limites', icon: '∞', type: 'term_limites', domain: 'Analyse' }
-      ]
-    };
+const speak = (text) => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR'; u.rate = 0.85; u.pitch = 1.15;
+    window.speechSynthesis.speak(u);
+  }
+};
 
-    const IS_MATERNELLE = (grade) => ['PS', 'MS', 'GS'].includes(grade);
+const playSound = (type) => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if (type === 'success') { osc.frequency.setValueAtTime(523, ctx.currentTime); osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1); osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2); }
+    else { osc.frequency.setValueAtTime(300, ctx.currentTime); osc.frequency.setValueAtTime(200, ctx.currentTime + 0.15); }
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(); osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+};
 
-    // Voix douce et claire pour les enfants
-    const speak = (text) => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'fr-FR';
-        u.rate = 0.85;          // un peu plus lent
-        u.pitch = 1.1;          // un peu plus aigu (plus doux)
-        window.speechSynthesis.speak(u);
-      }
-    };
+const fireConfetti = () => {
+  const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDelay = Math.random() * 0.5 + 's';
+    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3000);
+  }
+};
 
-    // ======================================================
-    // GÉNÉRATEUR DE QUESTIONS MATERNELLE (très ludique)
-    // ======================================================
-    function generateQuestion(type) {
-      let text = '', ans = '', opts = [], visual = null, speakText = '';
+const CURRICULUM = {
+  PS: [
+    { id: 'ps_shapes', name: 'Formes rondes et carrées', icon: '🔴', type: 'ps_shapes' },
+    { id: 'ps_count3', name: 'Dénombrer jusqu\'à 3', icon: '🔢', type: 'ps_count3' }
+  ],
+  MS: [
+    { id: 'ms_count6', name: 'Collections jusqu\'à 6', icon: '🍎', type: 'ms_count6' },
+    { id: 'ms_compare', name: 'Comparer des quantités', icon: '⚖️', type: 'ms_compare' }
+  ],
+  GS: [
+    { id: 'gs_num', name: 'Suite numérique jusqu\'à 10', icon: '🔢', type: 'gs_num' },
+    { id: 'gs_decomp', name: 'Décomposer les nombres', icon: '🧩', type: 'gs_decomp' }
+  ],
+  CP: [
+    { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100' },
+    { id: 'cp_add_sub', name: 'Additions et soustractions', icon: '➕', type: 'cp_add_sub' }
+  ],
+  CE1: [
+    { id: 'ce1_tables', name: 'Tables (2,3,4,5)', icon: '✖️', type: 'ce1_tables' }
+  ],
+  CE2: [
+    { id: 'ce2_mult', name: 'Tables de 1 à 9', icon: '🎲', type: 'ce2_mult' }
+  ],
+  CM1: [
+    { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions' }
+  ],
+  CM2: [
+    { id: 'cm2_frac_ops', name: 'Fractions (+, -)', icon: '🍰', type: 'cm2_frac_ops' }
+  ],
+  '6ème': [
+    { id: 'c6_fractions', name: 'Fractions', icon: '🔢', type: 'c6_fractions' },
+    { id: 'c6_decimals', name: 'Décimaux', icon: '📊', type: 'c6_decimals' }
+  ],
+  '5ème': [
+    { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs' }
+  ],
+  '4ème': [
+    { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore' }
+  ],
+  '3ème': [
+    { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales' }
+  ],
+  Seconde: [
+    { id: 'sec_vect', name: 'Vecteurs', icon: '➡️', type: 'sec_vect' }
+  ],
+  '1ère': [
+    { id: 'p1_deriv', name: 'Nombre dérivé', icon: '📈', type: 'p1_deriv' }
+  ],
+  Terminale: [
+    { id: 'term_lim', name: 'Limites de fonctions', icon: '♾️', type: 'term_lim' }
+  ]
+};
 
-      // ——— PS ———
-      if (type === 'ps_formes') {
-        text = "Où est le rond ?";
-        speakText = "Où est le rond ? Appuie sur le rond.";
-        ans = "🔴";
-        opts = ["🔴", "🟦", "🔺", "⭐"];
-      } else if (type === 'ps_count3') {
-        const n = Math.floor(Math.random() * 3) + 1;
-        text = `Combien d'étoiles ?\n${'⭐'.repeat(n)}`;
-        speakText = `Combien d'étoiles vois-tu ? ${n === 1 ? 'Une étoile' : n === 2 ? 'Deux étoiles' : 'Trois étoiles'}.`;
-        ans = `${n}`;
-        opts = ["1", "2", "3"];
-      } else if (type === 'ps_tailles') {
-        text = "Qui est le plus grand ?";
-        speakText = "Qui est le plus grand ? L'éléphant, la souris, le chat ou le chien ?";
-        ans = "🐘";
-        opts = ["🐘", "🐭", "🐱", "🐶"];
-      } else if (type === 'ps_espace') {
-        text = "Où est le soleil ?";
-        speakText = "Où est le soleil ? En haut ou en bas ?";
-        ans = "☁️ En haut";
-        opts = ["☁️ En haut", "⬇️ En bas"];
-      }
+function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
+  const [q, setQ] = useState({ text: '', ans: '', options: [] });
+  const [timeLeft, setTimeLeft] = useState(25);
+  const [feedback, setFeedback] = useState(null);
+  const isMat = IS_MATERNELLE(grade);
 
-      // ——— MS ———
-      else if (type === 'ms_count6') {
-        const n = Math.floor(Math.random() * 4) + 3;
-        text = `Combien de pommes ?\n${'🍎'.repeat(n)}`;
-        speakText = `Compte les pommes. Combien y en a-t-il ?`;
-        ans = `${n}`;
-        opts = [`${n}`, `${n + 1}`, `${n - 1}`, "4"].filter(x => Number(x) > 0);
-      } else if (type === 'ms_associer') {
-        const n = Math.floor(Math.random() * 5) + 1;
-        text = `Quel chiffre pour\n${'🔵'.repeat(n)} ?`;
-        speakText = `Quel chiffre correspond à ces ronds bleus ?`;
-        ans = `${n}`;
-        opts = [`${n}`, `${n + 1}`, `${Math.max(1, n - 1)}`, `${n + 2}`];
-      } else if (type === 'ms_formes') {
-        text = "Quelle forme a 3 côtés ?";
-        speakText = "Quelle forme a trois côtés ? Le triangle, le carré, le rond ou le rectangle ?";
-        ans = "🔺";
-        opts = ["🔺", "🟦", "🔴", "▭"];
-      } else if (type === 'ms_rythme') {
-        text = "Quel est le suivant ?\n🔴 🔵 🔴 🔵 ...";
-        speakText = "Regarde le rythme : rouge, bleu, rouge, bleu... Quel est le suivant ?";
-        ans = "🔴";
-        opts = ["🔴", "🔵", "🟢", "🟡"];
-      } else if (type === 'ms_comparer') {
-        text = "Quelle collection a le plus ?\n⭐⭐⭐   ou   🍎🍎";
-        speakText = "Quelle collection a le plus d'objets ? Les étoiles ou les pommes ?";
-        ans = "⭐⭐⭐";
-        opts = ["⭐⭐⭐", "🍎🍎"];
-      }
+  useEffect(() => {
+    if (isMat) return;
+    setTimeLeft(25);
+    const timerInterval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          handleAnswer('');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerInterval);
+  }, [q, isMat]);
 
-      // ——— GS ———
-      else if (type === 'gs_chaine') {
-        const n = Math.floor(Math.random() * 8) + 2;
-        text = `Quel nombre vient après ${n} ?`;
-        speakText = `Quel nombre vient juste après ${n} ?`;
-        ans = `${n + 1}`;
-        opts = [`${n + 1}`, `${n + 2}`, `${n - 1}`, `${n}`];
-      } else if (type === 'gs_decomp') {
-        const n = Math.floor(Math.random() * 4) + 4;
-        const p = Math.floor(Math.random() * (n - 1)) + 1;
-        text = `${n} c'est ${p} et encore ... ?`;
-        speakText = `${n} c'est ${p} et encore combien ?`;
-        ans = `${n - p}`;
-        opts = [`${n - p}`, `${n - p + 1}`, `${n}`, "1"];
-      } else if (type === 'gs_formes') {
-        text = "Quelle forme a 4 côtés égaux\net 4 angles droits ?";
-        speakText = "Quelle forme a quatre côtés égaux et quatre angles droits ?";
-        ans = "🟦 Carré";
-        opts = ["🟦 Carré", "▭ Rectangle", "🔺 Triangle", "🔴 Cercle"];
-      } else if (type === 'gs_espace') {
-        text = "Ma main droite pointe vers...";
-        speakText = "Si je regarde devant moi, ma main droite pointe vers quelle direction ?";
-        ans = "👉 L'est";
-        opts = ["👉 L'est", "👈 L'ouest", "⬆️ Le nord", "⬇️ Le sud"];
-      } else if (type === 'gs_masse') {
-        text = "Qui est le plus lourd ?";
-        speakText = "Qui est le plus lourd ? La voiture, le ballon, la plume ou le téléphone ?";
-        ans = "🚗";
-        opts = ["🚗", "🎈", "🪶", "📱"];
-      }
+  const generateNewQuestion = () => {
+    setFeedback(null);
+    let text = '', ans = '', opts = [];
+    const type = module.type;
 
-      // Fallback simple
-      else {
-        const n = Math.floor(Math.random() * 3) + 1;
-        text = `Combien ? ${'⭐'.repeat(n)}`;
-        speakText = `Combien d'étoiles ?`;
-        ans = `${n}`;
-        opts = ["1", "2", "3"];
-      }
-
-      // Nettoyage
-      opts = Array.from(new Set(opts.map(String))).slice(0, 4);
-      while (opts.length < 4) {
-        opts.push(String(opts.length + 1));
-      }
-      opts = opts.sort(() => Math.random() - 0.5);
-
-      return { text, ans: String(ans), options: opts, visual, speakText: speakText || text };
+    if (type === 'ps_shapes') {
+      text = "Où se cache la forme ronde ?";
+      ans = "Le rond";
+      opts = ["Le rond", "Le carré", "Le triangle", "L'étoile"];
+    } else if (type === 'ps_count3') {
+      const n = rand(1, 3);
+      text = `Combien y a-t-il d'étoiles ? ${'⭐'.repeat(n)}`;
+      ans = `${n}`;
+      opts = ["1", "2", "3", "4"].slice(0, 3);
+    } else if (type === 'cp_add_sub') {
+      const a = rand(1, 8);
+      const b = rand(1, 5);
+      text = `Combien font ${a} + ${b} ?`;
+      ans = `${a + b}`;
+      opts = [ans, `${a + b + 1}`, `${a + b - 1}`, `${a + b + 2}`];
+    } else if (type === 'cm1_fractions' || type === 'c6_fractions') {
+      const num = rand(1, 4);
+      const den = rand(5, 9);
+      text = `Comment lit-on la fraction ${num}/${den} ?`;
+      ans = `${num} sur ${den}`;
+      opts = [ans, `${num + 1} sur ${den}`, `${num} sur ${den + 2}`, `${den} sur ${num}`];
+    } else if (type === 'c6_decimals') {
+      const n = rand(2, 8);
+      text = `Quel nombre est le plus grand entre ${n},3 et ${n},15 ?`;
+      ans = `${n},3`;
+      opts = [`${n},3`, `${n},15`, "Ils sont égaux", `${n},1`];
+    } else if (type === 'c5_relatifs') {
+      const a = rand(2, 9);
+      const b = rand(2, 9);
+      text = `Calculer : -${a} + ${b} = ?`;
+      ans = `${b - a}`;
+      opts = [`${b - a}`, `-${a + b}`, `${a + b}`, `${b - a + 2}`];
+    } else if (type === 'c4_pythagore') {
+      text = "Dans un triangle rectangle ABC en A, quelle est l'égalité de Pythagore ?";
+      ans = "BC² = AB² + AC²";
+      opts = ["BC² = AB² + AC²", "AB² = BC² + AC²", "BC = AB + AC", "AC² = AB × BC"];
+    } else if (type === 'c3_thales') {
+      text = "Le théorème de Thalès permet de calculer :";
+      ans = "Des longueurs avec des droites parallèles";
+      opts = ["Des longueurs avec des droites parallèles", "Des angles", "Des aires", "Des volumes"];
+    } else if (type === 'sec_vect') {
+      text = "D'après la relation de Chasles, vecteur AB + vecteur BC = ?";
+      ans = "vecteur AC";
+      opts = ["vecteur AC", "vecteur CA", "vecteur nul", "vecteur BA"];
+    } else if (type === 'p1_deriv') {
+      text = "Quel est le nombre dérivé de f(x) = x² ?";
+      ans = "2x";
+      opts = ["2x", "x", "2", "x²"];
+    } else if (type === 'term_lim') {
+      text = "Quelle est la limite de 1/x quand x tend vers +∞ ?";
+      ans = "0";
+      opts = ["0", "+∞", "1", "-∞"];
+    } else {
+      // Par défaut (tables ou calculs généraux)
+      const a = rand(2, 9);
+      const b = rand(2, 9);
+      text = `Combien font ${a} × ${b} ?`;
+      ans = `${a * b}`;
+      opts = [ans, `${a * b + 2}`, `${a * b - 1}`, `${a * b + 4}`];
     }
 
-    // ======================================================
-    // COMPOSANT EXERCICE – VERSION MATERNELLE TRÈS LUDIQUE
-    // ======================================================
-    function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
-      const [q, setQ] = useState({ text: '', ans: '', options: [], speakText: '' });
-      const [feedback, setFeedback] = useState(null);
-      const [isAnswering, setIsAnswering] = useState(false);
-      const [showConfetti, setShowConfetti] = useState(false);
-      const isMat = IS_MATERNELLE(grade);
+    opts = shuffle(Array.from(new Set(opts)));
+    while(opts.length < 4) opts.push(`Option ${rand(10, 50)}`);
+    setQ({ text, ans, options: opts });
+    if (isMat) speak(text);
+  };
 
-      const loadNewQuestion = useCallback(() => {
-        setFeedback(null);
-        setIsAnswering(false);
-        setShowConfetti(false);
-        const newQ = generateQuestion(module.type);
-        setQ(newQ);
+  useEffect(() => { generateNewQuestion(); }, [module.type]);
 
-        // Vocal automatique pour la maternelle
-        if (isMat) {
-          setTimeout(() => speak(newQ.speakText), 400);
-        }
-      }, [module.type, isMat]);
+  const handleAnswer = (val) => {
+    if (val === q.ans) {
+      playSound('success');
+      fireConfetti();
+      setFeedback({ success: true, msg: `Bravo ${userName} ! Super ! (+10 XP)` });
+      setTimeout(() => {
+        onResult(10);
+        generateNewQuestion();
+      }, 1200);
+    } else {
+      playSound('fail');
+      setFeedback({ success: false, msg: `Oups ${userName}, ce n'est pas la bonne réponse.` });
+    }
+  };
 
-      useEffect(() => {
-        loadNewQuestion();
-      }, [loadNewQuestion]);
+  return (
+    <div className="bg-slate-900/90 p-6 sm:p-8 rounded-3xl text-center max-w-lg mx-auto border border-slate-800 shadow-2xl animate-pop">
+      <div className="flex justify-between items-center mb-4">
+        <button onClick={onBack} className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-black cursor-pointer">
+          ← RETOUR
+        </button>
+        <span className="text-xs font-black text-indigo-400 bg-indigo-950 px-3 py-1.5 rounded-xl border border-indigo-800/40">
+          {grade} • {module.name}
+        </span>
+        {!isMat && (
+          <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/20">
+            ⏱️ {timeLeft}s
+          </span>
+        )}
+      </div>
 
-      const handleAnswer = (val) => {
-        if (isAnswering || feedback) return;
-        setIsAnswering(true);
+      <h2 className="text-xl sm:text-2xl font-black my-6 text-white">{q.text}</h2>
 
-        if (String(val) === q.ans) {
-          setFeedback({ success: true, msg: `Bravo ${userName} ! 🎉` });
-          setShowConfetti(true);
-          speak(`Bravo ${userName} ! C'est très bien !`);
-          
-          setTimeout(() => {
-            onResult(15);
-            loadNewQuestion();
-          }, 1800);
-        } else {
-          setFeedback({ success: false, msg: `Essaie encore ${userName}` });
-          speak(`Ce n'est pas tout à fait ça. Essaie encore ${userName}.`);
-          
-          setTimeout(() => {
-            setFeedback(null);
-            setIsAnswering(false);
-          }, 2000);
-        }
-      };
+      {feedback && (
+        <div className={`p-3 rounded-xl mb-4 font-black text-sm ${feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
+          {feedback.msg}
+        </div>
+      )}
 
-      // ========== INTERFACE MATERNELLE ==========
-      if (isMat) {
-        return (
-          <div className="bg-gradient-to-b from-indigo-950 to-slate-950 p-5 sm:p-8 rounded-3xl text-center max-w-lg mx-auto border-4 border-indigo-500/30 shadow-2xl animate-pop relative overflow-hidden">
-            
-            {/* Confettis de réussite */}
-            {showConfetti && (
-              <>
-                <span className="confetti-piece" style={{left:'20%', animationDelay:'0s'}}>🎉</span>
-                <span className="confetti-piece" style={{left:'40%', animationDelay:'0.1s'}}>⭐</span>
-                <span className="confetti-piece" style={{left:'60%', animationDelay:'0.2s'}}>🌟</span>
-                <span className="confetti-piece" style={{left:'80%', animationDelay:'0.15s'}}>✨</span>
-              </>
-            )}
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        {q.options.map((opt, i) => (
+          <button
+            key={i}
+            onClick={() => handleAnswer(opt)}
+            className="bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-3 rounded-2xl border border-slate-700 hover:border-indigo-400 transition-all active:scale-95 text-base shadow-lg cursor-pointer"
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-            {/* En-tête */}
-            <div className="flex justify-between items-center mb-6">
-              <button 
-                onClick={onBack}
-                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-2xl text-sm font-bold"
-              >
-                ← Retour
-              </button>
-              <div className="text-pink-300 font-bold text-sm bg-pink-500/20 px-3 py-1 rounded-full">
-                {module.icon} {module.name}
-              </div>
-            </div>
+function App() {
+  const [userName, setUserName] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('CP');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeModule, setActiveModule] = useState(null);
+  const [score, setScore] = useState(0);
 
-            {/* Bouton Réécouter – très visible */}
-            <button
-              onClick={() => speak(q.speakText)}
-              className="mb-6 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white px-6 py-3 rounded-full font-bold text-base shadow-lg flex items-center gap-2 mx-auto active:scale-95 transition-all"
-            >
-              🔊 Écouter la consigne
-            </button>
+  const handleStart = (e) => {
+    e.preventDefault();
+    if (userName.trim()) setIsLoggedIn(true);
+  };
 
-            {/* Question – grande et claire */}
-            <div className="bg-white/5 rounded-3xl p-6 mb-6 border border-white/10">
-              <h2 className="text-2xl sm:text-3xl font-black text-white leading-snug whitespace-pre-line">
-                {q.text}
-              </h2>
-            </div>
-
-            {/* Feedback */}
-            {feedback && (
-              <div className={`p-4 rounded-2xl mb-5 font-black text-lg animate-happy ${
-                feedback.success 
-                  ? 'bg-emerald-500/30 text-emerald-200 border-2 border-emerald-400' 
-                  : 'bg-amber-500/30 text-amber-200 border-2 border-amber-400'
-              }`}>
-                {feedback.msg}
-              </div>
-            )}
-
-            {/* Gros boutons de réponse – style Montessori */}
-            <div className={`grid gap-4 ${q.options.length <= 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
-              {q.options.map((opt, i) => (
-                <button
-                  key={`${opt}-${i}`}
-                  onClick={() => handleAnswer(opt)}
-                  disabled={isAnswering || !!feedback}
-                  className="bg-gradient-to-b from-indigo-500 to-indigo-700 hover:from-indigo-400 hover:to-indigo-600 disabled:opacity-50 text-white font-black text-2xl py-6 px-4 rounded-3xl border-4 border-indigo-300/30 shadow-xl active:scale-90 transition-all min-h-[80px] flex items-center justify-center"
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-
-            {/* Petite indication Montessori */}
-            <p className="mt-6 text-xs text-indigo-300/70">
-              Touche la bonne réponse • Tu peux réécouter autant de fois que tu veux
-            </p>
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-slate-900/90 p-8 rounded-3xl max-w-md w-full border border-slate-800 shadow-2xl text-center animate-pop">
+          <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-lg shadow-indigo-600/30">
+            🎓
           </div>
-        );
-      }
+          <h1 className="text-2xl font-black text-white mb-6">MathsAcademy Montessori</h1>
+          
+          <form onSubmit={handleStart} className="space-y-5 text-left">
+            <div>
+              <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Prénom</label>
+              <input
+                type="text"
+                required
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                placeholder="Ex: Lucas, Emma..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Niveau Scolaire</label>
+              <select
+                value={selectedGrade}
+                onChange={(e) => setSelectedGrade(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                {Object.keys(CURRICULUM).map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 active:scale-95 cursor-pointer">
+              COMMENCER LE JEU 🚀
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
-      // ========== INTERFACE CLASSIQUE (CP et plus) ==========
-      // (version simplifiée pour les plus grands – on garde le focus maternelle)
-      return (
-        <div className="bg-slate-900/90 p-6 rounded-3xl text-center max-w-lg mx-auto border border-slate-800">
-          <button onClick={onBack} className="mb-4 text-sm text-slate-400">← Retour</button>
-          <h2 className="text-xl font-bold mb-4">{q.text}</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {q.options.map((opt, i) => (
-              <button key={i} onClick={() => handleAnswer(opt)} className="bg-slate-800 py-4 rounded-xl font-bold">
-                {opt}
+  return (
+    <div className="max-w-4xl mx-auto p-4">
+      <header className="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">🎓</span>
+          <div>
+            <h1 className="text-lg font-black text-white">MathsAcademy Montessori</h1>
+            <p className="text-xs text-indigo-400 font-bold">Joueur : {userName} ({selectedGrade})</p>
+          </div>
+        </div>
+        <div className="bg-slate-900 px-4 py-2 rounded-2xl border border-indigo-500/30">
+          <span className="text-xs text-slate-400 font-extrabold mr-2">XP</span>
+          <span className="text-lg font-black text-amber-400">{score}</span>
+        </div>
+      </header>
+
+      {!activeModule ? (
+        <>
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+            {Object.keys(CURRICULUM).map(g => (
+              <button
+                key={g}
+                onClick={() => setSelectedGrade(g)}
+                className={`px-4 py-2 rounded-2xl font-black text-xs transition-all whitespace-nowrap cursor-pointer ${
+                  selectedGrade === g ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                {g}
               </button>
             ))}
           </div>
-        </div>
-      );
-    }
 
-    // ======================================================
-    // APPLICATION PRINCIPALE
-    // ======================================================
-    function App() {
-      const [userName, setUserName] = useState('');
-      const [selectedGrade, setSelectedGrade] = useState('PS');
-      const [isLoggedIn, setIsLoggedIn] = useState(false);
-      const [activeModule, setActiveModule] = useState(null);
-      const [score, setScore] = useState(0);
-
-      const handleStart = (e) => {
-        e.preventDefault();
-        if (userName.trim()) setIsLoggedIn(true);
-      };
-
-      if (!isLoggedIn) {
-        return (
-          <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-indigo-950 to-slate-950">
-            <div className="bg-slate-900/90 p-8 rounded-3xl max-w-md w-full border-2 border-indigo-500/30 shadow-2xl animate-pop">
-              <div className="text-center mb-6">
-                <div className="text-5xl mb-3">🧮✨</div>
-                <h1 className="text-3xl font-black bg-gradient-to-r from-pink-400 to-indigo-400 bg-clip-text text-transparent">
-                  MathsAcademy
-                </h1>
-                <p className="text-slate-400 text-sm mt-2">
-                  Apprendre les maths en s'amusant<br/>
-                  <span className="text-pink-300">Pédagogie Montessori</span>
-                </p>
-              </div>
-
-              <form onSubmit={handleStart} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">Prénom de l'enfant</label>
-                  <input
-                    type="text"
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    placeholder="Ex: Léa"
-                    className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-4 py-3 text-white text-lg focus:outline-none focus:border-pink-500"
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">Classe</label>
-                  <select
-                    value={selectedGrade}
-                    onChange={(e) => setSelectedGrade(e.target.value)}
-                    className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-pink-500"
-                  >
-                    <optgroup label="Maternelle (recommandé)">
-                      <option value="PS">Petite Section (PS)</option>
-                      <option value="MS">Moyenne Section (MS)</option>
-                      <option value="GS">Grande Section (GS)</option>
-                    </optgroup>
-                    <optgroup label="Élémentaire & +">
-                      {['CP','CE1','CE2','CM1','CM2','6ème','5ème','4ème','3ème','Seconde','1ère','Terminale'].map(g => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
-
-                <button type="submit" className="w-full bg-gradient-to-r from-pink-500 to-indigo-500 hover:from-pink-400 hover:to-indigo-400 text-white font-black py-4 rounded-2xl text-lg shadow-lg active:scale-95 transition-all">
-                  C'est parti ! 🚀
-                </button>
-              </form>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {CURRICULUM[selectedGrade]?.map(m => (
+              <button
+                key={m.id}
+                onClick={() => setActiveModule(m)}
+                className="bg-slate-900/80 p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/30 transition-all flex flex-col justify-between h-36 shadow-md cursor-pointer"
+              >
+                <span className="text-3xl">{m.icon}</span>
+                <span className="font-extrabold text-sm text-slate-200">{m.name}</span>
+              </button>
+            ))}
           </div>
-        );
-      }
+        </>
+      ) : (
+        <ExerciseRunner
+          userName={userName}
+          grade={selectedGrade}
+          module={activeModule}
+          onBack={() => setActiveModule(null)}
+          onResult={(xp) => setScore(s => s + xp)}
+        />
+      )}
+    </div>
+  );
+}
 
-      if (activeModule) {
-        return (
-          <div className="min-h-screen p-4 pt-6 bg-gradient-to-b from-indigo-950 to-slate-950">
-            <div className="max-w-lg mx-auto mb-4 flex justify-between items-center">
-              <div className="text-pink-300 font-bold">👋 {userName}</div>
-              <div className="bg-amber-400/20 text-amber-300 px-4 py-1.5 rounded-full text-sm font-black border border-amber-400/40">
-                ⭐ {score}
-              </div>
-            </div>
-            <ExerciseRunner
-              userName={userName}
-              grade={selectedGrade}
-              module={activeModule}
-              onBack={() => setActiveModule(null)}
-              onResult={(xp) => setScore(s => s + xp)}
-            />
-          </div>
-        );
-      }
-
-      // Sélection des modules
-      const modules = CURRICULUM[selectedGrade] || [];
-      const isMat = IS_MATERNELLE(selectedGrade);
-
-      return (
-        <div className="min-h-screen p-4 pt-6 bg-gradient-to-b from-indigo-950 to-slate-950">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-2xl font-black text-white">
-                  Salut <span className="text-pink-400">{userName}</span> ! 👋
-                </h1>
-                <p className="text-indigo-300 text-sm mt-1">
-                  {isMat ? "On va jouer et apprendre !" : `Classe : ${selectedGrade}`}
-                </p>
-              </div>
-              <div className="bg-amber-400/20 text-amber-300 px-4 py-2 rounded-full font-black border border-amber-400/40">
-                ⭐ {score}
-              </div>
-            </div>
-
-            <div className={`grid gap-4 ${isMat ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
-              {modules.map((mod) => (
-                <button
-                  key={mod.id}
-                  onClick={() => setActiveModule(mod)}
-                  className={`p-6 rounded-3xl text-left transition-all active:scale-95 border-2 ${
-                    isMat 
-                      ? 'bg-gradient-to-br from-indigo-600/40 to-pink-600/30 border-pink-400/40 hover:border-pink-300' 
-                      : 'bg-slate-900/80 border-slate-700 hover:border-indigo-500'
-                  }`}
-                >
-                  <div className="text-4xl mb-3">{mod.icon}</div>
-                  <div className="font-black text-white text-lg leading-snug">{mod.name}</div>
-                  {mod.domain && (
-                    <div className="text-xs text-indigo-300 mt-2">{mod.domain}</div>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => { setIsLoggedIn(false); setActiveModule(null); setScore(0); }}
-              className="mt-10 text-sm text-slate-500 hover:text-slate-300"
-            >
-              Changer d'enfant
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
