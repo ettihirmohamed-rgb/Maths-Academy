@@ -1,505 +1,339 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MathsAcademy</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    .animate-pop { animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathsAcademy Montessori</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .animate-pop { animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+  @keyframes bounce-slow { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .animate-bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }
+  @keyframes wiggle { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+  .animate-wiggle { animation: wiggle 0.6s ease-in-out; }
+  @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+  .confetti { position: fixed; top: 0; width: 12px; height: 12px; animation: confetti-fall 2.5s linear forwards; z-index: 100; pointer-events: none; }
+  @keyframes pulse-ring { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99,102,241,0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(99,102,241,0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99,102,241,0); } }
+  .pulse-ring { animation: pulse-ring 2s infinite; }
+  .dys-font { font-family: 'Comic Sans MS', 'OpenDyslexic', sans-serif; letter-spacing: 0.05em; }
+  .light-mode { background: #f1f5f9 !important; color: #0f172a !important; }
+  .light-mode .bg-slate-900\/90, .light-mode .bg-slate-900\/80 { background: #ffffff !important; border-color: #cbd5e1 !important; }
+  .light-mode .bg-slate-900, .light-mode .bg-slate-950, .light-mode .bg-slate-800 { background: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
+  .light-mode .text-white { color: #0f172a !important; }
+  .light-mode .text-slate-400, .light-mode .text-slate-200 { color: #334155 !important; }
+  .light-mode h1, .light-mode h2 { color: #0f172a !important; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-indigo-500">
+<div id="root"></div>
 
-  <div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+const IS_MATERNELLE = (grade) => ['PS', 'MS', 'GS'].includes(grade);
 
-    const CURRICULUM = {
-      PS: [
-        { id: 'ps_shapes', name: 'Formes géométriques simples', icon: '🔴', type: 'ps_shapes' },
-        { id: 'ps_count3', name: 'Dénombrer jusqu\'à 3', icon: '🔢', type: 'ps_count3' }
-      ],
-      MS: [
-        { id: 'ms_count6', name: 'Collections jusqu\'à 6', icon: '🍎', type: 'ms_count6' },
-        { id: 'ms_compare', name: 'Comparaison de tailles', icon: '⚖️', type: 'ms_compare' }
-      ],
-      GS: [
-        { id: 'gs_num', name: 'Chiffres et suite numérique', icon: '🔢', type: 'gs_num' },
-        { id: 'gs_decomp', name: 'Petites décompositions', icon: '🧩', type: 'gs_decomp' }
-      ],
-      CP: [
-        { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100' },
-        { id: 'cp_add_sub', name: 'Premières additions', icon: '➕', type: 'cp_add_sub' }
-      ],
-      CE1: [
-        { id: 'ce1_tables', name: 'Tables de multiplication (Aléatoire)', icon: '✖️', type: 'ce1_tables' },
-        { id: 'ce1_symmetry', name: 'Reconnaissance axes symétrie', icon: '🪞', type: 'ce1_symmetry' }
-      ],
-      CE2: [
-        { id: 'ce2_mult', name: 'Multiplications en ligne', icon: '✖️', type: 'ce2_mult' },
-        { id: 'ce2_perimeters', name: 'Calculs de périmètres', icon: '📏', type: 'ce2_perimeters' }
-      ],
-      CM1: [
-        { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions' },
-        { id: 'cm1_decimals', name: 'Nombres décimaux (10ème)', icon: '🎯', type: 'cm1_decimals' }
-      ],
-      CM2: [
-        { id: 'cm2_frac_ops', name: 'Additions de fractions', icon: '🍰', type: 'cm2_frac_ops' },
-        { id: 'cm2_prop', name: 'Proportionnalité de base', icon: '📈', type: 'cm2_prop' }
-      ],
-      '6ème': [
-        { id: 'c6_fractions', name: 'Fractions et écritures', icon: '🔢', type: 'c6_fractions' },
-        { id: 'c6_decimals', name: 'Ordre et comparaison de décimaux', icon: '📊', type: 'c6_decimals' },
-        { id: 'c6_divisions', name: 'Division euclidienne', icon: '➗', type: 'c6_divisions' }
-      ],
-      '5ème': [
-        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs' },
-        { id: 'c5_fractions', name: 'Fractions (Quotients égaux)', icon: '🍰', type: 'c5_fractions' }
-      ],
-      '4ème': [
-        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore' },
-        { id: 'c4_calcul_litteral', name: 'Réduction d\'expressions', icon: '🔤', type: 'c4_calcul_litteral' }
-      ],
-      '3ème': [
-        { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales' },
-        { id: 'c3_trigo', name: 'Trigonométrie', icon: '📊', type: 'c3_trigo' }
-      ],
-      Seconde: [
-        { id: 'sec_vect', name: 'Vecteurs et Chasles', icon: '➡️', type: 'sec_vect' },
-        { id: 'sec_func', name: 'Sens de variation des fonctions', icon: '📉', type: 'sec_func' }
-      ],
-      '1ère': [
-        { id: 'p1_deriv', name: 'Nombre dérivé', icon: '📈', type: 'p1_deriv' }
-      ],
-      Terminale: [
-        { id: 'term_lim', name: 'Limites de fonctions', icon: '♾️', type: 'term_lim' }
-      ]
-    };
+const speak = (text) => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR'; u.rate = 0.85; u.pitch = 1.15;
+    window.speechSynthesis.speak(u);
+  }
+};
 
-    const IS_MATERNELLE = (grade) => ['PS', 'MS', 'GS'].includes(grade);
+const playSound = (type) => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if (type === 'success') { osc.frequency.setValueAtTime(523, ctx.currentTime); osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1); osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2); }
+    else if (type === 'fail') { osc.frequency.setValueAtTime(300, ctx.currentTime); osc.frequency.setValueAtTime(200, ctx.currentTime + 0.15); }
+    else { osc.frequency.setValueAtTime(440, ctx.currentTime); }
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(); osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+};
 
-    const speak = (text) => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'fr-FR';
-        u.rate = 0.9;
-        window.speechSynthesis.speak(u);
-      }
-    };
+const fireConfetti = () => {
+  const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDelay = Math.random() * 0.5 + 's';
+    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3000);
+  }
+};
 
-    function VisualGraphic({ type }) {
-      if (type === 'fraction_c6') {
-        return (
-          <svg className="w-32 h-32 mx-auto my-3" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="#1e293b" stroke="#818cf8" strokeWidth="4" />
-            <path d="M 50,50 L 50,10 A 40,40 0 0,1 90,50 Z" fill="#6366f1" />
-            <path d="M 50,50 L 90,50 A 40,40 0 0,1 50,90 Z" fill="#6366f1" />
-            <line x1="50" y1="10" x2="50" y2="90" stroke="#0f172a" strokeWidth="3" />
-            <line x1="10" y1="50" x2="90" y2="50" stroke="#0f172a" strokeWidth="3" />
-          </svg>
-        );
-      }
-      if (type === 'pythagore') {
-        return (
-          <svg className="w-36 h-28 mx-auto my-3" viewBox="0 0 120 90">
-            <polygon points="20,80 100,80 20,20" fill="none" stroke="#38bdf8" strokeWidth="4" />
-            <text x="15" y="55" fill="#a5b4fc" fontSize="12" fontWeight="bold">AB</text>
-            <text x="55" y="88" fill="#a5b4fc" fontSize="12" fontWeight="bold">AC</text>
-            <text x="65" y="45" fill="#f43f5e" fontSize="12" fontWeight="bold">BC</text>
-          </svg>
-        );
-      }
-      if (type === 'thales') {
-        return (
-          <svg className="w-36 h-32 mx-auto my-3" viewBox="0 0 100 100">
-            <polygon points="50,10 10,90 90,90" fill="none" stroke="#38bdf8" strokeWidth="3" />
-            <line x1="30" y1="50" x2="70" y2="50" stroke="#f43f5e" strokeWidth="3" strokeDasharray="3" />
-          </svg>
-        );
-      }
-      return null;
+const CURRICULUM = {
+  PS: [
+    { id: 'ps_shapes', name: 'Formes rondes et carrées', icon: '🔴', type: 'ps_shapes', domain: 'geometrie' },
+    { id: 'ps_count3', name: 'Dénombrer jusqu\'à 3', icon: '🔢', type: 'ps_count3', domain: 'nombres' }
+  ],
+  MS: [
+    { id: 'ms_count6', name: 'Collections jusqu\'à 6', icon: '🍎', type: 'ms_count6', domain: 'nombres' },
+    { id: 'ms_compare', name: 'Comparer des quantités', icon: '⚖️', type: 'ms_compare', domain: 'nombres' }
+  ],
+  GS: [
+    { id: 'gs_num', name: 'Suite numérique jusqu\'à 10', icon: '🔢', type: 'gs_num', domain: 'nombres' },
+    { id: 'gs_decomp', name: 'Décomposer les nombres', icon: '🧩', type: 'gs_decomp', domain: 'nombres' }
+  ],
+  CP: [
+    { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100', domain: 'nombres' },
+    { id: 'cp_add_sub', name: 'Additions et soustractions', icon: '➕', type: 'cp_add_sub', domain: 'nombres' }
+  ],
+  CE1: [
+    { id: 'ce1_tables', name: 'Tables (2,3,4,5)', icon: '✖️', type: 'ce1_tables', domain: 'calcul' }
+  ],
+  CE2: [
+    { id: 'ce2_mult', name: 'Tables de 1 à 9', icon: '🎲', type: 'ce2_mult', domain: 'calcul' }
+  ],
+  CM1: [
+    { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions', domain: 'nombres' }
+  ],
+  CM2: [
+    { id: 'cm2_frac_ops', name: 'Fractions (+, -)', icon: '🍰', type: 'cm2_frac_ops', domain: 'nombres' }
+  ],
+  '6ème': [
+    { id: 'c6_fractions', name: 'Fractions', icon: '🔢', type: 'c6_fractions', domain: 'nombres' }
+  ],
+  '5ème': [
+    { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs', domain: 'nombres' }
+  ],
+  '4ème': [
+    { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore', domain: 'geometrie' }
+  ],
+  '3ème': [
+    { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales', domain: 'geometrie' }
+  ],
+  Seconde: [
+    { id: 'sec_vect', name: 'Vecteurs', icon: '➡️', type: 'sec_vect', domain: 'geometrie' }
+  ],
+  '1ère': [
+    { id: 'p1_deriv', name: 'Nombre dérivé', icon: '📈', type: 'p1_deriv', domain: 'algebre' }
+  ],
+  Terminale: [
+    { id: 'term_lim', name: 'Limites de fonctions', icon: '♾️', type: 'term_lim', domain: 'algebre' }
+  ]
+};
+
+function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
+  const [q, setQ] = useState({ text: '', ans: '', options: [] });
+  const [timeLeft, setTimeLeft] = useState(25);
+  const [feedback, setFeedback] = useState(null);
+  const isMat = IS_MATERNELLE(grade);
+
+  useEffect(() => {
+    if (isMat) return;
+    setTimeLeft(25);
+    const timerInterval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          handleAnswer('');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerInterval);
+  }, [q, isMat]);
+
+  const generateNewQuestion = () => {
+    setFeedback(null);
+    let text = '', ans = '', opts = [];
+    const a = rand(2, 9);
+    const b = rand(2, 9);
+    text = `Combien font ${a} × ${b} ?`;
+    ans = `${a * b}`;
+    opts = [ans, `${a * b + 2}`, `${a * b - 1}`, `${a * b + 4}`];
+    opts = shuffle(Array.from(new Set(opts)));
+    while(opts.length < 4) opts.push(`${rand(10, 50)}`);
+    setQ({ text, ans, options: opts });
+    if (isMat) speak(text);
+  };
+
+  useEffect(() => { generateNewQuestion(); }, [module.type]);
+
+  const handleAnswer = (val) => {
+    if (val === q.ans) {
+      playSound('success');
+      fireConfetti();
+      setFeedback({ success: true, msg: `Bravo ${userName} ! Super ! (+10 XP)` });
+      setTimeout(() => {
+        onResult(10);
+        generateNewQuestion();
+      }, 1200);
+    } else {
+      playSound('fail');
+      setFeedback({ success: false, msg: `Oups ${userName}, ce n'est pas la bonne réponse.` });
     }
+  };
 
-    function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
-      const [q, setQ] = useState({ text: '', ans: '', options: [], visual: null });
-      const [timeLeft, setTimeLeft] = useState(25);
-      const [feedback, setFeedback] = useState(null);
-      const isMat = IS_MATERNELLE(grade);
+  return (
+    <div className="bg-slate-900/90 p-6 sm:p-8 rounded-3xl text-center max-w-lg mx-auto border border-slate-800 shadow-2xl animate-pop">
+      <div className="flex justify-between items-center mb-4">
+        <button onClick={onBack} className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-black cursor-pointer">
+          ← RETOUR
+        </button>
+        <span className="text-xs font-black text-indigo-400 bg-indigo-950 px-3 py-1.5 rounded-xl border border-indigo-800/40">
+          {grade} • {module.name}
+        </span>
+        {!isMat && (
+          <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/20">
+            ⏱️ {timeLeft}s
+          </span>
+        )}
+      </div>
 
-      useEffect(() => {
-        if (isMat) return;
-        setTimeLeft(25);
-        const timerInterval = setInterval(() => {
-          setTimeLeft((prev) => {
-            if (prev <= 1) {
-              handleAnswer('');
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-        return () => clearInterval(timerInterval);
-      }, [q, isMat]);
+      <h2 className="text-xl sm:text-2xl font-black my-6 text-white">{q.text}</h2>
 
-      const generateNewQuestion = () => {
-        setFeedback(null);
-        let text = '', ans = '', opts = [], visual = null;
-        const type = module.type;
+      {feedback && (
+        <div className={`p-3 rounded-xl mb-4 font-black text-sm ${feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
+          {feedback.msg}
+        </div>
+      )}
 
-        if (type === 'ps_shapes') {
-          text = "Où se trouve la forme parfaitement ronde ?";
-          ans = "🔴 Rond";
-          opts = ["🔴 Rond", "🟦 Carré", "⭐ Étoile"].sort(() => Math.random() - 0.5);
-        } else if (type === 'ps_count3') {
-          const n = Math.floor(Math.random() * 3) + 1;
-          text = `Combien y a-t-il d'éléments ? ${'⭐'.repeat(n)}`;
-          ans = `${n}`;
-          opts = ["1", "2", "3"].sort(() => Math.random() - 0.5);
-        } else if (type === 'ms_count6') {
-          const n = Math.floor(Math.random() * 4) + 3;
-          text = `Combien de pommes vois-tu ? ${'🍎'.repeat(n)}`;
-          ans = `${n}`;
-          opts = Array.from(new Set([`${n}`, `${n === 6 ? 5 : n + 1}`, `${n > 1 ? n - 1 : 2}`, '4'])).sort(() => Math.random() - 0.5);
-        } else if (type === 'ms_compare') {
-          const a = Math.floor(Math.random() * 5) + 5;
-          const b = Math.floor(Math.random() * 4) + 1;
-          text = `Quel est le plus grand nombre entre ${a} et ${b} ?`;
-          ans = `${Math.max(a, b)}`;
-          opts = [`${a}`, `${b}`, `${Math.max(a,b)+1}`, `${Math.max(a,b)-1}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'gs_num') {
-          const n = Math.floor(Math.random() * 7) + 3;
-          text = `Quel nombre vient immédiatement après ${n - 1} ?`;
-          ans = `${n}`;
-          opts = [`${n}`, `${n + 1}`, `${n - 2}`, `${n + 2}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'gs_decomp') {
-          const n = Math.floor(Math.random() * 3) + 3;
-          const p = Math.floor(Math.random() * (n - 1)) + 1;
-          text = `${n} c'est ${p} et ... ?`;
-          ans = `${n - p}`;
-          opts = [`${n - p}`, `${n - p + 1}`, `${n}`, `1`].sort(() => Math.random() - 0.5);
-        } else if (type === 'cp_num100') {
-          const n = Math.floor(Math.random() * 70) + 20;
-          text = `Quel est le nombre qui vient juste avant ${n + 1} ?`;
-          ans = `${n}`;
-          opts = [`${n}`, `${n + 2}`, `${n - 1}`, `${n + 10}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'cp_add_sub') {
-          const a = Math.floor(Math.random() * 10) + 5;
-          const b = Math.floor(Math.random() * 5) + 1;
-          text = `Calculer : ${a} + ${b} = ... ?`;
-          ans = `${a + b}`;
-          opts = [`${a + b}`, `${a + b + 1}`, `${a + b - 2}`, `${a + b + 3}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'ce1_tables') {
-          const a = Math.floor(Math.random() * 8) + 2;
-          const b = Math.floor(Math.random() * 8) + 2;
-          text = `Combien font ${a} × ${b} ?`;
-          ans = `${a * b}`;
-          opts = [`${a * b}`, `${a * b + (Math.random() > 0.5 ? 2 : -3)}`, `${a * b + 4}`, `${a * (b + 1)}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'ce1_symmetry') {
-          const ok = Math.random() > 0.5;
-          text = ok ? "Cette figure présente-t-elle un axe de symétrie valide ?" : "La ligne tracée est-elle un axe de symétrie correct ?";
-          ans = ok ? "Oui" : "Non";
-          opts = ["Oui", "Non"];
-        } else if (type === 'ce2_mult') {
-          const a = Math.floor(Math.random() * 20) + 10;
-          const b = Math.floor(Math.random() * 5) + 2;
-          text = `Calculer en ligne : ${a} × ${b} = ... ?`;
-          ans = `${a * b}`;
-          opts = [`${a * b}`, `${a * b + 5}`, `${a * b - 3}`, `${a * b + 10}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'ce2_perimeters') {
-          const c = Math.floor(Math.random() * 10) + 4;
-          text = `Quel est le périmètre d'un carré dont le côté mesure ${c} cm ?`;
-          ans = `${c * 4} cm`;
-          opts = [`${c * 4} cm`, `${c * c} cm`, `${c * 2} cm`, `${c * 4 + 2} cm`].sort(() => Math.random() - 0.5);
-        } else if (type === 'cm1_fractions') {
-          text = "Comment s'écrit la fraction 'trois quarts' ?";
-          ans = "3/4";
-          opts = ["3/4", "4/3", "1/3", "3/1"].sort(() => Math.random() - 0.5);
-        } else if (type === 'cm1_decimals') {
-          const e = Math.floor(Math.random() * 5) + 1;
-          const d = Math.floor(Math.random() * 8) + 1;
-          text = `Écrire sous forme décimale : ${e} + ${d}/10 = ... ?`;
-          ans = `${e}.${d}`;
-          opts = [`${e}.${d}`, `${e + 1}.${d}`, `${e}.${d + 1}`, `${e - 1}.${d}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'cm2_frac_ops') {
-          const d = Math.floor(Math.random() * 4) + 3;
-          const n1 = Math.floor(Math.random() * 2) + 1;
-          const n2 = Math.floor(Math.random() * 2) + 1;
-          text = `Calculer : ${n1}/${d} + ${n2}/${d} = ... ?`;
-          ans = `${n1 + n2}/${d}`;
-          opts = [`${n1 + n2}/${d}`, `${n1 + n2 + 1}/${d}`, `${n1 * n2}/${d}`, `1/${d}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'cm2_prop') {
-          const p = Math.floor(Math.random() * 3) + 2;
-          text = `Si 2 cahiers coûtent ${2 * p} €, quel est le prix de 4 cahiers ?`;
-          ans = `${4 * p} €`;
-          opts = [`${4 * p} €`, `${2 * p + 2} €`, `${6 * p} €`, `${4 * p + 4} €`].sort(() => Math.random() - 0.5);
-        } else if (type === 'c6_fractions') {
-          text = "Quelle fraction représente la partie colorée (2 parts sur 4) ?";
-          ans = "2/4";
-          opts = ["2/4", "1/4", "3/4", "4/4"].sort(() => Math.random() - 0.5);
-          visual = 'fraction_c6';
-        } else if (type === 'c6_decimals') {
-          const n = Math.floor(Math.random() * 10) + 5;
-          text = `Quel nombre est le plus grand entre ${n},3 et ${n},15 ?`;
-          ans = `${n},3`;
-          opts = [`${n},3`, `${n},15`, `Ils sont égaux`, `${n},1`].sort(() => Math.random() - 0.5);
-        } else if (type === 'c6_divisions') {
-          const div = Math.floor(Math.random() * 5) + 4;
-          const quo = Math.floor(Math.random() * 6) + 5;
-          const rest = Math.floor(Math.random() * (div - 1));
-          const total = div * quo + rest;
-          text = `Dans la division euclidienne de ${total} par ${div}, quel est le quotient entier ?`;
-          ans = `${quo}`;
-          opts = [`${quo}`, `${quo + 1}`, `${quo - 1}`, `${quo + 2}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'c5_relatifs') {
-          const a = Math.floor(Math.random() * 10) + 3;
-          const b = Math.floor(Math.random() * 10) + 5;
-          text = `Calculer : -${a} + ${b} = ... ?`;
-          ans = `${b - a}`;
-          opts = [`${b - a}`, `-${a + b}`, `${a + b}`, `${b - a - 2}`].sort(() => Math.random() - 0.5);
-        } else if (type === 'c5_fractions') {
-          text = "Par quel nombre non nul peut-on multiplier numérateur et dénominateur pour obtenir une fraction égale ?";
-          ans = "Un même nombre non nul";
-          opts = ["Un même nombre non nul", "Zéro", "Un nombre différent", "Par deux obligatoirement"].sort(() => Math.random() - 0.5);
-        } else if (type === 'c4_pythagore') {
-          text = "Dans un triangle ABC rectangle en A, quelle est l'égalité du théorème de Pythagore ?";
-          ans = "BC² = AB² + AC²";
-          opts = ["BC² = AB² + AC²", "AB² = BC² + AC²", "BC = AB + AC", "AC² = AB × BC"].sort(() => Math.random() - 0.5);
-          visual = 'pythagore';
-        } else if (type === 'c4_calcul_litteral') {
-          const x = Math.floor(Math.random() * 4) + 2;
-          text = `Réduire l'expression algébrique : 4x + 3x + ${x} = ... ?`;
-          ans = `7x + ${x}`;
-          opts = [`7x + ${x}`, `8x`, `${x}x + 7`, `7x`].sort(() => Math.random() - 0.5);
-        } else if (type === 'c3_thales') {
-          text = "Le théorème de Thalès permet de calculer :";
-          ans = "Des longueurs dans une configuration de triangles emboîtés ou en papillon";
-          opts = ["Des longueurs dans une configuration de triangles emboîtés ou en papillon", "Des angles", "Des aires de surfaces", "Des racines carrées complexes"].sort(() => Math.random() - 0.5);
-          visual = 'thales';
-        } else if (type === 'c3_trigo') {
-          text = "Dans un triangle rectangle, le cosinus d'un angle aigu est égal à :";
-          ans = "Côté adjacent / Hypoténuse";
-          opts = ["Côté adjacent / Hypoténuse", "Côté opposé / Hypoténuse", "Côté opposé / Côté adjacent", "Hypoténuse / Côté adjacent"].sort(() => Math.random() - 0.5);
-        } else if (type === 'sec_vect') {
-          text = "D'après la relation de Chasles, que vaut vecteur AB + vecteur BC ?";
-          ans = "vecteur AC";
-          opts = ["vecteur AC", "vecteur CA", "vecteur nul", "vecteur BA"].sort(() => Math.random() - 0.5);
-        } else if (type === 'sec_func') {
-          text = "Si une fonction est strictement croissante sur un intervalle, sa courbe représentative :";
-          ans = "Monte de gauche à droite";
-          opts = ["Monte de gauche à droite", "Descend de gauche à droite", "Est horizontale", "Forme un cercle"].sort(() => Math.random() - 0.5);
-        } else if (type === 'p1_deriv') {
-          text = "Quel est le nombre dérivé de la fonction f(x) = x² en x ?";
-          ans = "f'(x) = 2x";
-          opts = ["f'(x) = 2x", "f'(x) = x", "f'(x) = 2", "f'(x) = x²"].sort(() => Math.random() - 0.5);
-        } else if (type === 'term_lim') {
-          text = "Quelle est la limite de 1/x lorsque x tend vers +∞ ?";
-          ans = "0";
-          opts = ["0", "+∞", "1", "-∞"].sort(() => Math.random() - 0.5);
-        } else {
-          const a = Math.floor(Math.random() * 8) + 2;
-          const b = Math.floor(Math.random() * 8) + 2;
-          text = `Calculer : ${a} × ${b} = ... ?`;
-          ans = `${a * b}`;
-          opts = [`${a * b}`, `${a * b + 2}`, `${a * b - 1}`, `${a * b + 4}`].sort(() => Math.random() - 0.5);
-        }
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        {q.options.map((opt, i) => (
+          <button
+            key={i}
+            onClick={() => handleAnswer(opt)}
+            className="bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-3 rounded-2xl border border-slate-700 hover:border-indigo-400 transition-all active:scale-95 text-base shadow-lg cursor-pointer"
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-        opts = Array.from(new Set(opts));
-        while(opts.length < 4) {
-          opts.push(`${Number(ans) + opts.length + 1}`);
-        }
-        opts.sort(() => Math.random() - 0.5);
+function App() {
+  const [userName, setUserName] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('CP');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeModule, setActiveModule] = useState(null);
+  const [score, setScore] = useState(0);
 
-        setQ({ text, ans, options: opts, visual });
-        if (isMat) speak(text);
-      };
+  const handleStart = (e) => {
+    e.preventDefault();
+    if (userName.trim()) setIsLoggedIn(true);
+  };
 
-      useEffect(() => { generateNewQuestion(); }, [module.type]);
-
-      const handleAnswer = (val) => {
-        if (val === q.ans) {
-          const xp = isMat ? 15 : Math.max(5, timeLeft);
-          setFeedback({ success: true, msg: `Bravo ${userName} ! Super ! (+${xp} XP)` });
-          if (isMat) speak(`Bravo ${userName} !`);
-          setTimeout(() => {
-            onResult(xp);
-            generateNewQuestion();
-          }, 1300);
-        } else {
-          setFeedback({ success: false, msg: `Oups ${userName}, ce n'est pas la bonne réponse.` });
-          if (isMat) speak(`Réessaie ${userName}`);
-        }
-      };
-
-      return (
-        <div className="bg-slate-900/90 p-6 sm:p-8 rounded-3xl text-center max-w-lg mx-auto border border-slate-800 shadow-2xl animate-pop">
-          <div className="flex justify-between items-center mb-4">
-            <button onClick={onBack} className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-black">
-              ← RETOUR
-            </button>
-            <span className="text-xs font-black text-indigo-400 bg-indigo-950 px-3 py-1.5 rounded-xl border border-indigo-800/40">
-              {grade} • {module.name}
-            </span>
-            {!isMat && (
-              <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/20">
-                ⏱️ {timeLeft}s
-              </span>
-            )}
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-slate-900/90 p-8 rounded-3xl max-w-md w-full border border-slate-800 shadow-2xl text-center animate-pop">
+          <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-lg shadow-indigo-600/30">
+            🎓
           </div>
-
-          {isMat && (
-            <button 
-              onClick={() => speak(q.text)}
-              className="mb-3 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg inline-flex items-center gap-2"
-            >
-              🔊 Réécouter la consigne
-            </button>
-          )}
-
-          {q.visual && <VisualGraphic type={q.visual} />}
-
-          <h2 className="text-xl sm:text-2xl font-black my-5 text-white leading-relaxed">{q.text}</h2>
-
-          {feedback && (
-            <div className={`p-3 rounded-xl mb-4 font-black text-sm ${feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
-              {feedback.msg}
+          <h1 className="text-2xl font-black text-white mb-6">MathsAcademy Montessori</h1>
+          
+          <form onSubmit={handleStart} className="space-y-5 text-left">
+            <div>
+              <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Prénom</label>
+              <input
+                type="text"
+                required
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                placeholder="Ex: Lucas, Emma..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500"
+              />
             </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            {q.options.map((opt, i) => (
-              <button
-                key={i}
-                onClick={() => handleAnswer(opt)}
-                className="bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-3 rounded-2xl border border-slate-700 hover:border-indigo-400 transition-all active:scale-95 text-base shadow-lg cursor-pointer"
+            <div>
+              <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Niveau Scolaire</label>
+              <select
+                value={selectedGrade}
+                onChange={(e) => setSelectedGrade(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500 cursor-pointer"
               >
-                {opt}
+                {Object.keys(CURRICULUM).map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 active:scale-95 cursor-pointer">
+              COMMENCER LE JEU 🚀
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-4">
+      <header className="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">🎓</span>
+          <div>
+            <h1 className="text-lg font-black text-white">MathsAcademy Montessori</h1>
+            <p className="text-xs text-indigo-400 font-bold">Joueur : {userName} ({selectedGrade})</p>
+          </div>
+        </div>
+        <div className="bg-slate-900 px-4 py-2 rounded-2xl border border-indigo-500/30">
+          <span className="text-xs text-slate-400 font-extrabold mr-2">XP</span>
+          <span className="text-lg font-black text-amber-400">{score}</span>
+        </div>
+      </header>
+
+      {!activeModule ? (
+        <>
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+            {Object.keys(CURRICULUM).map(g => (
+              <button
+                key={g}
+                onClick={() => setSelectedGrade(g)}
+                className={`px-4 py-2 rounded-2xl font-black text-xs transition-all whitespace-nowrap cursor-pointer ${
+                  selectedGrade === g ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                {g}
               </button>
             ))}
           </div>
-        </div>
-      );
-    }
 
-    function App() {
-      const [userName, setUserName] = useState('');
-      const [selectedGrade, setSelectedGrade] = useState('CP');
-      const [isLoggedIn, setIsLoggedIn] = useState(false);
-      const [activeModule, setActiveModule] = useState(null);
-      const [score, setScore] = useState(0);
-
-      const handleStart = (e) => {
-        e.preventDefault();
-        if (userName.trim()) setIsLoggedIn(true);
-      };
-
-      if (!isLoggedIn) {
-        return (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-slate-900/90 p-8 rounded-3xl max-w-md w-full border border-slate-800 shadow-2xl text-center animate-pop">
-              <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-lg shadow-indigo-600/30">
-                🎓
-              </div>
-              <h1 className="text-2xl font-black text-white mb-6">MathsAcademy</h1>
-              
-              <form onSubmit={handleStart} className="space-y-5 text-left">
-                <div>
-                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Prénom</label>
-                  <input
-                    type="text"
-                    required
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    placeholder="Ex: Lucas, Emma..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Niveau Scolaire</label>
-                  <select
-                    value={selectedGrade}
-                    onChange={(e) => setSelectedGrade(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500 cursor-pointer"
-                  >
-                    {Object.keys(CURRICULUM).map(g => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                </div>
-                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 active:scale-95 cursor-pointer">
-                  COMMENCER LE JEU 🚀
-                </button>
-              </form>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {CURRICULUM[selectedGrade]?.map(m => (
+              <button
+                key={m.id}
+                onClick={() => setActiveModule(m)}
+                className="bg-slate-900/80 p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/30 transition-all flex flex-col justify-between h-36 shadow-md cursor-pointer"
+              >
+                <span className="text-3xl">{m.icon}</span>
+                <span className="font-extrabold text-sm text-slate-200">{m.name}</span>
+              </button>
+            ))}
           </div>
-        );
-      }
+        </>
+      ) : (
+        <ExerciseRunner
+          userName={userName}
+          grade={selectedGrade}
+          module={activeModule}
+          onBack={() => setActiveModule(null)}
+          onResult={(xp) => setScore(s => s + xp)}
+        />
+      )}
+    </div>
+  );
+}
 
-      return (
-        <div className="max-w-4xl mx-auto p-4">
-          <header className="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🎓</span>
-              <div>
-                <h1 className="text-lg font-black text-white">MathsAcademy</h1>
-                <p className="text-xs text-indigo-400 font-bold">Joueur : {userName} ({selectedGrade})</p>
-              </div>
-            </div>
-            <div className="bg-slate-900 px-4 py-2 rounded-2xl border border-indigo-500/30">
-              <span className="text-xs text-slate-400 font-extrabold mr-2">XP</span>
-              <span className="text-lg font-black text-amber-400">{score}</span>
-            </div>
-          </header>
-
-          {!activeModule ? (
-            <>
-              <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
-                {Object.keys(CURRICULUM).map(g => (
-                  <button
-                    key={g}
-                    onClick={() => setSelectedGrade(g)}
-                    className={`px-4 py-2 rounded-2xl font-black text-xs transition-all whitespace-nowrap cursor-pointer ${
-                      selectedGrade === g ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
-                    }`}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {CURRICULUM[selectedGrade]?.map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => setActiveModule(m)}
-                    className="bg-slate-900/80 p-5 rounded-3xl text-left border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/30 transition-all flex flex-col justify-between h-36 shadow-md cursor-pointer"
-                  >
-                    <span className="text-3xl">{m.icon}</span>
-                    <span className="font-extrabold text-sm text-slate-200">{m.name}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <ExerciseRunner
-              userName={userName}
-              grade={selectedGrade}
-              module={activeModule}
-              onBack={() => setActiveModule(null)}
-              onResult={(xp) => setScore(s => s + xp)}
-            />
-          )}
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
