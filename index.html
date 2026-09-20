@@ -1,144 +1,514 @@
 <!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MathsAcademy Montessori</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>@keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}.pop{animation:pop .25s ease forwards}@keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}.cf{position:fixed;top:-20px;width:12px;height:12px;animation:fall 2.5s linear forwards;z-index:100;pointer-events:none}.big{font-size:2rem;line-height:2.4rem;word-break:break-all}.rot{transform:rotate(180deg)}</style></head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans"><div id="app"></div>
-<script>
-const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a,pick=a=>a[R(0,a.length-1)],sh=a=>[...a].sort(()=>Math.random()-.5),$=s=>document.getElementById(s);
-const fm=n=>n<0?'−'+-n:''+n,fd=n=>n.toFixed(1).replace('.',','),SUP=['','','²','³','⁴','⁵','⁶','⁷'];
-const E=[['🍎','pommes'],['🐟','poissons'],['⭐','étoiles'],['🚗','voitures'],['🌸','fleurs'],['🐶','chiens'],['🎈','ballons gonflables'],['🍓','fraises'],['🐥','poussins'],['⚽','ballons de foot']];
-const COL=[['rouge','#ef4444'],['bleu','#3b82f6'],['vert','#22c55e'],['jaune','#facc15'],['orange','#f97316'],['violet','#a855f7'],['rose','#ec4899'],['marron','#92400e']];
-let mute=false,AC;
-const say=t=>{if(mute||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g,' ').replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\u2B50]/gu,'').replace(/²/g,' au carré').replace(/³/g,' au cube').replace(/×/g,' fois ').replace(/\+/g,' plus ').replace(/[−-]/g,' moins ').replace(/=/g,' égale ').replace(/\//g,' sur ').replace(/∞/g,' l’infini '));u.lang='fr-FR';u.rate=.9;u.pitch=1.1;speechSynthesis.speak(u)};
-const tg=()=>{mute=!mute;window.speechSynthesis&&speechSynthesis.cancel();document.querySelectorAll('.mt').forEach(e=>e.textContent=mute?'🔇':'🔊')};
-const snd=ok=>{try{AC=AC||new(window.AudioContext||webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime;o.connect(g);g.connect(AC.destination);(ok?[523,659,784]:[300,200]).forEach((f,i)=>o.frequency.setValueAtTime(f,n+i*.12));g.gain.setValueAtTime(.1,n);g.gain.exponentialRampToValueAtTime(.001,n+.4);o.start();o.stop(n+.4)}catch(e){}};
-const cf=()=>{const c=['#6366f1','#f59e0b','#10b981','#ef4444','#8b5cf6','#ec4899'];for(let i=0;i<40;i++){const d=document.createElement('div');d.className='cf';d.style.cssText=`left:${Math.random()*100}vw;background:${pick(c)};animation-delay:${Math.random()*.5}s;border-radius:${i%2?'50%':0}`;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}};
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathsAcademy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @keyframes popIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes bounceHappy {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+    }
+    @keyframes confetti {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+    }
+    .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .animate-happy { animation: bounceHappy 0.45s ease; }
+    .confetti-piece {
+      position: absolute;
+      font-size: 1.6rem;
+      pointer-events: none;
+      animation: confetti 1.2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
 
-/* ---------- Visuels SVG ---------- */
-const svg=(b,w=100,h=80,c='mx-auto w-full max-w-[260px]')=>`<svg viewBox="0 0 ${w} ${h}" class="${c}">${b}</svg>`;
-const SH={rond:c=>`<circle cx="30" cy="30" r="24" fill="${c}"/>`,carré:c=>`<rect x="8" y="8" width="44" height="44" fill="${c}"/>`,triangle:c=>`<polygon points="30,5 56,54 4,54" fill="${c}"/>`,rectangle:c=>`<rect x="2" y="15" width="56" height="30" fill="${c}"/>`,étoile:c=>`<polygon points="30,3 37,22 57,23 42,36 47,56 30,45 13,56 18,36 3,23 23,22" fill="${c}"/>`};
-const em=(n,e,c='')=>`<div class="big ${c}">${e.repeat(n)}</div>`,row=(...a)=>`<div class="flex justify-center items-center gap-5 flex-wrap">${a.join('')}</div>`;
-const pie=(n,d)=>{let s='';for(let i=0;i<d;i++){const a=i/d*6.2832-1.5708,b=(i+1)/d*6.2832-1.5708;s+=`<path d="M40 40L${40+36*Math.cos(a)} ${40+36*Math.sin(a)}A36 36 0 0 1 ${40+36*Math.cos(b)} ${40+36*Math.sin(b)}Z" fill="${i<n?'#6366f1':'#1e293b'}" stroke="#94a3b8" stroke-width="1.5"/>`}return svg(s,80,80,'inline-block w-32')};
-const bar=(n,d)=>{let s='';for(let i=0;i<d;i++)s+=`<rect x="${2+i*96/d}" y="4" width="${96/d}" height="24" fill="${i<n?'#f59e0b':'#1e293b'}" stroke="#94a3b8"/>`;return svg(s,100,32,'block mx-auto w-56 my-1')};
-const nl=(a,b,m,lab)=>{let s='<path d="M5 30H195" stroke="#94a3b8" stroke-width="2"/>';for(let i=0;i<=b-a;i++){const x=10+i*180/(b-a);s+=`<path d="M${x} 24V36" stroke="#94a3b8"/><text x="${x}" y="50" font-size="9" fill="#cbd5e1" text-anchor="middle">${lab(a+i)}</text>`}const x=10+(m-a)*180/(b-a);return svg(s+`<circle cx="${x}" cy="30" r="5" fill="#f59e0b"/><text x="${x}" y="16" font-size="11" fill="#f59e0b" text-anchor="middle">?</text>`,200,58,'mx-auto w-full max-w-md')};
-const bt=(t,u)=>`<div class="flex justify-center items-end gap-4"><div class="flex gap-1">${'<div class="w-3 h-16 bg-amber-400 rounded-sm"></div>'.repeat(t)}</div><div class="flex flex-wrap gap-1 w-20">${'<div class="w-3 h-3 bg-indigo-400 rounded-sm"></div>'.repeat(u)}</div></div>`;
-const grid=(x,y)=>{let s='';for(let i=0;i<x;i++)for(let j=0;j<y;j++)s+=`<circle cx="${4+j*8}" cy="${4+i*8}" r="3" fill="${i%2?'#818cf8':'#f59e0b'}"/>`;return `<div class="mx-auto" style="max-width:${y*22}px">${svg(s,y*8,x*8,'w-full')}</div>`};
-const tri=(L,a,b,h)=>{const [r,p,q]=L,sc=70/Math.max(a,b),w=a*sc,hh=b*sc,T=(x,y,t,an='middle')=>`<text x="${x}" y="${y}" font-size="9" fill="#e2e8f0" text-anchor="${an}">${t}</text>`;return svg(`<polygon points="20,80 ${20+w},80 20,${80-hh}" fill="#312e81" stroke="#a5b4fc" stroke-width="1.5"/><path d="M20 72H28V80" fill="none" stroke="#a5b4fc"/>${T(8,90,r)}${T(20+w+3,90,p)}${T(24,80-hh-3,q)}${T(20+w/2,97,a==null?'':h[0])}${T(17,80-hh/2,h[1],'end')}${T(20+w/2+8,80-hh/2-4,h[2])}`,130,100,'mx-auto w-48')};
-const th=(f)=>{const A=[50,5],B=[8,90],C=[100,90],P=(u,t)=>[u[0]+(A[0]-u[0])*0+(u[0]-A[0])*0,0],M=[A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f],N=[A[0]+(C[0]-A[0])*f,A[1]+(C[1]-A[1])*f],T=(p,t,dx,dy)=>`<text x="${p[0]+dx}" y="${p[1]+dy}" font-size="10" fill="#e2e8f0">${t}</text>`;return svg(`<polygon points="50,5 8,90 100,90" fill="none" stroke="#a5b4fc" stroke-width="2"/><path d="M${M[0]} ${M[1]}L${N[0]} ${N[1]}" stroke="#f59e0b" stroke-width="2"/>${T(A,'A',-3,-1)}${T(B,'B',-9,4)}${T(C,'C',3,4)}${T(M,'M',-11,3)}${T(N,'N',4,3)}`,110,100,'mx-auto w-44')};
-const vg=(A,B)=>{let s='<defs><marker id="ar" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="#f59e0b"/></marker></defs>';for(let i=-5;i<=5;i++)s+=`<path d="M${90+15*i} 15V165M15 ${90+15*i}H165" stroke="#334155" stroke-width=".6"/>`;const X=p=>90+15*p[0],Y=p=>90-15*p[1];return svg(s+`<path d="M${X(A)} ${Y(A)}L${X(B)} ${Y(B)}" stroke="#f59e0b" stroke-width="2" marker-end="url(#ar)"/><text x="${X(A)-9}" y="${Y(A)-4}" fill="#e2e8f0" font-size="10">A</text><text x="${X(B)+3}" y="${Y(B)-4}" fill="#e2e8f0" font-size="10">B</text>`,180,180,'mx-auto w-56')};
-const gr=(f,xa,xb,mx)=>{const xs=[...Array(61)].map((_,i)=>xa+(xb-xa)*i/60),ys=xs.map(f),lo=Math.min(...ys),hi=Math.max(...ys),X=x=>5+(x-xa)/(xb-xa)*110,Y=y=>75-(y-lo)/(hi-lo||1)*70;let s=`<polyline fill="none" stroke="#818cf8" stroke-width="2" points="${xs.map((x,i)=>X(x)+','+Y(ys[i])).join(' ')}"/>`;if(xa<0&&xb>0)s+=`<path d="M${X(0)} 2V78" stroke="#475569"/>`;if(lo<0&&hi>0)s+=`<path d="M2 ${Y(0)}H118" stroke="#475569"/>`;if(mx!=null)s+=`<circle cx="${X(mx)}" cy="${Y(f(mx))}" r="3.5" fill="#f59e0b"/>`;return svg(s,120,80,'mx-auto w-56')};
-const P=(a,b,c)=>[[a,'x²'],[b,'x'],[c,'']].filter(t=>t[0]).map((t,i)=>{const k=t[0],m=Math.abs(k);return (k<0?'− ':i?'+ ':'')+(m==1&&t[1]?'':m)+t[1]}).join(' ');
+  <div id="root"></div>
 
-/* ---------- Générateurs de questions ---------- */
-const Q=(t,a,w,v='')=>{a=''+a;const o=[a];w.forEach(x=>{x=''+x;!o.includes(x)&&o.length<4&&o.push(x)});for(let k=1;o.length<4&&k<30;k++){const x=''+(+a+(k%2?k:-k));!o.includes(x)&&o.push(x)}return{t,a,o:sh(o),v}};
-const mix=(max,tot)=>{const[a,an]=pick(E),[b,bn]=pick(E.filter(e=>e[0]!=a)),m=tot?max>>1:max,x=R(1,m),y=R(1,m),v=row(em(x,a),em(y,b));return tot?Q(`Combien y a-t-il de ${an} et de ${bn} en tout ?`,x+y,[x+y+1,x+y-1,x+y+2],v):Q(`Combien y a-t-il de ${an} ?`,x,[x+1,x-1,x+2],v)};
-const mult=T=>{const t=pick(T),b=R(1,10),[x,y]=R(0,1)?[t,b]:[b,t],p=x*y,k=R(0,2),[,an]=pick(E);
-if(k==0)return Q(`Combien font ${x} × ${y} ?`,p,[p+x,p-y,p+y,p+2],grid(x,y));
-if(k==1)return Q(`${x} × ? = ${p}`,y,[y+1,y-1,y+2],grid(x,y));
-return Q(`${x} rangées de ${y} ${an}. Combien de ${an} en tout ?`,p,[p+x,p-y,p+y,p+2],grid(x,y))};
-const TRI=[[3,4,5],[5,12,13],[8,15,17],[7,24,25],[6,8,10]],NM=[['A','B','C'],['D','E','F'],['M','N','P'],['R','S','T'],['X','Y','Z']];
-const G={
-ps_shapes(){const ks=Object.keys(SH),k=pick(ks),[cn,cc]=pick(COL),t=R(0,2),n=R(1,4),v=svg(SH[k](cc),60,60,'mx-auto w-28');
-if(t==0)return Q('Comment s’appelle cette forme ?',k,ks.filter(x=>x!=k),v);
-if(t==1)return Q('De quelle couleur est cette forme ?',cn,COL.map(c=>c[0]).filter(x=>x!=cn),v);
-return Q(`Combien de ${k}s vois-tu ?`,n,[n+1,n-1,n+2],row(...Array(n).fill(svg(SH[k](cc),60,60,'w-14'))))},
-ps_count3:()=>mix(3),
-ms_count6:()=>R(0,1)?mix(6):mix(6,1),
-ms_compare(){const[a,an]=pick(E),[b,bn]=pick(E.filter(e=>e[0]!=a));let x=R(1,9),y=R(1,9);while(y==x)y=R(1,9);const more=R(0,1),win=(x>y)==!!more?an:bn,los=win==an?bn:an;return Q(more?'Qu’y a-t-il en plus grand nombre ?':'Qu’y a-t-il en plus petit nombre ?',win,[los,...E.map(e=>e[1]).filter(n=>n!=an&&n!=bn)],row(em(x,a),em(y,b)))},
-gs_num(){const t=R(0,5),n=R(1,9);return t==0?Q(`Quel nombre vient juste après ${n} ?`,n+1,[n,n+2,n-1]):t==1?Q(`Quel nombre vient juste avant ${n+1} ?`,n,[n+1,n+2,n-1]):t==2?Q(`Complète : ${n-1}, ?, ${n+1}`,n,[n+2,n-1,n+1]):mix(10)},
-gs_decomp(){const n=R(2,10),x=R(1,n-1),[a]=pick(E);return Q(`${x} et combien font ${n} ?`,n-x,[n-x+1,n-x-1,n-x+2],`<div class="big">${a.repeat(x)}<span class="opacity-30">${'⬜'.repeat(n-x)}</span></div>`)},
-cp_num100(){const t=R(0,4),n=R(1,99),d=n/10|0,u=n%10;
-if(t<2)return Q('Quel nombre est représenté ? (barres = dizaines)',n,[n+1,n-1,u*10+d,n+10],bt(d,u));
-if(t==2)return Q(`Quel nombre vient juste après ${n} ?`,n+1,[n-1,n+10,n+2]);
-if(t==3)return Q(`Combien de dizaines y a-t-il dans ${n} ?`,d,[u,d+1,d-1],bt(d,u));
-let y=R(1,99);while(y==n)y=R(1,99);return Q('Quel nombre est le plus grand ?',Math.max(n,y),[Math.min(n,y),Math.max(n,y)+1,Math.min(n,y)-1])},
-cp_add_sub(){const t=R(0,4),[a]=pick(E),x=R(1,9),y=R(1,9),X=R(5,15),Y=R(1,20-X);
-if(t==0)return Q(`Combien font ${x} + ${y} ?`,x+y,[x+y+1,x+y-1,x+y+2],row(em(x,a),'<b class="text-3xl">➕</b>',em(y,a)));
-if(t==1){const s=Math.max(x,y),l=Math.min(x,y);return Q(`Combien font ${s} − ${l} ? (les images grises sont enlevées)`,s-l,[s-l+1,s-l-1,s+l],`<div class="big">${a.repeat(s-l)}<span class="opacity-25 grayscale">${a.repeat(l)}</span></div>`)}
-if(t==2)return Q(`Combien font ${X} + ${Y} ?`,X+Y,[X+Y+1,X+Y-1,X+Y+10]);
-if(t==3)return Q(`Combien font ${X+Y} − ${Y} ?`,X,[X+1,X-1,X+Y]);
-return Q(`${X} + ? = ${X+Y}`,Y,[Y+1,Y-1,Y+2])},
-ce1_tables:()=>mult([2,3,4,5]),
-ce2_mult:()=>mult([1,2,3,4,5,6,7,8,9]),
-cm1_fractions(){const d=R(2,12),n=R(1,d-1),t=R(0,4),f=(a,b)=>a+'/'+b,v=t%2?bar(n,d):pie(n,d);
-if(t<2)return Q('Quelle fraction est coloriée ?',f(n,d),[f(n+1,d),f(d-n,d),f(n,d+1),f(d,n)],v);
-if(t<4)return Q('Quelle fraction n’est PAS coloriée ?',f(d-n,d),[f(n,d),f(d-n+1,d),f(d-n,d+1),f(d,d-n)],v);
-return Q(`Comment lit-on la fraction ${n}/${d} ?`,`${n} sur ${d}`,[`${n+1} sur ${d}`,`${n} sur ${d+2}`,`${d} sur ${n}`],pie(n,d))},
-cm2_frac_ops(){const d=R(3,12),t=R(0,3),f=(a,b)=>a+'/'+b;
-if(t==0){const a=R(1,d-2),b=R(1,d-1-a);return Q(`${f(a,d)} + ${f(b,d)} = ?`,f(a+b,d),[f(a+b,2*d),f(a+b+1,d),f(a*b,d)],bar(a,d)+bar(b,d))}
-if(t==1){const x=R(2,d-1),y=R(1,x-1);return Q(`${f(x,d)} − ${f(y,d)} = ?`,f(x-y,d),[f(x-y,d-y),f(x-y+1,d),f(x+y,d)],bar(x,d))}
-if(t==2){const n=R(1,d-1),k=R(2,4);return Q(`${f(n,d)} = ?/${d*k}`,n*k,[n+k,n*k+1,n*k-1],pie(n,d))}
-const D=pick([2,3,4,5,10]),n=R(1,D-1),m=R(1,10);return Q(`Combien font ${f(n,D)} de ${D*m} ?`,n*m,[n*m+D,n+m,D*m-n],pie(n,D))},
-c6_fractions(){const t=R(0,3),f=(a,b)=>a+'/'+b;
-if(t==0){const D=pick([2,3,4,5,6,8,10]),n=R(1,D-1),m=R(2,12);return Q(`Combien font ${f(n,D)} de ${D*m} ?`,n*m,[n*m+D,n+m,D*m-n],pie(n,D))}
-if(t==1){const n=R(1,9);return Q(`Écris ${f(n,10)} en nombre décimal.`,`0,${n}`,[`0,0${n}`,`${n},0`,`${n},1`],pie(n,10))}
-if(t==2){const d=R(2,9),n=R(1,15),a=n<d?'Inférieure à 1':n==d?'Égale à 1':'Supérieure à 1';return Q(`La fraction ${f(n,d)} est…`,a,['Inférieure à 1','Égale à 1','Supérieure à 1','On ne peut pas savoir'].filter(x=>x!=a))}
-return G.cm1_fractions()},
-c6_decimals(){const t=R(0,4),n=R(0,19);
-if(t==0){const a=R(1,9);let b=R(10,99);while(a*10==b)b=R(10,99);const s1=`${n},${a}`,s2=`${n},${b}`,big=R(0,1),w=(a*10>b)==!!big?s1:s2;return Q(`Quel nombre est le plus ${big?'grand':'petit'} ?`,w,[w==s1?s2:s1,'Ils sont égaux','On ne peut pas savoir'])}
-if(t==1){const x=R(1,9);return Q('Quel nombre est repéré sur la droite ?',`${n},${x}`,[`${n},${x+1}`,`${n},${x-1}`,`${n+1},${x}`,`${x},${n}`],nl(n*10,n*10+10,n*10+x,v=>v%10?'':v/10))}
-if(t==2){const x=R(11,99),y=R(11,99),s=(x+y)/10;return Q(`Calcule ${fd(x/10)} + ${fd(y/10)}`,fd(s),[fd(s+.1),fd(s-.1),fd(s+1)])}
-if(t==3){const x=R(100,999)/100,s=x.toFixed(2).replace('.',','),r=Math.round(x);return Q(`Arrondis ${s} à l’unité.`,r,[Math.floor(x)+1==r?r-1:Math.floor(x)+1,r+1,r-1])}
-const x=R(100,999),s=`${x/100}`.replace('.',','),ds=String(x),k=R(0,1);return Q(`Quel est le chiffre des ${k?'centièmes':'dixièmes'} de ${(x/100).toFixed(2).replace('.',',')} ?`,ds[k?2:1],[...'0123456789'].filter(c=>c!=ds[k?2:1]))},
-c5_relatifs(){const t=R(0,5),x=R(-9,9),y=R(-9,9),pa=v=>v<0?`(${fm(v)})`:v;
-if(t==0){const a=R(-10,0),m=R(a,a+10);return Q('Quel nombre est repéré sur la droite ?',fm(m),[fm(-m),fm(m+1),fm(m-1),fm(m+2)],nl(a,a+10,m,fm))}
-if(t==1)return Q(`Calcule : ${fm(x)} + ${pa(y)}`,fm(x+y),[fm(x-y),fm(-(x+y)),fm(x+y+2),fm(Math.abs(x)+Math.abs(y))]);
-if(t==2)return Q(`Calcule : ${fm(x)} − ${pa(y)}`,fm(x-y),[fm(x+y),fm(-(x-y)),fm(x-y+2),fm(y-x+1)]);
-if(t==3){let z=y;while(z==x)z=R(-9,9);return Q('Quel nombre est le plus petit ?',fm(Math.min(x,z)),[fm(Math.max(x,z)),fm(-Math.min(x,z)),fm(0)])}
-if(t==4){const k=R(1,15)*(R(0,1)?1:-1);return Q(`Quel est l’opposé de ${fm(k)} ?`,fm(-k),[fm(k),fm(k+1),fm(k-1)])}
-const T=R(-10,15),d=R(1,10),up=R(0,1);return Q(`Il fait ${fm(T)} degrés. La température ${up?'monte':'baisse'} de ${d} degrés. Quelle température ?`,fm(up?T+d:T-d),[fm(up?T-d:T+d),fm(T),fm(-T),fm(T+d+1)],'<div class="text-5xl">🌡️</div>')},
-c4_pythagore(){const L=pick(NM),r=R(0,2),[Rr,p,q]=[L[r],...L.filter((_,i)=>i!=r)],[a,b,c]=pick(TRI).map(v=>v*(R(0,1)?1:2)),n=L.join(''),t=R(0,4),A=Rr+p,B=Rr+q,H=p+q;
-if(t==0)return Q(`${n} est rectangle en ${Rr}. ${A} = ${a} et ${B} = ${b}. Calcule ${H}.`,c,[a+b,c+1,c-1,c+2],tri(L,a,b,[a,b,'?']));
-if(t==1)return Q(`${n} est rectangle en ${Rr}. ${A} = ${a} et ${H} = ${c}. Calcule ${B}.`,b,[c-a,b+1,b-1,c+a],tri(L,a,b,[a,'?',c]));
-if(t==2)return Q(`${n} est rectangle en ${Rr}. Quelle égalité est vraie ?`,`${H}² = ${A}² + ${B}²`,[`${A}² = ${H}² + ${B}²`,`${B}² = ${H}² + ${A}²`,`${H} = ${A} + ${B}`],tri(L,3,4,['','','']));
-if(t==3)return Q(`${n} est rectangle en ${Rr}. ${A} = ${a} et ${B} = ${b}. Calcule ${H}².`,a*a+b*b,[(a+b)**2,Math.abs(a*a-b*b),a*a+b*b+1,a+b]);
-const ok=R(0,1),s=ok?c:c+1;return Q(`Un triangle a pour côtés ${a} ; ${b} ; ${s}. Est-il rectangle ?`,ok?'Oui':'Non',ok?['Non','Impossible à dire','Seulement si isocèle']:['Oui','Impossible à dire','Seulement si isocèle'],tri(['A','B','C'],a,b,[a,b,s]))},
-c3_thales(){const a=R(2,6),k=R(2,4),x=R(2,6),t=R(0,3),v=th(1/k),e='Les droites (MN) et (BC) sont parallèles. ';
-if(t==0)return Q(`${e}AM = ${a}, AB = ${a*k}, AC = ${x*k}. Calcule AN.`,x,[x+1,x-1,x+2,a*k],v);
-if(t==1)return Q(`${e}AM = ${a}, AB = ${a*k}, AN = ${x}. Calcule AC.`,x*k,[x*k+1,x+k,x*k-1,x+a],v);
-if(t==2)return Q(`${e}AM = ${a}, AB = ${a*k}, BC = ${x*k}. Calcule MN.`,x,[x+1,x-1,x+2,x*k],v);
-return Q(`${e}AM = ${a}, AB = ${a*k}, MN = ${x}. Calcule BC.`,x*k,[x*k+1,x*k-1,x+k,x+a],v)},
-sec_vect(){const t=R(0,5),a=R(-6,6),b=R(-6,6),c=R(-6,6),d=R(-6,6),c2=(x,y)=>`(${x} ; ${y})`;
-if(t==0){const A=[R(-4,4),R(-4,4)],B=[R(-5,5),R(-5,5)];if(A[0]==B[0]&&A[1]==B[1])B[0]+=A[0]>4?-1:1;const dx=B[0]-A[0],dy=B[1]-A[1];return Q('Lis les coordonnées du vecteur AB sur le quadrillage.',c2(dx,dy),[c2(dy,dx),c2(-dx,-dy),c2(dx+1,dy),c2(dx,dy+2)],vg(A,B))}
-if(t==1)return Q(`u${c2(a,b)} + v${c2(c,d)} a pour coordonnées :`,c2(a+c,b+d),[c2(a-c,b-d),c2(a+c,b-d),c2(a*c,b*d),c2(a+c+1,b+d)]);
-if(t==2){const[A,B,C]=sh('ABCDEFMNPQ'.split(''));return Q(`Relation de Chasles : vecteur ${A}${B} + vecteur ${B}${C} = ?`,`vecteur ${A}${C}`,[`vecteur ${C}${A}`,`vecteur ${A}${B}`,`vecteur ${B}${C}`])}
-if(t==3)return Q(`Le vecteur u${c2(a,b+(b||1))} a pour opposé −u de coordonnées :`,c2(-a,-(b+(b||1))),[c2(a,b+(b||1)),c2(-a,b+(b||1)),c2(b+(b||1),a)]);
-if(t==4){const[p,q,r]=pick(TRI),s=R(0,1)?1:-1,u=R(0,1)?1:-1;return Q(`Calcule la norme du vecteur u${c2(p*s,q*u)}.`,r,[p+q,r+1,r-1,Math.abs(p-q)])}
-const x=R(-4,4),y=R(-4,4),X=x+2*R(-3,3),Y=y+2*R(-3,3);return Q(`Quel est le milieu de A${c2(x,y)} et B${c2(X,Y)} ?`,c2((x+X)/2,(y+Y)/2),[c2(x+X,y+Y),c2((X-x)/2,(Y-y)/2),c2((x+X)/2+1,(y+Y)/2),c2((x+Y)/2,(y+X)/2)])},
-p1_deriv(){const t=R(0,3),a=pick([-3,-2,-1,1,2,3]),b=R(-5,5),c=R(-5,5),x0=R(-3,3);
-if(t==0){const f=a*x0*x0+b*x0+c;return Q(`f(x) = ${P(a,b,c)}. Calcule le nombre dérivé f’(${x0}).`,2*a*x0+b,[f,a*x0+b,2*a*x0,2*a*x0+b+2],gr(x=>a*x*x+b*x+c,-3,3,x0))}
-if(t==1){const n=R(2,6),F=(k,e)=>`${k}x${e==1?'':SUP[e]}`;return Q(`Quelle est la dérivée de f(x) = x${SUP[n]} ?`,F(n,n-1),[F(n-1,n),F(1,n-1),F(n,n),F(n+1,n-1)])}
-if(t==2)return Q(`f(x) = ${a}x ${b<0?'−':'+'} ${Math.abs(b)||1}. Que vaut f’(x) ?`,a,[b||1,a+b,0,-a]);
-return Q(`Quelle est la dérivée de f(x) = ${a}x² ?`,`${2*a}x`,[`${a}x`,`${2*a}`,`${a*a}x`,`${a}x²`])},
-term_lim(){const t=R(0,4),a=pick([-3,-2,-1,1,2,3]),k=pick([-9,-5,-3,-2,-1,1,2,3,5,9]),I=['+∞','−∞','0'],sg=n=>n<0?`− ${-n}`:`+ ${n}`;
-if(t==0)return Q(`Limite de ${k}/x quand x tend vers +∞ ?`,'0',['+∞','−∞',`${k}`],gr(x=>k/x,.5,8));
-if(t==1){const b=R(-5,5),c=R(-5,5),ans=a>0?'+∞':'−∞';return Q(`Limite de ${P(a,b,c)} quand x tend vers +∞ ?`,ans,[...I.filter(x=>x!=ans),`${a}`],gr(x=>a*x*x+b*x+c,-3,3))}
-if(t==2){const c=R(1,5),m=R(1,6),b=R(-5,5),d=R(1,9);return Q(`Limite de (${c*m}x ${sg(b)}) / (${c}x ${sg(d)}) quand x tend vers +∞ ?`,m,[c*m,c,'+∞','0'])}
-if(t==3){const ans=k>0?'+∞':'−∞';return Q(`Limite de ${k}/x quand x tend vers 0 avec x > 0 ?`,ans,[...I.filter(x=>x!=ans),`${k}`],gr(x=>k/x,.3,4))}
-const n=R(2,7),ans=(a>0)==(n%2==0)?'+∞':'−∞';return Q(`Limite de ${a}x${SUP[n]} quand x tend vers −∞ ?`,ans,[...I.filter(x=>x!=ans),`${a}`])}
-};
-const CUR={PS:[['ps_shapes','Formes et couleurs','🔴'],['ps_count3','Dénombrer jusqu’à 3','🔢']],MS:[['ms_count6','Collections jusqu’à 6','🍎'],['ms_compare','Comparer des quantités','⚖️']],GS:[['gs_num','Suite numérique jusqu’à 10','🔢'],['gs_decomp','Décomposer les nombres','🧩']],CP:[['cp_num100','Nombres jusqu’à 100','💯'],['cp_add_sub','Additions et soustractions','➕']],CE1:[['ce1_tables','Tables (2, 3, 4, 5)','✖️']],CE2:[['ce2_mult','Tables de 1 à 9','🎲']],CM1:[['cm1_fractions','Fractions simples','🍕']],CM2:[['cm2_frac_ops','Fractions (+, −, équivalentes)','🍰']],'6ème':[['c6_fractions','Fractions','🔢'],['c6_decimals','Décimaux','📊']],'5ème':[['c5_relatifs','Nombres relatifs','🌡️']],'4ème':[['c4_pythagore','Théorème de Pythagore','📐']],'3ème':[['c3_thales','Théorème de Thalès','📐']],Seconde:[['sec_vect','Vecteurs','➡️']],'1ère':[['p1_deriv','Nombre dérivé','📈']],Terminale:[['term_lim','Limites de fonctions','♾️']]};
-const DU=['ce1_tables','ce2_mult'],BO='bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-3 rounded-2xl border border-slate-700 active:scale-95 shadow-lg',BP='bg-indigo-600 hover:bg-indigo-500 font-black py-2 rounded-xl text-sm';
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
 
-/* ---------- Interface ---------- */
-let S={u:'',g:'CP',xp:0,m:null,q:null,t:25,tm:0,done:0,D:null};
-const app=$('app'),H=s=>app.innerHTML=s,mat=()=>['PS','MS','GS'].includes(S.g);
-const login=()=>H(`<div class="min-h-screen flex items-center justify-center p-4"><div class="bg-slate-900/90 p-8 rounded-3xl max-w-md w-full border border-slate-800 text-center pop"><div class="text-5xl mb-3">🎓</div><h1 class="text-2xl font-black mb-6">MathsAcademy Montessori</h1><input id="nm" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 font-bold mb-4" placeholder="Ton prénom"><select id="gr" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 font-bold mb-5">${Object.keys(CUR).map(g=>`<option ${g==S.g?'selected':''}>${g}</option>`).join('')}</select><button onclick="go()" class="w-full bg-indigo-600 hover:bg-indigo-500 font-black py-4 rounded-2xl">COMMENCER 🚀</button></div></div>`);
-const go=()=>{const n=$('nm').value.trim();if(!n)return $('nm').focus();S.u=n;S.g=$('gr').value;home();say(`Bonjour ${n} !`)};
-const setG=g=>{S.g=g;home()};
-const home=()=>{clearInterval(S.tm);S.m=null;S.D=null;H(`<div class="max-w-4xl mx-auto p-4"><header class="flex justify-between items-center py-3 border-b border-slate-800 mb-5"><div><h1 class="font-black">🎓 MathsAcademy Montessori</h1><p class="text-xs text-indigo-400 font-bold">${S.u} (${S.g})</p></div><div class="flex gap-2 items-center"><button class="mt bg-slate-800 px-3 py-2 rounded-xl" onclick="tg()">${mute?'🔇':'🔊'}</button><div class="bg-slate-900 px-4 py-2 rounded-2xl border border-indigo-500/30 text-xs font-extrabold text-slate-400">XP <b class="text-amber-400 text-lg">${S.xp}</b></div></div></header><div class="flex gap-2 overflow-x-auto pb-3 mb-4">${Object.keys(CUR).map(g=>`<button onclick="setG('${g}')" class="px-4 py-2 rounded-2xl font-black text-xs whitespace-nowrap ${S.g==g?'bg-indigo-600':'bg-slate-900 text-slate-400'}">${g}</button>`).join('')}</div><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">${CUR[S.g].map(([id,n,ic])=>`<div class="bg-slate-900/80 p-5 rounded-3xl border border-slate-800 flex flex-col gap-3"><span class="text-3xl">${ic}</span><b class="text-sm">${n}</b><button onclick="play('${id}')" class="${BP}">Jouer</button>${DU.includes(id)?`<button onclick="duel('${id}')" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-black py-2 rounded-xl text-sm">⚔️ Duel à 2</button>`:''}</div>`).join('')}</div></div>`)};
-const play=id=>{S.m=id;S.D=null;next()};
-const next=()=>{if(!S.m||S.D)return;S.done=0;S.q=G[S.m]();S.t=25;clearInterval(S.tm);draw();say(S.q.t);if(!mat())S.tm=setInterval(()=>{if(--S.t<=0){clearInterval(S.tm);S.done=1;fb(0,`Temps écoulé ! La réponse était ${S.q.a}.`);setTimeout(next,2800)}else{const e=$('tm');if(e)e.textContent='⏱️ '+S.t+'s'}},1000)};
-const draw=()=>{const q=S.q;H(`<div class="max-w-lg mx-auto p-4"><div class="bg-slate-900/90 p-5 rounded-3xl text-center border border-slate-800 pop"><div class="flex justify-between items-center gap-2 mb-3"><button onclick="home()" class="bg-slate-800 px-3 py-2 rounded-xl text-xs font-black">← RETOUR</button><span class="text-xs font-black text-indigo-300">${S.g}</span><span class="flex gap-2"><button onclick="say(S.q.t)" class="bg-slate-800 px-3 py-2 rounded-xl">🔁</button><button class="mt bg-slate-800 px-3 py-2 rounded-xl" onclick="tg()">${mute?'🔇':'🔊'}</button>${mat()?'':`<span id="tm" class="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-2 rounded-xl">⏱️ ${S.t}s</span>`}</span></div><div class="my-3">${q.v}</div><h2 class="text-lg sm:text-xl font-black my-4">${q.t}</h2><div id="fb"></div><div id="op" class="grid grid-cols-2 gap-3">${q.o.map((o,i)=>`<button onclick="ans(${i})" class="${BO}">${o}</button>`).join('')}</div></div></div>`)};
-const fb=(ok,m)=>{$('fb').innerHTML=`<div class="p-3 rounded-xl mb-3 font-black text-sm ${ok?'bg-emerald-500/20 text-emerald-300':'bg-rose-500/20 text-rose-300'}">${m}</div>`;say(m)};
-const ans=i=>{if(S.done)return;const b=$('op').children[i];if(S.q.o[i]==S.q.a){S.done=1;clearInterval(S.tm);snd(1);cf();S.xp+=10;fb(1,`Bravo ${S.u} ! +10 XP`);setTimeout(next,1400)}else{snd(0);b.disabled=true;b.classList.add('opacity-30');fb(0,`Oups ${S.u}, essaie encore !`)}};
+    const CURRICULUM = {
+      PS: [
+        { id: 'ps_formes', name: 'Les formes (rond, carré...)', icon: '🔴', type: 'ps_formes', domain: 'Sensoriel' },
+        { id: 'ps_count3', name: 'Compter jusqu\'à 3', icon: '⭐', type: 'ps_count3', domain: 'Nombres' },
+        { id: 'ps_tailles', name: 'Petit, Moyen et Grand', icon: '🐘', type: 'ps_tailles', domain: 'Grandeurs' },
+        { id: 'ps_espace', name: 'Haut, Bas, Dedans', icon: '☁️', type: 'ps_espace', domain: 'Espace' }
+      ],
+      MS: [
+        { id: 'ms_count6', name: 'Compter jusqu\'à 6', icon: '🍎', type: 'ms_count6', domain: 'Nombres' },
+        { id: 'ms_associer', name: 'Chiffre et quantité', icon: '🔢', type: 'ms_associer', domain: 'Nombres' },
+        { id: 'ms_formes', name: 'Carré, Triangle et Cercle', icon: '🟦', type: 'ms_formes', domain: 'Sensoriel' },
+        { id: 'ms_rythme', name: 'Les suites logiques', icon: '🔵🔴', type: 'ms_rythme', domain: 'Logique' },
+        { id: 'ms_comparer', name: 'Plus et Moins d\'objets', icon: '⚖️', type: 'ms_comparer', domain: 'Nombres' }
+      ],
+      GS: [
+        { id: 'gs_chaine', name: 'Compter jusqu\'à 10', icon: '🔟', type: 'gs_chaine', domain: 'Nombres' },
+        { id: 'gs_decomp', name: 'Décomposer les nombres', icon: '🧩', type: 'gs_decomp', domain: 'Nombres' },
+        { id: 'gs_formes', name: 'Formes géométriques complexes', icon: '▭', type: 'gs_formes', domain: 'Sensoriel' },
+        { id: 'gs_espace', name: 'Repérage spatial', icon: '👈👉', type: 'gs_espace', domain: 'Espace' },
+        { id: 'gs_masse', name: 'Lourd et Léger', icon: '🏋️', type: 'gs_masse', domain: 'Grandeurs' }
+      ],
+      CP: [
+        { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100', domain: 'Nombres' },
+        { id: 'cp_add', name: 'Additions illustrées', icon: '➕', type: 'cp_add', domain: 'Calcul' },
+        { id: 'cp_soustraction', name: 'Soustractions imagées', icon: '➖', type: 'cp_soustraction', domain: 'Calcul' },
+        { id: 'cp_regle', name: 'Tracer et mesurer', icon: '📏', type: 'cp_regle', domain: 'Géométrie' },
+        { id: 'cp_monnaie', name: 'La monnaie (Pièces & Billets)', icon: '💶', type: 'cp_monnaie', domain: 'Grandeurs' },
+        { id: 'cp_heure', name: 'Lire l\'heure (Horloges)', icon: '🕒', type: 'cp_heure', domain: 'Grandeurs' }
+      ],
+      CE1: [
+        { id: 'ce1_num1000', name: 'Nombres jusqu\'à 1000', icon: '🔢', type: 'ce1_num1000', domain: 'Nombres' },
+        { id: 'ce1_tables', name: 'Tables de 2 à 5 (Mode Duel)', icon: '✖️', type: 'ce1_tables', domain: 'Calcul' },
+        { id: 'ce1_soustraction', name: 'Soustraction posée avec retenue', icon: '➖', type: 'ce1_soustraction', domain: 'Calcul' },
+        { id: 'ce1_solides', name: 'Cube, pavé et solides', icon: '🧊', type: 'ce1_solides', domain: 'Géométrie' },
+        { id: 'ce1_angle', name: 'Reconnaître l\'angle droit', icon: '📐', type: 'ce1_angle', domain: 'Géométrie' },
+        { id: 'ce1_mesures', name: 'Unités (m, g, kg, L)', icon: '📏', type: 'ce1_mesures', domain: 'Grandeurs' }
+      ],
+      CE2: [
+        { id: 'ce2_num10000', name: 'Nombres jusqu\'à 10 000', icon: '🔢', type: 'ce2_num10000', domain: 'Nombres' },
+        { id: 'ce2_mult', name: 'Multiplication posée en colonnes', icon: '✖️', type: 'ce2_mult', domain: 'Calcul' },
+        { id: 'ce2_division', name: 'Partages et divisions simples', icon: '➗', type: 'ce2_division', domain: 'Calcul' },
+        { id: 'ce2_tables', name: 'Toutes les tables (Défi Chrono)', icon: '📊', type: 'ce2_tables', domain: 'Calcul' },
+        { id: 'ce2_figures', name: 'Carré, rectangle et triangles', icon: '🟦', type: 'ce2_figures', domain: 'Géométrie' },
+        { id: 'ce2_conversions', name: 'Conversions de longueurs', icon: '🔄', type: 'ce2_conversions', domain: 'Grandeurs' }
+      ],
+      CM1: [
+        { id: 'cm1_grands', name: 'Grands nombres (Millions)', icon: '🔢', type: 'cm1_grands', domain: 'Nombres' },
+        { id: 'cm1_fractions', name: 'Fractions simples en parts de pizza', icon: '🍕', type: 'cm1_fractions', domain: 'Nombres' },
+        { id: 'cm1_decimaux', name: 'Nombres décimaux illustrés', icon: '🎯', type: 'cm1_decimaux', domain: 'Nombres' },
+        { id: 'cm1_operations', name: 'Multiplications & Divisions avancées', icon: '✖️', type: 'cm1_operations', domain: 'Calcul' },
+        { id: 'cm1_perimetre', name: 'Calculs de périmètres', icon: '📏', type: 'cm1_perimetre', domain: 'Grandeurs' },
+        { id: 'cm1_paralleles', name: 'Parallèles & Perpendiculaires', icon: '📐', type: 'cm1_paralleles', domain: 'Géométrie' }
+      ],
+      CM2: [
+        { id: 'cm2_milliard', name: 'Nombres jusqu\'au milliard', icon: '🔢', type: 'cm2_milliard', domain: 'Nombres' },
+        { id: 'cm2_fractions', name: 'Fractions & nombres décimaux', icon: '🍰', type: 'cm2_fractions', domain: 'Nombres' },
+        { id: 'cm2_operations', name: 'Opérations posées sur les décimaux', icon: '➕', type: 'cm2_operations', domain: 'Calcul' },
+        { id: 'cm2_aires', name: 'Calculs d\'aires de rectangles', icon: '📐', type: 'cm2_aires', domain: 'Grandeurs' },
+        { id: 'cm2_symetrie', name: 'Symétrie axiale sur quadrillage', icon: '🪞', type: 'cm2_symetrie', domain: 'Géométrie' },
+        { id: 'cm2_prop', name: 'Tableaux de proportionnalité', icon: '📈', type: 'cm2_prop', domain: 'Proportionnalité' }
+      ],
+      '6ème': [
+        { id: 'c6_fractions', name: 'Fractions', icon: '🔢', type: 'c6_fractions', domain: 'Nombres' },
+        { id: 'c6_priorites', name: 'Priorités opératoires', icon: '⚖️', type: 'c6_priorites', domain: 'Calcul' },
+        { id: 'c6_perimetre', name: 'Périmètre & aire du disque', icon: '⭕', type: 'c6_perimetre', domain: 'Grandeurs' },
+        { id: 'c6_volume', name: 'Volume du pavé droit', icon: '📦', type: 'c6_volume', domain: 'Grandeurs' },
+        { id: 'c6_symetrie', name: 'Symétrie axiale', icon: '🪞', type: 'c6_symetrie', domain: 'Géométrie' },
+        { id: 'c6_donnees', name: 'Tableaux & diagrammes', icon: '📊', type: 'c6_donnees', domain: 'Données' }
+      ],
+      '5ème': [
+        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs', domain: 'Nombres' },
+        { id: 'c5_litteral', name: 'Calcul littéral', icon: '🔤', type: 'c5_litteral', domain: 'Algèbre' },
+        { id: 'c5_symetrie', name: 'Symétrie centrale', icon: '🔄', type: 'c5_symetrie', domain: 'Géométrie' },
+        { id: 'c5_parallelo', name: 'Parallélogrammes', icon: '▱', type: 'c5_parallelo', domain: 'Géométrie' },
+        { id: 'c5_moyenne', name: 'Moyennes', icon: '📊', type: 'c5_moyenne', domain: 'Statistiques' },
+        { id: 'c5_scratch', name: 'Algorithmique Scratch', icon: '💻', type: 'c5_scratch', domain: 'Algorithmique' }
+      ],
+      '4ème': [
+        { id: 'c4_relatifs', name: 'Relatifs avancés', icon: '🌡️', type: 'c4_relatifs', domain: 'Nombres' },
+        { id: 'c4_puissances', name: 'Puissances', icon: '¹⁰', type: 'c4_puissances', domain: 'Nombres' },
+        { id: 'c4_litteral', name: 'Développement', icon: '🔤', type: 'c4_litteral', domain: 'Algèbre' },
+        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore', domain: 'Géométrie' },
+        { id: 'c4_transfo', name: 'Translations', icon: '🔄', type: 'c4_transfo', domain: 'Géométrie' },
+        { id: 'c4_proba', name: 'Probabilités', icon: '🎲', type: 'c4_proba', domain: 'Probabilités' }
+      ],
+      '3ème': [
+        { id: 'c3_arithmetique', name: 'Arithmétique', icon: '🔢', type: 'c3_arithmetique', domain: 'Nombres' },
+        { id: 'c3_equations', name: 'Équations', icon: '⚖️', type: 'c3_equations', domain: 'Algèbre' },
+        { id: 'c3_fonctions', name: 'Fonctions affines', icon: '📈', type: 'c3_fonctions', domain: 'Fonctions' },
+        { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales', domain: 'Géométrie' },
+        { id: 'c3_trigo', name: 'Trigonométrie', icon: '△', type: 'c3_trigo', domain: 'Géométrie' },
+        { id: 'c3_proba', name: 'Probabilités 2 épreuves', icon: '🎲', type: 'c3_proba', domain: 'Probabilités' }
+      ],
+      Seconde: [
+        { id: 'sec_ensembles', name: 'Ensembles de nombres', icon: 'ℝ', type: 'sec_ensembles', domain: 'Algèbre' },
+        { id: 'sec_fonctions', name: 'Fonctions de référence', icon: '📉', type: 'sec_fonctions', domain: 'Fonctions' },
+        { id: 'sec_variations', name: 'Variations', icon: '📈', type: 'sec_variations', domain: 'Fonctions' },
+        { id: 'sec_vecteurs', name: 'Vecteurs', icon: '➡️', type: 'sec_vecteurs', domain: 'Géométrie' },
+        { id: 'sec_proba', name: 'Probabilités conditionnelles', icon: '🌳', type: 'sec_proba', domain: 'Probabilités' },
+        { id: 'sec_python', name: 'Python', icon: '🐍', type: 'sec_python', domain: 'Algorithmique' }
+      ],
+      '1ère': [
+        { id: 'p1_second', name: 'Second degré', icon: 'ax²', type: 'p1_second', domain: 'Algèbre' },
+        { id: 'p1_derivee', name: 'Dérivation', icon: '📈', type: 'p1_derivee', domain: 'Analyse' },
+        { id: 'p1_exp', name: 'Fonction exponentielle', icon: 'eˣ', type: 'p1_exp', domain: 'Analyse' },
+        { id: 'p1_suites', name: 'Suites numériques', icon: '🔢', type: 'p1_suites', domain: 'Suites' },
+        { id: 'p1_scalaire', name: 'Produit scalaire', icon: '⋅', type: 'p1_scalaire', domain: 'Géométrie' },
+        { id: 'p1_proba', name: 'Lois de probabilité', icon: '🎲', type: 'p1_proba', domain: 'Probabilités' }
+      ],
+      Terminale: [
+        { id: 'term_limites', name: 'Limites', icon: '∞', type: 'term_limites', domain: 'Analyse' },
+        { id: 'term_continuite', name: 'Continuité', icon: '📈', type: 'term_continuite', domain: 'Analyse' },
+        { id: 'term_log', name: 'Logarithme népérien', icon: 'ln', type: 'term_log', domain: 'Analyse' },
+        { id: 'term_integrales', name: 'Calcul intégral', icon: '∫', type: 'term_integrales', domain: 'Analyse' },
+        { id: 'term_espace', name: 'Géométrie dans l\'espace', icon: '🧊', type: 'term_espace', domain: 'Géométrie' },
+        { id: 'term_binomiale', name: 'Loi binomiale', icon: '🎲', type: 'term_binomiale', domain: 'Probabilités' }
+      ]
+    };
 
-/* ---------- Duel (multiplication) : 2 joueurs face à face, premier à 10 ---------- */
-const duel=id=>{const p2=prompt('Prénom du joueur 2 ?','Joueur 2')||'Joueur 2';clearInterval(S.tm);S.m=id;S.D={n:[S.u,p2],s:[0,0],l:[0,0],d:0,w:-1};dn()};
-const dn=()=>{const D=S.D;if(!D)return;D.l=[0,0];D.d=0;S.q=G[S.m]();dr();say(S.q.t)};
-const rp=()=>{S.D.s=[0,0];S.D.w=-1;dn()};
-const dp=p=>{const D=S.D,q=S.q;return `<div class="${p?'rot':''} p-3 flex-1 flex flex-col justify-center text-center"><div class="font-black text-sm text-amber-400">${D.n[p]} : ${D.s[p]}/10</div><div>${q.v}</div><h2 class="font-black my-2">${q.t}</h2><div class="grid grid-cols-2 gap-2">${q.o.map((o,i)=>`<button ${D.l[p]||D.d?'disabled':''} onclick="da(${p},${i})" class="${BO} ${D.l[p]?'opacity-30':''}">${o}</button>`).join('')}</div></div>`};
-const dr=()=>{const D=S.D;if(D.w>=0)return H(`<div class="min-h-screen flex items-center justify-center p-4 text-center"><div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 pop"><div class="text-6xl mb-3">🏆</div><h2 class="text-2xl font-black mb-5">${D.n[D.w]} gagne ${D.s[D.w]} à ${D.s[1-D.w]} !</h2><div class="flex gap-3 justify-center"><button onclick="rp()" class="${BP} px-5">Rejouer</button><button onclick="home()" class="bg-slate-800 font-black px-5 rounded-xl text-sm">Menu</button></div></div></div>`);H(`<div class="min-h-screen flex flex-col">${dp(1)}<div class="flex justify-between items-center bg-slate-900 px-3 py-2"><button onclick="home()" class="bg-slate-800 px-3 py-1 rounded-xl text-xs font-black">← MENU</button><b class="text-xs text-amber-400">⚔️ Premier à 10 points</b><span><button class="mt px-2" onclick="tg()">${mute?'🔇':'🔊'}</button><button class="px-2" onclick="say(S.q.t)">🔁</button></span></div>${dp(0)}</div>`)};
-const da=(p,i)=>{const D=S.D,q=S.q;if(D.d||D.l[p])return;if(q.o[i]==q.a){D.d=1;D.s[p]++;snd(1);cf();if(D.s[p]>=10){D.w=p;dr();say(`${D.n[p]} gagne la partie !`);return}dr();say(`Point pour ${D.n[p]} !`);setTimeout(dn,1200)}else{D.l[p]=1;snd(0);if(D.l[0]&&D.l[1]){D.d=1;setTimeout(dn,1000)}dr()}};
-login();
-</script></body></html>
+    const GRADES_ROW_1 = ['PS', 'MS', 'GS', 'CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème', '5ème', '4ème', '3ème', 'Seconde'];
+    const GRADES_ROW_2 = ['1ère', 'Terminale'];
+
+    // Moteur vocal haut de gamme, fluide et naturel
+    const speak = (text) => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const cleanText = text.replace(/[\/\+\-\×\÷\=\(\)\[\]#*⭐🔴🟦🔺🐘☁️🍎🔢🔵🏋️💶🕒🧊📐🍕🎯📦🌡️🔤🔄🎲ℝ📉➡️🌳ax²eˣln∫∞]/g, ' ');
+        const u = new SpeechSynthesisUtterance(cleanText);
+        u.lang = 'fr-FR';
+        u.rate = 0.95;
+        u.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        const humanVoice = voices.find(v => v.lang.includes('fr') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Thomas') || v.name.includes('Audrey'))) || voices.find(v => v.lang.includes('fr'));
+        
+        if (humanVoice) {
+          u.voice = humanVoice;
+        }
+
+        window.speechSynthesis.speak(u);
+      }
+    };
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+
+    function generateQuestion(type) {
+      let text = '', ans = '', opts = [], speakText = '';
+      const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+      if (type.includes('tables') || type.includes('mult') || type.includes('operations')) {
+        const a = r(2, 12), b = r(2, 12);
+        text = `Combien font ${a} × ${b} ?`;
+        ans = `${a * b}`;
+        opts = [ans, `${a * b + r(1, 3)}`, `${a * b - r(1, 3)}`, `${a * (b + 1)}`];
+      } else if (type === 'c6_fractions' || type.includes('fractions')) {
+        const num = r(1, 4), den = r(5, 10);
+        text = `Quelle fraction correspond à ${num} parts sur ${den} ?`;
+        ans = `${num}/${den}`; opts = [`${num}/${den}`, `${den}/${num}`, `${num+1}/${den}`, `${num}/${den+1}`];
+      } else if (type === 'c6_priorites') {
+        text = "Calculer : 5 + 3 × 2 = ?";
+        ans = "11"; opts = ["11", "16", "13", "10"];
+      } else if (type === 'c6_perimetre') {
+        text = "Quel est le rayon d'un disque si son diamètre vaut 10 cm ?";
+        ans = "5 cm"; opts = ["5 cm", "10 cm", "20 cm", "25 cm"];
+      } else if (type === 'c6_volume') {
+        text = "Volume d'un pavé de longueur 3, largeur 2 et hauteur 4 ?";
+        ans = "24"; opts = ["24", "9", "14", "20"];
+      } else if (type === 'c6_symetrie') {
+        text = "Que conserve la symétrie axiale ?";
+        ans = "Les longueurs et les angles"; opts = ["Les longueurs et les angles", "Uniquement les aires", "Rien du tout", "Les milieux"];
+      } else if (type === 'c6_donnees') {
+        text = "Dans un graphique, que représente l'axe des ordonnées (vertical) ?";
+        ans = "Les valeurs mesurées"; opts = ["Les valeurs mesurées", "Le temps uniquement", "Le titre", "Rien"];
+      } else {
+        const a = r(3, 25), b = r(2, 10);
+        text = `Si tu as ${a} billes et que tu en gagnes ${b}, combien en as-tu en tout ?`;
+        ans = `${a + b}`;
+        opts = [`${a + b}`, `${a + b + 2}`, `${a + b - 1}`, `${a * b}`];
+      }
+
+      opts = Array.from(new Set(opts.map(String))).slice(0, 4);
+      while (opts.length < 4) opts.push(String(r(10, 99)));
+      opts = opts.sort(() => Math.random() - 0.5);
+
+      speakText = text;
+      return { text, ans: String(ans), options: opts, speakText };
+    }
+
+    function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
+      const [q, setQ] = useState({ text: '', ans: '', options: [], speakText: '' });
+      const [feedback, setFeedback] = useState(null);
+      const [isAnswering, setIsAnswering] = useState(false);
+      const [showConfetti, setShowConfetti] = useState(false);
+      const [timeLeft, setTimeLeft] = useState(30);
+      const timerRef = useRef(null);
+
+      const loadNewQuestion = useCallback(() => {
+        setFeedback(null);
+        setIsAnswering(false);
+        const newQ = generateQuestion(module.type);
+        setQ(newQ);
+        setTimeLeft(30);
+        speak(newQ.speakText);
+      }, [module.type]);
+
+      useEffect(() => {
+        loadNewQuestion();
+      }, [loadNewQuestion]);
+
+      useEffect(() => {
+        if (feedback) return;
+        timerRef.current = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev <= 1) {
+              clearInterval(timerRef.current);
+              handleAnswer('');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearInterval(timerRef.current);
+      }, [q, feedback]);
+
+      const handleAnswer = (choice) => {
+        if (isAnswering) return;
+        setIsAnswering(true);
+        clearInterval(timerRef.current);
+
+        const isCorrect = String(choice).trim() === String(q.ans).trim();
+
+        if (isCorrect) {
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 1200);
+          setFeedback({ success: true, text: "Bravo ! C'est une excellente réponse 🎉 (+10 XP)" });
+          speak("Bravo ! C'est une excellente réponse !");
+          setTimeout(() => {
+            onResult(10);
+            loadNewQuestion();
+          }, 1300);
+        } else {
+          setFeedback({ success: false, text: `Oups... La bonne réponse était : ${q.ans}` });
+          speak(`Ce n'est pas tout à fait ça. La bonne réponse était ${q.ans}`);
+          setTimeout(() => {
+            loadNewQuestion();
+          }, 2400);
+        }
+      };
+
+      return (
+        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl max-w-xl mx-auto shadow-2xl relative animate-pop">
+          {showConfetti && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <div className="confetti-piece">⭐ 🎉 🌟 🎈 ✨ 🍕</div>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center mb-6">
+            <button
+              onClick={onBack}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer"
+            >
+              ← Retour au menu
+            </button>
+            <span className="text-xs font-bold bg-indigo-950 text-indigo-400 border border-indigo-800/50 px-3 py-1.5 rounded-xl">
+              {grade} • {module.name}
+            </span>
+            <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl">
+              ⏱️ {timeLeft}s
+            </span>
+          </div>
+
+          <div className="text-center my-6">
+            <div className="text-4xl mb-3">{module.icon}</div>
+            <h2 className="text-lg sm:text-xl font-black text-white whitespace-pre-line leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+              {q.text}
+            </h2>
+            <button
+              onClick={() => speak(q.speakText)}
+              className="mt-4 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 px-4 py-2 rounded-xl text-xs font-bold border border-indigo-500/30 transition cursor-pointer inline-flex items-center gap-2"
+            >
+              🔊 Réécouter l'énoncé vocal
+            </button>
+          </div>
+
+          {feedback && (
+            <div className={`p-4 rounded-2xl mb-6 text-center font-black text-sm animate-pop ${
+              feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-happy' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+            }`}>
+              {feedback.text}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {q.options.map((opt, idx) => (
+              <button
+                key={idx}
+                disabled={isAnswering}
+                onClick={() => handleAnswer(opt)}
+                className="bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-4 rounded-2xl border border-slate-700 hover:border-indigo-400 transition-all active:scale-95 text-sm sm:text-base shadow-lg cursor-pointer disabled:opacity-50"
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [userName, setUserName] = useState('');
+      const [selectedGrade, setSelectedGrade] = useState('6ème');
+      const [isLoggedIn, setIsLoggedIn] = useState(false);
+      const [activeModule, setActiveModule] = useState(null);
+      const [score, setScore] = useState(0);
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        if (userName.trim()) {
+          setIsLoggedIn(true);
+          speak(`Bienvenue ${userName} sur l'académie des mathématiques Montessori ! Choisis ton module pour commencer.`);
+        }
+      };
+
+      if (!isLoggedIn) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-md w-full shadow-2xl animate-pop text-center">
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-lg shadow-indigo-600/30">
+                🎓
+              </div>
+              <h1 className="text-2xl font-black text-white mb-2">MathsAcademy Montessori</h1>
+              <p className="text-xs text-slate-400 mb-6">Des centaines de défis visuels, vocaux et duels chronométrés !</p>
+
+              <form onSubmit={handleLogin} className="space-y-4 text-left">
+                <div>
+                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Prénom</label>
+                  <input
+                    type="text"
+                    required
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Ex: Lucas, Emma..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Ton Niveau Scolaire</label>
+                  <select
+                    value={selectedGrade}
+                    onChange={(e) => setSelectedGrade(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500 cursor-pointer"
+                  >
+                    {[...GRADES_ROW_1, ...GRADES_ROW_2].map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30 active:scale-95 cursor-pointer mt-2"
+                >
+                  COMMENCER L'AVENTURE 🚀
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="max-w-5xl mx-auto p-4 sm:p-6 min-h-screen flex flex-col justify-between">
+          <div>
+            <header className="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🎓</span>
+                <div>
+                  <h1 className="text-base font-black text-white">MathsAcademy Montessori</h1>
+                  <p className="text-xs text-slate-400">Joueur : <span className="font-bold text-white">{userName} ({selectedGrade})</span></p>
+                </div>
+              </div>
+              <div className="bg-slate-900 border border-amber-500/30 px-4 py-2 rounded-2xl flex items-center gap-2 shadow-md">
+                <span className="text-amber-400 text-lg">⭐</span>
+                <span className="text-sm font-black text-amber-400">{score} XP</span>
+              </div>
+            </header>
+
+            <main className="mb-8">
+              {!activeModule ? (
+                <>
+                  {/* Grille des niveaux sur deux lignes à l'identique de l'ancien site */}
+                  <div className="flex flex-col gap-2 mb-8">
+                    <div className="flex flex-wrap gap-2">
+                      {GRADES_ROW_1.map(g => (
+                        <button
+                          key={g}
+                          onClick={() => setSelectedGrade(g)}
+                          className={`px-4 py-2 rounded-2xl font-extrabold text-xs transition-all cursor-pointer ${
+                            selectedGrade === g ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105' : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {GRADES_ROW_2.map(g => (
+                        <button
+                          key={g}
+                          onClick={() => setSelectedGrade(g)}
+                          className={`px-4 py-2 rounded-2xl font-extrabold text-xs transition-all cursor-pointer ${
+                            selectedGrade === g ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105' : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Grille des modules (3x2 pour la 6ème) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    {CURRICULUM[selectedGrade]?.map(m => (
+                      <div
+                        key={m.id}
+                        onClick={() => setActiveModule(m)}
+                        className="bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/20 p-6 rounded-3xl transition-all flex flex-col justify-between h-40 shadow-lg cursor-pointer group"
+                      >
+                        <div className="flex items-start justify-between">
+                          <span className="text-3xl bg-slate-950 p-2.5 rounded-2xl border border-slate-800 group-hover:scale-110 transition-transform">{m.icon}</span>
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-xl">
+                            {m.domain}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-extrabold text-base text-white group-hover:text-indigo-400 transition-colors">{m.name}</h3>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <ExerciseRunner
+                  userName={userName}
+                  grade={selectedGrade}
+                  module={activeModule}
+                  onBack={() => setActiveModule(null)}
+                  onResult={(xp) => setScore(s => s + xp)}
+                />
+              )}
+            </main>
+          </div>
+
+          <footer className="py-4 border-t border-slate-900 flex justify-between items-center text-xs text-slate-500">
+            <button
+              onClick={() => { setIsLoggedIn(false); setActiveModule(null); }}
+              className="hover:text-indigo-400 transition cursor-pointer underline font-medium"
+            >
+              Changer d'élève
+            </button>
+            <span>MathsAcademy Montessori © 2026</span>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
