@@ -160,26 +160,26 @@
     const GRADES_ROW_1 = ['PS', 'MS', 'GS', 'CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème', '5ème', '4ème', '3ème', 'Seconde'];
     const GRADES_ROW_2 = ['1ère', 'Terminale'];
 
-    // Moteur vocal haut de gamme, fluide et naturel
-    const speak = (text) => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const cleanText = text.replace(/[\/\+\-\×\÷\=\(\)\[\]#*⭐🔴🟦🔺🐘☁️🍎🔢🔵🏋️💶🕒🧊📐🍕🎯📦🌡️🔤🔄🎲ℝ📉➡️🌳ax²eˣln∫∞]/g, ' ');
-        const u = new SpeechSynthesisUtterance(cleanText);
-        u.lang = 'fr-FR';
-        u.rate = 0.95;
-        u.pitch = 1.0;
+  // Moteur vocal corrigé pour forcer le français
+const speak = (text) => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[\/\+\-\×\÷\=\(\)\[\]#*⭐🔴🟦🔺🐘☁️🍎🔢🔵🏋️💶🕒🧊📐🍕🎯📦🌡️🔤🔄🎲ℝ📉➡️🌳ax²eˣln∫∞]/g, ' ');
+    const u = new SpeechSynthesisUtterance(cleanText);
+    u.lang = 'fr-FR';
+    u.rate = 0.95;
+    u.pitch = 1.0;
 
-        const voices = window.speechSynthesis.getVoices();
-        const humanVoice = voices.find(v => v.lang.includes('fr') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Thomas') || v.name.includes('Audrey'))) || voices.find(v => v.lang.includes('fr'));
-        
-        if (humanVoice) {
-          u.voice = humanVoice;
-        }
+    const voices = window.speechSynthesis.getVoices();
+    const frenchVoice = voices.find(v => v.lang === 'fr-FR' || v.lang === 'fr_FR' || v.lang.startsWith('fr'));
+    
+    if (frenchVoice) {
+      u.voice = frenchVoice;
+    }
 
-        window.speechSynthesis.speak(u);
-      }
-    };
+    window.speechSynthesis.speak(u);
+  }
+};
 
     if ('speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => {
