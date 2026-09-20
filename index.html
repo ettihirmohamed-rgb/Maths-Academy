@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MathsAcademy Montessori</title>
+  <title>MathsAcademy</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -60,250 +60,221 @@
         { id: 'gs_masse', name: 'Lourd et Léger', icon: '🏋️', type: 'gs_masse', domain: 'Grandeurs' }
       ],
       CP: [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100', domain: 'Nombres' },
         { id: 'cp_add', name: 'Additions illustrées', icon: '➕', type: 'cp_add', domain: 'Calcul' },
         { id: 'cp_soustraction', name: 'Soustractions imagées', icon: '➖', type: 'cp_soustraction', domain: 'Calcul' },
-        { id: 'cp_regle', name: 'Tracer et mesurer', icon: '📏', type: 'cp_regle', domain: 'Géométrie' },
-        { id: 'cp_monnaie', name: 'La monnaie (Pièces & Billets)', icon: '💶', type: 'cp_monnaie', domain: 'Grandeurs' },
-        { id: 'cp_heure', name: 'Lire l\'heure (Horloges)', icon: '🕒', type: 'cp_heure', domain: 'Grandeurs' }
+        { id: 'cp_regle', name: 'Tracer et mesurer', icon: '📏', type: 'cp_regle', domain: 'Géométrie' }
       ],
       CE1: [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'ce1_num1000', name: 'Nombres jusqu\'à 1000', icon: '🔢', type: 'ce1_num1000', domain: 'Nombres' },
-        { id: 'ce1_tables', name: 'Tables de 2 à 5 (Mode Duel)', icon: '✖️', type: 'ce1_tables', domain: 'Calcul' },
         { id: 'ce1_soustraction', name: 'Soustraction posée avec retenue', icon: '➖', type: 'ce1_soustraction', domain: 'Calcul' },
-        { id: 'ce1_solides', name: 'Cube, pavé et solides', icon: '🧊', type: 'ce1_solides', domain: 'Géométrie' },
-        { id: 'ce1_angle', name: 'Reconnaître l\'angle droit', icon: '📐', type: 'ce1_angle', domain: 'Géométrie' },
-        { id: 'ce1_mesures', name: 'Unités (m, g, kg, L)', icon: '📏', type: 'ce1_mesures', domain: 'Grandeurs' }
+        { id: 'ce1_solides', name: 'Cube, pavé et solides', icon: '🧊', type: 'ce1_solides', domain: 'Géométrie' }
       ],
       CE2: [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'ce2_num10000', name: 'Nombres jusqu\'à 10 000', icon: '🔢', type: 'ce2_num10000', domain: 'Nombres' },
         { id: 'ce2_mult', name: 'Multiplication posée en colonnes', icon: '✖️', type: 'ce2_mult', domain: 'Calcul' },
-        { id: 'ce2_division', name: 'Partages et divisions simples', icon: '➗', type: 'ce2_division', domain: 'Calcul' },
-        { id: 'ce2_tables', name: 'Toutes les tables (Défi Chrono)', icon: '📊', type: 'ce2_tables', domain: 'Calcul' },
-        { id: 'ce2_figures', name: 'Carré, rectangle et triangles', icon: '🟦', type: 'ce2_figures', domain: 'Géométrie' },
-        { id: 'ce2_conversions', name: 'Conversions de longueurs', icon: '🔄', type: 'ce2_conversions', domain: 'Grandeurs' }
+        { id: 'ce2_figures', name: 'Carré, rectangle et triangles', icon: '🟦', type: 'ce2_figures', domain: 'Géométrie' }
       ],
       CM1: [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'cm1_grands', name: 'Grands nombres (Millions)', icon: '🔢', type: 'cm1_grands', domain: 'Nombres' },
         { id: 'cm1_fractions', name: 'Fractions simples en parts de pizza', icon: '🍕', type: 'cm1_fractions', domain: 'Nombres' },
-        { id: 'cm1_decimaux', name: 'Nombres décimaux illustrés', icon: '🎯', type: 'cm1_decimaux', domain: 'Nombres' },
-        { id: 'cm1_operations', name: 'Multiplications & Divisions avancées', icon: '✖️', type: 'cm1_operations', domain: 'Calcul' },
-        { id: 'cm1_perimetre', name: 'Calculs de périmètres', icon: '📏', type: 'cm1_perimetre', domain: 'Grandeurs' },
-        { id: 'cm1_paralleles', name: 'Parallèles & Perpendiculaires', icon: '📐', type: 'cm1_paralleles', domain: 'Géométrie' }
+        { id: 'cm1_perimetre', name: 'Calculs de périmètres', icon: '📏', type: 'cm1_perimetre', domain: 'Grandeurs' }
       ],
       CM2: [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'cm2_milliard', name: 'Nombres jusqu\'au milliard', icon: '🔢', type: 'cm2_milliard', domain: 'Nombres' },
         { id: 'cm2_fractions', name: 'Fractions & nombres décimaux', icon: '🍰', type: 'cm2_fractions', domain: 'Nombres' },
-        { id: 'cm2_operations', name: 'Opérations posées sur les décimaux', icon: '➕', type: 'cm2_operations', domain: 'Calcul' },
-        { id: 'cm2_aires', name: 'Calculs d\'aires de rectangles', icon: '📐', type: 'cm2_aires', domain: 'Grandeurs' },
-        { id: 'cm2_symetrie', name: 'Symétrie axiale sur quadrillage', icon: '🪞', type: 'cm2_symetrie', domain: 'Géométrie' },
-        { id: 'cm2_prop', name: 'Tableaux de proportionnalité', icon: '📈', type: 'cm2_prop', domain: 'Proportionnalité' }
+        { id: 'cm2_symetrie', name: 'Symétrie axiale sur quadrillage', icon: '🪞', type: 'cm2_symetrie', domain: 'Géométrie' }
       ],
       '6ème': [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'c6_fractions', name: 'Fractions', icon: '🔢', type: 'c6_fractions', domain: 'Nombres' },
         { id: 'c6_priorites', name: 'Priorités opératoires', icon: '⚖️', type: 'c6_priorites', domain: 'Calcul' },
-        { id: 'c6_perimetre', name: 'Périmètre & aire du disque', icon: '⭕', type: 'c6_perimetre', domain: 'Grandeurs' },
-        { id: 'c6_volume', name: 'Volume du pavé droit', icon: '📦', type: 'c6_volume', domain: 'Grandeurs' },
-        { id: 'c6_symetrie', name: 'Symétrie axiale', icon: '🪞', type: 'c6_symetrie', domain: 'Géométrie' },
-        { id: 'c6_donnees', name: 'Tableaux & diagrammes', icon: '📊', type: 'c6_donnees', domain: 'Données' }
+        { id: 'c6_perimetre', name: 'Périmètre & aire du disque', icon: '⭕', type: 'c6_perimetre', domain: 'Grandeurs' }
       ],
       '5ème': [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs', domain: 'Nombres' },
         { id: 'c5_litteral', name: 'Calcul littéral', icon: '🔤', type: 'c5_litteral', domain: 'Algèbre' },
-        { id: 'c5_symetrie', name: 'Symétrie centrale', icon: '🔄', type: 'c5_symetrie', domain: 'Géométrie' },
-        { id: 'c5_parallelo', name: 'Parallélogrammes', icon: '▱', type: 'c5_parallelo', domain: 'Géométrie' },
-        { id: 'c5_moyenne', name: 'Moyennes', icon: '📊', type: 'c5_moyenne', domain: 'Statistiques' },
-        { id: 'c5_scratch', name: 'Algorithmique Scratch', icon: '💻', type: 'c5_scratch', domain: 'Algorithmique' }
+        { id: 'c5_symetrie', name: 'Symétrie centrale', icon: '🔄', type: 'c5_symetrie', domain: 'Géométrie' }
       ],
       '4ème': [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'c4_relatifs', name: 'Relatifs avancés', icon: '🌡️', type: 'c4_relatifs', domain: 'Nombres' },
         { id: 'c4_puissances', name: 'Puissances', icon: '¹⁰', type: 'c4_puissances', domain: 'Nombres' },
-        { id: 'c4_litteral', name: 'Développement', icon: '🔤', type: 'c4_litteral', domain: 'Algèbre' },
-        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore', domain: 'Géométrie' },
-        { id: 'c4_transfo', name: 'Translations', icon: '🔄', type: 'c4_transfo', domain: 'Géométrie' },
-        { id: 'c4_proba', name: 'Probabilités', icon: '🎲', type: 'c4_proba', domain: 'Probabilités' }
+        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore', domain: 'Géométrie' }
       ],
       '3ème': [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'c3_arithmetique', name: 'Arithmétique', icon: '🔢', type: 'c3_arithmetique', domain: 'Nombres' },
         { id: 'c3_equations', name: 'Équations', icon: '⚖️', type: 'c3_equations', domain: 'Algèbre' },
-        { id: 'c3_fonctions', name: 'Fonctions affines', icon: '📈', type: 'c3_fonctions', domain: 'Fonctions' },
-        { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales', domain: 'Géométrie' },
-        { id: 'c3_trigo', name: 'Trigonométrie', icon: '△', type: 'c3_trigo', domain: 'Géométrie' },
-        { id: 'c3_proba', name: 'Probabilités 2 épreuves', icon: '🎲', type: 'c3_proba', domain: 'Probabilités' }
+        { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales', domain: 'Géométrie' }
       ],
       Seconde: [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'sec_ensembles', name: 'Ensembles de nombres', icon: 'ℝ', type: 'sec_ensembles', domain: 'Algèbre' },
         { id: 'sec_fonctions', name: 'Fonctions de référence', icon: '📉', type: 'sec_fonctions', domain: 'Fonctions' },
-        { id: 'sec_variations', name: 'Variations', icon: '📈', type: 'sec_variations', domain: 'Fonctions' },
-        { id: 'sec_vecteurs', name: 'Vecteurs', icon: '➡️', type: 'sec_vecteurs', domain: 'Géométrie' },
-        { id: 'sec_proba', name: 'Probabilités conditionnelles', icon: '🌳', type: 'sec_proba', domain: 'Probabilités' },
-        { id: 'sec_python', name: 'Python', icon: '🐍', type: 'sec_python', domain: 'Algorithmique' }
+        { id: 'sec_vecteurs', name: 'Vecteurs', icon: '➡️', type: 'sec_vecteurs', domain: 'Géométrie' }
       ],
       '1ère': [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'p1_second', name: 'Second degré', icon: 'ax²', type: 'p1_second', domain: 'Algèbre' },
         { id: 'p1_derivee', name: 'Dérivation', icon: '📈', type: 'p1_derivee', domain: 'Analyse' },
-        { id: 'p1_exp', name: 'Fonction exponentielle', icon: 'eˣ', type: 'p1_exp', domain: 'Analyse' },
-        { id: 'p1_suites', name: 'Suites numériques', icon: '🔢', type: 'p1_suites', domain: 'Suites' },
-        { id: 'p1_scalaire', name: 'Produit scalaire', icon: '⋅', type: 'p1_scalaire', domain: 'Géométrie' },
-        { id: 'p1_proba', name: 'Lois de probabilité', icon: '🎲', type: 'p1_proba', domain: 'Probabilités' }
+        { id: 'p1_suites', name: 'Suites numériques', icon: '🔢', type: 'p1_suites', domain: 'Suites' }
       ],
       Terminale: [
+        { id: 'mult_tables', name: 'Tables de multiplication (Mode Duel inclus)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
         { id: 'term_limites', name: 'Limites', icon: '∞', type: 'term_limites', domain: 'Analyse' },
-        { id: 'term_continuite', name: 'Continuité', icon: '📈', type: 'term_continuite', domain: 'Analyse' },
         { id: 'term_log', name: 'Logarithme népérien', icon: 'ln', type: 'term_log', domain: 'Analyse' },
-        { id: 'term_integrales', name: 'Calcul intégral', icon: '∫', type: 'term_integrales', domain: 'Analyse' },
-        { id: 'term_espace', name: 'Géométrie dans l\'espace', icon: '🧊', type: 'term_espace', domain: 'Géométrie' },
-        { id: 'term_binomiale', name: 'Loi binomiale', icon: '🎲', type: 'term_binomiale', domain: 'Probabilités' }
+        { id: 'term_integrales', name: 'Calcul intégral', icon: '∫', type: 'term_integrales', domain: 'Analyse' }
       ]
     };
 
     const GRADES_ROW_1 = ['PS', 'MS', 'GS', 'CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème', '5ème', '4ème', '3ème', 'Seconde'];
     const GRADES_ROW_2 = ['1ère', 'Terminale'];
 
-    // Moteur vocal ultra-fluide optimisé pour Windows (Microsoft Vivienne Natural HD)
+    const THEOREMS_EXPLANATIONS = {
+      mult_tables: {
+        title: "Pourquoi et comment multiplier ?",
+        why: "La multiplication est une addition réitérée. Au lieu d'écrire 5 + 5 + 5 + 5, on écrit 5 × 4. C'est l'outil indispensable pour calculer rapidement des surfaces, des prix ou des quantités.",
+        rule: "La multiplication est commutative : a × b est égal à b × a. Apprendre ses tables par cœur permet d'accélérer considérablement tous les calculs mathématiques futurs."
+      }
+    };
+
     const speak = (text) => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        
-        // Nettoyage strict pour ne garder que les mots et chiffres
         const cleanText = text.replace(/[^a-zA-ZÀ-ÿ0-9\s]/g, ' ');
-        
         const u = new SpeechSynthesisUtterance(cleanText);
         u.lang = 'fr-FR';
         u.rate = 0.95;
         u.pitch = 1.0;
-
         const voices = window.speechSynthesis.getVoices();
-        
-        // Sélection prioritaire de la voix "Natural" (ex: Microsoft Vivienne)
         const naturalVoice = voices.find(v => v.lang.includes('fr') && v.name.includes('Natural'));
         const frenchVoice = naturalVoice || voices.find(v => v.lang.includes('fr') || v.lang.includes('fr_FR'));
-        
-        if (frenchVoice) {
-          u.voice = frenchVoice;
-        }
-
+        if (frenchVoice) u.voice = frenchVoice;
         window.speechSynthesis.speak(u);
       }
     };
 
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
+      window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
     }
 
-    // Générateur enrichi avec des centaines de combinaisons dynamiques
-    function generateQuestion(type) {
-      let text = '', ans = '', opts = [];
+    // Générateur de questions de multiplication adaptatif selon le niveau
+    function generateMultiplicationQuestion(grade) {
       const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+      let a, b, text, ans, opts;
 
-      if (type === 'c6_fractions') {
-        const num = r(1, 7), den = r(num + 1, 12);
-        const templates = [
-          { q: `Quelle fraction correspond à ${num} parts coloriées sur un total de ${den} parts ?`, a: `${num}/${den}` },
-          { q: `Écris la fraction représentant ${num} divisé par ${den}.`, a: `${num}/${den}` },
-          { q: `Si un gâteau est coupé en ${den} parts égales et que l'on en prend ${num}, quelle fraction reste-t-il ?`, a: `${den - num}/${den}` }
-        ];
-        const chosen = templates[r(0, templates.length - 1)];
-        text = chosen.q; ans = chosen.a;
-        opts = [ans, `${den}/${num}`, `${num+1}/${den}`, `${num}/${den+1}`];
-      } 
-      else if (type === 'c6_priorites') {
-        const a = r(2, 9), b = r(2, 5), c = r(2, 10);
-        const cases = [
-          { q: `Calculer en respectant les priorités : ${a} + ${b} multiplié par ${c}`, a: `${a + b * c}` },
-          { q: `Calculer : parenthèse ouverte ${a} + ${b} parenthèse fermée multiplié par ${c}`, a: `${(a + b) * c}` },
-          { q: `Calculer : ${a * c} - ${b} multiplié par ${c}`, a: `${(a * c) - (b * c)}` }
-        ];
-        const chosen = cases[r(0, cases.length - 1)];
-        text = chosen.q; ans = chosen.a;
-        const numAns = parseInt(ans);
-        opts = [ans, `${numAns + r(1, 5)}`, `${numAns - r(1, 4)}`, `${numAns + 10}`];
-      }
-      else if (type === 'c6_perimetre') {
-        const d = r(2, 20) * 2;
-        text = `Quel est le rayon d'un disque si son diamètre total est de ${d} centimètres ?`;
-        ans = `${d / 2} cm`;
-        opts = [`${d / 2} cm`, `${d} cm`, `${d * 2} cm`, `${d / 4} cm`];
-      }
-      else if (type === 'c6_volume') {
-        const L = r(2, 6), l = r(2, 5), h = r(2, 5);
-        text = `Quel est le volume d'un pavé droit de longueur ${L}, de largeur ${l} et de hauteur ${h} ?`;
-        ans = `${L * l * h}`;
-        opts = [ans, `${L + l + h}`, `${(L * l + l * h + L * h) * 2}`, `${L * l * h + r(2, 6)}`];
-      }
-      else if (type === 'c6_symetrie') {
-        const questionsSym = [
-          { q: "Que conserve une symétrie axiale par rapport aux figures géométriques ?", a: "Les longueurs et les angles" },
-          { q: "Dans une symétrie axiale, le symétrique d un segment de 5 centimètres mesure...", a: "5 cm" },
-          { q: "L axe de symétrie d un segment est sa droite...", a: "Médiatrice" }
-        ];
-        const chosen = questionsSym[r(0, questionsSym.length - 1)];
-        text = chosen.q; ans = chosen.a;
-        opts = [ans, "La moitié", "Le double", "Le triple"];
-      }
-      else if (type === 'c6_donnees') {
-        const val1 = r(10, 50), val2 = r(15, 60);
-        text = `Dans un tableau, si le mois de janvier compte ${val1} inscrits et février en compte ${val2}, quel est le total sur les deux mois ?`;
-        ans = `${val1 + val2}`;
-        opts = [`${val1 + val2}`, `${Math.abs(val1 - val2)}`, `${val1 + val2 + 5}`, `${val1 + val2 - 10}`];
-      }
-      else {
-        const a = r(5, 50), b = r(2, 20);
-        const ops = [
-          { q: `Combien font ${a} plus ${b} ?`, a: `${a + b}` },
-          { q: `Combien font ${a} moins ${b} ?`, a: `${a > b ? a - b : b - a}` },
-          { q: `Calcule le produit de ${r(2, 10)} par ${r(2, 10)}`, a: `${r(2, 10) * r(2, 10)}` }
-        ];
-        const chosen = ops[r(0, ops.length - 1)];
-        text = chosen.q; ans = chosen.a;
-        const numAns = parseInt(ans) || 15;
-        opts = [ans, `${numAns + r(1, 4)}`, `${numAns - r(1, 3)}`, `${numAns + 10}`];
+      if (['PS', 'MS', 'GS', 'CP'].includes(grade)) {
+        // Petites tables (1 à 5)
+        a = r(1, 5);
+        b = r(1, 5);
+      } else if (['CE1', 'CE2'].includes(grade)) {
+        // Tables standard de 2 à 10
+        a = r(2, 10);
+        b = r(2, 10);
+      } else if (['CM1', 'CM2', '6ème'].includes(grade)) {
+        // Tables étendues et multi-chiffres simples (2 à 12, ou dizaines)
+        a = r(3, 12);
+        b = r(4, 15);
+      } else if (['5ème', '4ème'].includes(grade)) {
+        // Nombres relatifs ou décimaux simples multipliés
+        if (Math.random() > 0.5) {
+          a = r(-12, 12);
+          b = r(2, 12);
+        } else {
+          a = r(2, 20);
+          b = r(2, 20);
+        }
+      } else if (['3ème', 'Seconde'].includes(grade)) {
+        // Nombres plus complexes, identités ou puissances / relatifs croisés
+        a = r(-15, 15);
+        b = r(-12, 12);
+      } else {
+        // 1ère / Terminale : Calculs littéraux / produits de facteurs avancés
+        a = r(-20, 20);
+        b = r(-20, 20);
       }
 
-      opts = Array.from(new Set(opts.map(String))).slice(0, 4);
-      while (opts.length < 4) opts.push(String(r(10, 99)));
+      ans = a * b;
+      text = `Combien font ${a} multiplié par ${b} ?`;
+
+      opts = [ans, ans + r(1, 5), ans - r(1, 4), ans + r(6, 12)];
+      if (ans === 0) opts = [0, 2, 5, 10];
+      opts = Array.from(new Set(opts.map(Number))).slice(0, 4);
+      while (opts.length < 4) opts.push(ans + opts.length + 1);
       opts = opts.sort(() => Math.random() - 0.5);
 
+      return { text, ans: String(ans), options: opts.map(String), speakText: text };
+    }
+
+    function generateQuestion(type, grade) {
+      if (type === 'mult_tables') {
+        return generateMultiplicationQuestion(grade);
+      }
+
+      let text = '', ans = '', opts = [];
+      const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+      const a = r(5, 50), b = r(2, 20);
+      text = `Combien font ${a} plus ${b} ?`;
+      ans = `${a + b}`;
+      opts = [ans, `${parseInt(ans) + 3}`, `${parseInt(ans) - 2}`, `${parseInt(ans) + 10}`].sort(() => Math.random() - 0.5);
       return { text, ans: String(ans), options: opts, speakText: text };
     }
 
     function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
+      const [isDuel, setIsDuel] = useState(false);
       const [q, setQ] = useState({ text: '', ans: '', options: [], speakText: '' });
       const [feedback, setFeedback] = useState(null);
       const [isAnswering, setIsAnswering] = useState(false);
       const [showConfetti, setShowConfetti] = useState(false);
       const [timeLeft, setTimeLeft] = useState(30);
+      const [showTheoremModal, setShowTheoremModal] = useState(false);
+
+      // États spécifiques au mode Duel
+      const [duelScores, setDuelScores] = useState({ p1: 0, p2: 0 });
+      const [activePlayerTurn, setActivePlayerTurn] = useState(1); // 1 ou 2
+      const [duelWinner, setDuelWinner] = useState(null);
+
       const timerRef = useRef(null);
 
       const loadNewQuestion = useCallback(() => {
         setFeedback(null);
         setIsAnswering(false);
-        const newQ = generateQuestion(module.type);
+        const newQ = generateQuestion(module.type, grade);
         setQ(newQ);
         setTimeLeft(30);
-        speak(newQ.speakText);
-      }, [module.type]);
+        if (!isDuel) speak(newQ.speakText);
+      }, [module.type, grade, isDuel]);
 
       useEffect(() => {
         loadNewQuestion();
-      }, [loadNewQuestion]);
+      }, [loadNewQuestion, isDuel]);
 
       useEffect(() => {
-        if (feedback) return;
+        if (feedback || showTheoremModal || duelWinner) return;
         timerRef.current = setInterval(() => {
           setTimeLeft(prev => {
             if (prev <= 1) {
               clearInterval(timerRef.current);
-              handleAnswer('');
+              if (isDuel) {
+                // Tour passé ou point perdu au temps
+                handleDuelAnswer(null);
+              } else {
+                handleAnswer('');
+              }
               return 0;
             }
             return prev - 1;
           });
         }, 1000);
         return () => clearInterval(timerRef.current);
-      }, [q, feedback]);
+      }, [q, feedback, showTheoremModal, duelWinner, isDuel]);
 
       const handleAnswer = (choice) => {
         if (isAnswering) return;
@@ -330,6 +301,41 @@
         }
       };
 
+      const handleDuelAnswer = (choice) => {
+        if (isAnswering) return;
+        setIsAnswering(true);
+        clearInterval(timerRef.current);
+
+        const isCorrect = String(choice).trim() === String(q.ans).trim();
+
+        if (isCorrect) {
+          setDuelScores(prev => {
+            const updated = { ...prev, [`p${activePlayerTurn}`]: prev[`p${activePlayerTurn}`] + 1 };
+            if (updated[`p${activePlayerTurn}`] >= 5) {
+              setDuelWinner(activePlayerTurn);
+              speak(`Joueur ${activePlayerTurn} remporte la partie de duel ! Félicitations !`);
+            }
+            return updated;
+          });
+          setFeedback({ success: true, text: `Joueur ${activePlayerTurn} marque un point ! 🎉` });
+        } else {
+          setFeedback({ success: false, text: `Raté pour Joueur ${activePlayerTurn} ! C'était ${q.ans}` });
+        }
+
+        setTimeout(() => {
+          if (!duelWinner) {
+            setActivePlayerTurn(prev => (prev === 1 ? 2 : 1));
+            loadNewQuestion();
+          }
+        }, 1800);
+      };
+
+      const theoremData = THEOREMS_EXPLANATIONS[module.type] || {
+        title: `Le secret du module : ${module.name}`,
+        why: "Ce module te permet de développer tes réflexes logiques et mathématiques.",
+        rule: "Observe bien l'énoncé et procède étape par étape."
+      };
+
       return (
         <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl max-w-xl mx-auto shadow-2xl relative animate-pop">
           {showConfetti && (
@@ -338,61 +344,179 @@
             </div>
           )}
 
+          {/* Modal Pourquoi & Théorème */}
+          {showTheoremModal && (
+            <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md rounded-3xl z-30 p-6 flex flex-col justify-between animate-pop">
+              <div>
+                <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                  <h3 className="text-base font-black text-amber-400 flex items-center gap-2">
+                    <span>💡</span> {theoremData.title}
+                  </h3>
+                  <button
+                    onClick={() => { setShowTheoremModal(false); }}
+                    className="text-slate-400 hover:text-white font-bold text-sm px-3 py-1 bg-slate-800 rounded-xl cursor-pointer"
+                  >
+                    ✕ Fermer
+                  </button>
+                </div>
+                
+                <div className="space-y-4 text-sm">
+                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                    <h4 className="font-extrabold text-indigo-400 mb-1 text-xs uppercase tracking-wider">Pourquoi apprend-on cela ?</h4>
+                    <p className="text-slate-300 leading-relaxed">{theoremData.why}</p>
+                  </div>
+
+                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                    <h4 className="font-extrabold text-emerald-400 mb-1 text-xs uppercase tracking-wider">Règle ou Théorème clé</h4>
+                    <p className="text-slate-300 leading-relaxed whitespace-pre-line">{theoremData.rule}</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => speak(theoremData.why + ". " + theoremData.rule)}
+                className="w-full bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 py-3 rounded-2xl text-xs font-bold border border-indigo-500/30 transition cursor-pointer flex items-center justify-center gap-2 mt-4"
+              >
+                🔊 Écouter l'explication complète
+              </button>
+            </div>
+          )}
+
+          {/* En-tête avec option Duel si c'est le module tables */}
           <div className="flex justify-between items-center mb-6">
             <button
               onClick={onBack}
               className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer"
             >
-              ← Retour au menu
+              ← Retour
             </button>
-            <span className="text-xs font-bold bg-indigo-950 text-indigo-400 border border-indigo-800/50 px-3 py-1.5 rounded-xl">
-              {grade} • {module.name}
-            </span>
-            <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl">
-              ⏱️ {timeLeft}s
-            </span>
-          </div>
 
-          <div className="text-center my-6">
-            <div className="text-4xl mb-3">{module.icon}</div>
-            <h2 className="text-lg sm:text-xl font-black text-white whitespace-pre-line leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-              {q.text}
-            </h2>
+            {module.type === 'mult_tables' && (
+              <button
+                onClick={() => {
+                  setIsDuel(!isDuel);
+                  setDuelScores({ p1: 0, p2: 0 });
+                  setDuelWinner(null);
+                  setActivePlayerTurn(1);
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-2 shadow-md ${
+                  isDuel ? 'bg-rose-600 text-white animate-pulse' : 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-600/50'
+                }`}
+              >
+                <span>⚔️</span> {isDuel ? 'Mode Solo' : 'Activer Mode Duel (2 Joueurs)'}
+              </button>
+            )}
+            
             <button
-              onClick={() => speak(q.speakText)}
-              className="mt-4 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 px-4 py-2 rounded-xl text-xs font-bold border border-indigo-500/30 transition cursor-pointer inline-flex items-center gap-2"
+              onClick={() => {
+                setShowTheoremModal(true);
+                speak("Voici l'explication et le théorème de ce module : " + theoremData.why);
+              }}
+              className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-md"
             >
-              🔊 Réécouter l'énoncé vocal
+              <span>💡</span> Pourquoi & Théorème
             </button>
+
+            {!isDuel && (
+              <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl">
+                ⏱️ {timeLeft}s
+              </span>
+            )}
           </div>
 
-          {feedback && (
-            <div className={`p-4 rounded-2xl mb-6 text-center font-black text-sm animate-pop ${
-              feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-happy' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-            }`}>
-              {feedback.text}
+          {/* Affichage du tableau de score Duel si activé */}
+          {isDuel && (
+            <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-6 flex justify-around items-center">
+              <div className={`text-center p-2 rounded-xl ${activePlayerTurn === 1 ? 'bg-indigo-600/20 border border-indigo-500' : ''}`}>
+                <p className="text-xs font-bold text-indigo-400">Joueur 1</p>
+                <p className="text-2xl font-black text-white">{duelScores.p1} <span className="text-xs text-slate-400">/ 5 pts</span></p>
+                {activePlayerTurn === 1 && !duelWinner && <span className="text-[10px] text-amber-400 font-bold animate-bounce">À ton tour ! 🎯</span>}
+              </div>
+
+              <div className="text-xl font-black text-slate-600">VS</div>
+
+              <div className={`text-center p-2 rounded-xl ${activePlayerTurn === 2 ? 'bg-rose-600/20 border border-rose-500' : ''}`}>
+                <p className="text-xs font-bold text-rose-400">Joueur 2</p>
+                <p className="text-2xl font-black text-white">{duelScores.p2} <span className="text-xs text-slate-400">/ 5 pts</span></p>
+                {activePlayerTurn === 2 && !duelWinner && <span className="text-[10px] text-amber-400 font-bold animate-bounce">À ton tour ! 🎯</span>}
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {q.options.map((opt, idx) => (
+          {duelWinner ? (
+            <div className="text-center py-10 space-y-4 animate-pop">
+              <div className="text-5xl">🏆</div>
+              <h2 className="text-2xl font-black text-amber-400">Victoire du Joueur {duelWinner} !</h2>
+              <p className="text-sm text-slate-300">Quel superbe duel mathématique de niveau {grade}.</p>
               <button
-                key={idx}
-                disabled={isAnswering}
-                onClick={() => handleAnswer(opt)}
-                className="bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-4 rounded-2xl border border-slate-700 hover:border-indigo-400 transition-all active:scale-95 text-sm sm:text-base shadow-lg cursor-pointer disabled:opacity-50"
+                onClick={() => {
+                  setDuelScores({ p1: 0, p2: 0 });
+                  setDuelWinner(null);
+                  setActivePlayerTurn(1);
+                  loadNewQuestion();
+                }}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-6 py-3 rounded-2xl text-sm shadow-lg cursor-pointer mt-4"
               >
-                {opt}
+                Relancer un Duel ⚔️
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <>
+              <div className="text-center my-6">
+                <div className="text-4xl mb-3">{isDuel ? (activePlayerTurn === 1 ? '🔵' : '🔴') : module.icon}</div>
+                <h2 className="text-lg sm:text-xl font-black text-white whitespace-pre-line leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+                  {isDuel ? <span className="text-amber-400 text-xs block mb-1 uppercase tracking-wider">Tour du Joueur {activePlayerTurn}</span> : null}
+                  {q.text}
+                </h2>
+                {!isDuel && (
+                  <button
+                    onClick={() => speak(q.speakText)}
+                    className="mt-4 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 px-4 py-2 rounded-xl text-xs font-bold border border-indigo-500/30 transition cursor-pointer inline-flex items-center gap-2"
+                  >
+                    🔊 Réécouter l'énoncé vocal
+                  </button>
+                )}
+              </div>
+
+              {feedback && (
+                <div className={`p-4 rounded-2xl mb-6 text-center font-black text-sm animate-pop ${
+                  feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-happy' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                }`}>
+                  {feedback.text}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {q.options.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    disabled={isAnswering}
+                    onClick={() => {
+                      if (isDuel) {
+                        handleDuelAnswer(opt);
+                      } else {
+                        handleAnswer(opt);
+                      }
+                    }}
+                    className={`font-black py-4 px-4 rounded-2xl border transition-all active:scale-95 text-sm sm:text-base shadow-lg cursor-pointer disabled:opacity-50 ${
+                      isDuel && activePlayerTurn === 2 
+                        ? 'bg-slate-800 hover:bg-rose-600 border-slate-700 hover:border-rose-400 text-white' 
+                        : 'bg-slate-800 hover:bg-indigo-600 border-slate-700 hover:border-indigo-400 text-white'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       );
     }
 
     function App() {
       const [userName, setUserName] = useState('');
-      const [selectedGrade, setSelectedGrade] = useState('6ème');
+      const [selectedGrade, setSelectedGrade] = useState('CE1');
       const [isLoggedIn, setIsLoggedIn] = useState(false);
       const [activeModule, setActiveModule] = useState(null);
       const [score, setScore] = useState(0);
@@ -401,7 +525,7 @@
         e.preventDefault();
         if (userName.trim()) {
           setIsLoggedIn(true);
-          speak(`Bienvenue ${userName} sur l'académie des mathématiques Montessori ! Choisis ton module pour commencer.`);
+          speak(`Bienvenue ${userName} sur l'académie des mathématiques ! Choisis ton module pour commencer.`);
         }
       };
 
@@ -412,8 +536,8 @@
               <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-lg shadow-indigo-600/30">
                 🎓
               </div>
-              <h1 className="text-2xl font-black text-white mb-2">MathsAcademy Montessori</h1>
-              <p className="text-xs text-slate-400 mb-6">Des centaines de défis visuels, vocaux et duels chronométrés !</p>
+              <h1 className="text-2xl font-black text-white mb-2">MathsAcademy</h1>
+              <p className="text-xs text-slate-400 mb-6">Des tables de multiplication adaptatives du CP à la Terminale et mode Duel à deux !</p>
 
               <form onSubmit={handleLogin} className="space-y-4 text-left">
                 <div>
@@ -458,7 +582,7 @@
               <div className="flex items-center gap-3">
                 <span className="text-3xl">🎓</span>
                 <div>
-                  <h1 className="text-base font-black text-white">MathsAcademy Montessori</h1>
+                  <h1 className="text-base font-black text-white">MathsAcademy</h1>
                   <p className="text-xs text-slate-400">Joueur : <span className="font-bold text-white">{userName} ({selectedGrade})</span></p>
                 </div>
               </div>
@@ -471,7 +595,6 @@
             <main className="mb-8">
               {!activeModule ? (
                 <>
-                  {/* Grille des niveaux sur deux lignes à l'identique de l'ancien site */}
                   <div className="flex flex-col gap-2 mb-8">
                     <div className="flex flex-wrap gap-2">
                       {GRADES_ROW_1.map(g => (
@@ -501,7 +624,6 @@
                     </div>
                   </div>
 
-                  {/* Grille des modules (3x2) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                     {CURRICULUM[selectedGrade]?.map(m => (
                       <div
@@ -541,7 +663,7 @@
             >
               Changer d'élève
             </button>
-            <span>MathsAcademy Montessori © 2026</span>
+            <span>MathsAcademy © 2026</span>
           </footer>
         </div>
       );
