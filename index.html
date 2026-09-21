@@ -1,1382 +1,431 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MathsAcademy</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    @keyframes popIn {
-      0% { transform: scale(0.92); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    @keyframes bounceHappy {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.12); }
-    }
-    @keyframes confetti {
-      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(-110px) rotate(360deg); opacity: 0; }
-    }
-    .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    .animate-happy { animation: bounceHappy 0.45s ease; }
-    .confetti-piece {
-      position: absolute;
-      font-size: 1.7rem;
-      pointer-events: none;
-      animation: confetti 1.15s ease-out forwards;
-    }
-  </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
-  <div id="root"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect, useCallback, useRef } = React;
-
-    // ======================================================
-    // CURRICULUM COMPLET
-    // ======================================================
-    const CURRICULUM = {
-      PS: [
-        { id: 'ps_formes', name: 'Les formes (rond, carré...)', icon: '🔴', type: 'ps_formes', domain: 'Sensoriel' },
-        { id: 'ps_count3', name: 'Compter jusqu\'à 3', icon: '⭐', type: 'ps_count3', domain: 'Nombres' },
-        { id: 'ps_tailles', name: 'Petit, Moyen et Grand', icon: '🐘', type: 'ps_tailles', domain: 'Grandeurs' },
-        { id: 'ps_espace', name: 'Haut, Bas, Dedans', icon: '☁️', type: 'ps_espace', domain: 'Espace' }
-      ],
-      MS: [
-        { id: 'ms_count6', name: 'Compter jusqu\'à 6', icon: '🍎', type: 'ms_count6', domain: 'Nombres' },
-        { id: 'ms_associer', name: 'Chiffre et quantité', icon: '🔢', type: 'ms_associer', domain: 'Nombres' },
-        { id: 'ms_formes', name: 'Carré, Triangle et Cercle', icon: '🟦', type: 'ms_formes', domain: 'Sensoriel' },
-        { id: 'ms_rythme', name: 'Les suites logiques', icon: '🔵🔴', type: 'ms_rythme', domain: 'Logique' },
-        { id: 'ms_comparer', name: 'Plus et Moins d\'objets', icon: '⚖️', type: 'ms_comparer', domain: 'Nombres' }
-      ],
-      GS: [
-        { id: 'gs_chaine', name: 'Compter jusqu\'à 10', icon: '🔟', type: 'gs_chaine', domain: 'Nombres' },
-        { id: 'gs_decomp', name: 'Décomposer les nombres', icon: '🧩', type: 'gs_decomp', domain: 'Nombres' },
-        { id: 'gs_formes', name: 'Formes géométriques', icon: '▭', type: 'gs_formes', domain: 'Sensoriel' },
-        { id: 'gs_espace', name: 'Repérage spatial', icon: '👈👉', type: 'gs_espace', domain: 'Espace' },
-        { id: 'gs_masse', name: 'Lourd et Léger', icon: '🏋️', type: 'gs_masse', domain: 'Grandeurs' }
-      ],
-      CP: [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'cp_num100', name: 'Nombres jusqu\'à 100', icon: '💯', type: 'cp_num100', domain: 'Nombres' },
-        { id: 'cp_add', name: 'Additions', icon: '➕', type: 'cp_add', domain: 'Calcul' },
-        { id: 'cp_soustraction', name: 'Soustractions', icon: '➖', type: 'cp_soustraction', domain: 'Calcul' },
-        { id: 'cp_regle', name: 'Tracer et mesurer', icon: '📏', type: 'cp_regle', domain: 'Géométrie' },
-        { id: 'cp_monnaie', name: 'La monnaie', icon: '💶', type: 'cp_monnaie', domain: 'Grandeurs' }
-      ],
-      CE1: [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'ce1_num1000', name: 'Nombres jusqu\'à 1000', icon: '🔢', type: 'ce1_num1000', domain: 'Nombres' },
-        { id: 'ce1_soustraction', name: 'Soustraction avec retenue', icon: '➖', type: 'ce1_soustraction', domain: 'Calcul' },
-        { id: 'ce1_solides', name: 'Cube et pavé', icon: '🧊', type: 'ce1_solides', domain: 'Géométrie' },
-        { id: 'ce1_angle', name: 'Angle droit', icon: '📐', type: 'ce1_angle', domain: 'Géométrie' },
-        { id: 'ce1_mesures', name: 'Unités de mesure', icon: '📏', type: 'ce1_mesures', domain: 'Grandeurs' }
-      ],
-      CE2: [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'ce2_num10000', name: 'Nombres jusqu\'à 10 000', icon: '🔢', type: 'ce2_num10000', domain: 'Nombres' },
-        { id: 'ce2_mult', name: 'Multiplication posée', icon: '✖️', type: 'ce2_mult', domain: 'Calcul' },
-        { id: 'ce2_division', name: 'Division simple', icon: '➗', type: 'ce2_division', domain: 'Calcul' },
-        { id: 'ce2_figures', name: 'Figures planes', icon: '🟦', type: 'ce2_figures', domain: 'Géométrie' },
-        { id: 'ce2_conversions', name: 'Conversions', icon: '🔄', type: 'ce2_conversions', domain: 'Grandeurs' }
-      ],
-      CM1: [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'cm1_grands', name: 'Grands nombres', icon: '🔢', type: 'cm1_grands', domain: 'Nombres' },
-        { id: 'cm1_fractions', name: 'Fractions simples', icon: '🍕', type: 'cm1_fractions', domain: 'Nombres' },
-        { id: 'cm1_decimaux', name: 'Nombres décimaux', icon: '🎯', type: 'cm1_decimaux', domain: 'Nombres' },
-        { id: 'cm1_perimetre', name: 'Périmètres', icon: '📏', type: 'cm1_perimetre', domain: 'Grandeurs' },
-        { id: 'cm1_paralleles', name: 'Parallèles & perpendiculaires', icon: '📐', type: 'cm1_paralleles', domain: 'Géométrie' }
-      ],
-      CM2: [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'cm2_milliard', name: 'Jusqu\'au milliard', icon: '🔢', type: 'cm2_milliard', domain: 'Nombres' },
-        { id: 'cm2_fractions', name: 'Fractions & décimaux', icon: '🍰', type: 'cm2_fractions', domain: 'Nombres' },
-        { id: 'cm2_aires', name: 'Aires', icon: '📐', type: 'cm2_aires', domain: 'Grandeurs' },
-        { id: 'cm2_symetrie', name: 'Symétrie axiale', icon: '🪞', type: 'cm2_symetrie', domain: 'Géométrie' },
-        { id: 'cm2_prop', name: 'Proportionnalité', icon: '📈', type: 'cm2_prop', domain: 'Proportionnalité' }
-      ],
-      '6ème': [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'c6_fractions', name: 'Fractions', icon: '🔢', type: 'c6_fractions', domain: 'Nombres' },
-        { id: 'c6_priorites', name: 'Priorités opératoires', icon: '⚖️', type: 'c6_priorites', domain: 'Calcul' },
-        { id: 'c6_perimetre', name: 'Périmètre & aire du disque', icon: '⭕', type: 'c6_perimetre', domain: 'Grandeurs' },
-        { id: 'c6_volume', name: 'Volume du pavé droit', icon: '📦', type: 'c6_volume', domain: 'Grandeurs' },
-        { id: 'c6_symetrie', name: 'Symétrie axiale', icon: '🪞', type: 'c6_symetrie', domain: 'Géométrie' },
-        { id: 'c6_donnees', name: 'Tableaux & diagrammes', icon: '📊', type: 'c6_donnees', domain: 'Données' }
-      ],
-      '5ème': [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'c5_relatifs', name: 'Nombres relatifs', icon: '🌡️', type: 'c5_relatifs', domain: 'Nombres' },
-        { id: 'c5_litteral', name: 'Calcul littéral', icon: '🔤', type: 'c5_litteral', domain: 'Algèbre' },
-        { id: 'c5_symetrie', name: 'Symétrie centrale', icon: '🔄', type: 'c5_symetrie', domain: 'Géométrie' },
-        { id: 'c5_parallelo', name: 'Parallélogrammes', icon: '▱', type: 'c5_parallelo', domain: 'Géométrie' },
-        { id: 'c5_moyenne', name: 'Moyenne & fréquences', icon: '📊', type: 'c5_moyenne', domain: 'Statistiques' }
-      ],
-      '4ème': [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'c4_relatifs', name: 'Relatifs × et ÷', icon: '🌡️', type: 'c4_relatifs', domain: 'Nombres' },
-        { id: 'c4_puissances', name: 'Puissances', icon: '¹⁰', type: 'c4_puissances', domain: 'Nombres' },
-        { id: 'c4_litteral', name: 'Développement & équations', icon: '🔤', type: 'c4_litteral', domain: 'Algèbre' },
-        { id: 'c4_pythagore', name: 'Théorème de Pythagore', icon: '📐', type: 'c4_pythagore', domain: 'Géométrie' },
-        { id: 'c4_proba', name: 'Probabilités simples', icon: '🎲', type: 'c4_proba', domain: 'Probabilités' }
-      ],
-      '3ème': [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'c3_arithmetique', name: 'Nombres premiers & PGCD', icon: '🔢', type: 'c3_arithmetique', domain: 'Nombres' },
-        { id: 'c3_equations', name: 'Équations & inéquations', icon: '⚖️', type: 'c3_equations', domain: 'Algèbre' },
-        { id: 'c3_fonctions', name: 'Fonctions linéaires & affines', icon: '📈', type: 'c3_fonctions', domain: 'Fonctions' },
-        { id: 'c3_thales', name: 'Théorème de Thalès', icon: '📐', type: 'c3_thales', domain: 'Géométrie' },
-        { id: 'c3_trigo', name: 'Trigonométrie', icon: '△', type: 'c3_trigo', domain: 'Géométrie' },
-        { id: 'c3_proba', name: 'Probabilités à 2 épreuves', icon: '🎲', type: 'c3_proba', domain: 'Probabilités' }
-      ],
-      Seconde: [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'sec_ensembles', name: 'Ensembles & intervalles', icon: 'ℝ', type: 'sec_ensembles', domain: 'Algèbre' },
-        { id: 'sec_fonctions', name: 'Fonctions de référence', icon: '📉', type: 'sec_fonctions', domain: 'Fonctions' },
-        { id: 'sec_variations', name: 'Sens de variation', icon: '📈', type: 'sec_variations', domain: 'Fonctions' },
-        { id: 'sec_vecteurs', name: 'Vecteurs & Chasles', icon: '➡️', type: 'sec_vecteurs', domain: 'Géométrie' },
-        { id: 'sec_proba', name: 'Probabilités conditionnelles', icon: '🌳', type: 'sec_proba', domain: 'Probabilités' }
-      ],
-      '1ère': [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'p1_second', name: 'Équations du 2nd degré', icon: 'ax²', type: 'p1_second', domain: 'Algèbre' },
-        { id: 'p1_derivee', name: 'Dérivation', icon: '📈', type: 'p1_derivee', domain: 'Analyse' },
-        { id: 'p1_exp', name: 'Fonction exponentielle', icon: 'eˣ', type: 'p1_exp', domain: 'Analyse' },
-        { id: 'p1_suites', name: 'Suites arith. & géom.', icon: '🔢', type: 'p1_suites', domain: 'Suites' },
-        { id: 'p1_scalaire', name: 'Produit scalaire', icon: '⋅', type: 'p1_scalaire', domain: 'Géométrie' }
-      ],
-      Terminale: [
-        { id: 'mult_tables', name: 'Tables de multiplication (Duel)', icon: '⚔️✖️', type: 'mult_tables', domain: 'Calcul' },
-        { id: 'term_limites', name: 'Limites', icon: '∞', type: 'term_limites', domain: 'Analyse' },
-        { id: 'term_continuite', name: 'Continuité & TVI', icon: '📈', type: 'term_continuite', domain: 'Analyse' },
-        { id: 'term_log', name: 'Logarithme népérien', icon: 'ln', type: 'term_log', domain: 'Analyse' },
-        { id: 'term_integrales', name: 'Intégrales', icon: '∫', type: 'term_integrales', domain: 'Analyse' },
-        { id: 'term_binomiale', name: 'Loi binomiale', icon: '🎲', type: 'term_binomiale', domain: 'Probabilités' }
-      ]
-    };
-
-    const GRADES = Object.keys(CURRICULUM);
-    const IS_MATERNELLE = (g) => ['PS', 'MS', 'GS'].includes(g);
-
-    // ======================================================
-    // EXPLICATIONS / THÉORÈMES – CONTENU PÉDAGOGIQUE RÉEL
-    // ======================================================
-    const EXPLANATIONS = {
-      // Maternelle
-      ps_formes: { title: "Les formes", why: "Reconnaître les formes permet d'organiser et de décrire le monde.", rule: "Rond = 0 côté. Triangle = 3 côtés. Carré = 4 côtés égaux + 4 angles droits." },
-      ps_count3: { title: "Compter jusqu'à 3", why: "Compter est la base de tous les calculs futurs.", rule: "On pointe chaque objet une seule fois en disant un nombre dans l'ordre." },
-      ps_tailles: { title: "Petit / Grand", why: "Comparer les tailles développe le sens des grandeurs.", rule: "On regarde quel objet dépasse l'autre. Le plus grand est celui qui a la plus grande taille." },
-      ps_espace: { title: "Haut / Bas", why: "Se repérer dans l'espace est essentiel pour se déplacer et comprendre les consignes.", rule: "Le ciel et la tête sont en haut. Les pieds et le sol sont en bas." },
-      ms_count6: { title: "Compter jusqu'à 6", why: "Savoir dénombrer des collections plus grandes.", rule: "Compte un par un sans sauter d'objet et sans compter deux fois le même." },
-      ms_associer: { title: "Chiffre et quantité", why: "Relier le symbole écrit à la quantité réelle.", rule: "Le chiffre 4 correspond à quatre objets. On associe le symbole à la collection." },
-      ms_formes: { title: "Carré, Triangle, Cercle", why: "Distinguer les formes selon leurs côtés et leurs angles.", rule: "Triangle = 3 côtés. Carré = 4 côtés égaux. Cercle = rond sans côté." },
-      ms_rythme: { title: "Suites logiques", why: "Anticiper et comprendre les régularités (base de la logique).", rule: "On repère le motif qui se répète et on continue la même suite." },
-      ms_comparer: { title: "Plus / Moins", why: "Comparer des quantités sans forcément compter.", rule: "La collection qui a le plus d'objets est la plus grande. On peut les aligner pour comparer." },
-      gs_chaine: { title: "Compter jusqu'à 10", why: "Maîtriser la suite des nombres pour calculer et se repérer.", rule: "Après 7 vient 8. Avant 5 vient 4. On connaît la chaine numérique dans l'ordre." },
-      gs_decomp: { title: "Décomposer les nombres", why: "Comprendre que les nombres sont composés de parties (base de l'addition).", rule: "5 = 2 + 3 = 1 + 4 = 4 + 1. On peut casser un nombre en plusieurs parts." },
-      gs_formes: { title: "Formes géométriques", why: "Reconnaître et nommer les formes du quotidien.", rule: "Carré : 4 côtés égaux + 4 angles droits. Rectangle : 4 angles droits. Triangle : 3 côtés." },
-      gs_espace: { title: "Repérage spatial", why: "Se situer et situer des objets (droite/gauche, dessus/dessous).", rule: "Ta main droite est du côté opposé à ta main gauche. Le dessus est vers le haut." },
-      gs_masse: { title: "Lourd / Léger", why: "Comparer les masses par estimation ou balance.", rule: "L'objet qui pèse le plus est le plus lourd. La plume est légère, la voiture est lourde." },
-
-      // Tables
-      mult_tables: { title: "Tables de multiplication", why: "La multiplication est une addition répétée. Elle permet de calculer beaucoup plus vite.", rule: "a × b = b × a. Exemple : 7 × 8 = 56. Apprends-les par cœur jusqu'à 10 puis 12." },
-
-      // CP
-      cp_num100: { title: "Nombres jusqu'à 100", why: "Savoir lire, écrire et comparer les nombres jusqu'à 100.", rule: "Avant 37 vient 36. Après 49 vient 50. Les dizaines changent tous les 10." },
-      cp_add: { title: "Additions", why: "Réunir deux quantités pour trouver le total.", rule: "a + b = total. On peut additionner dans n'importe quel ordre (commutativité)." },
-      cp_soustraction: { title: "Soustractions", why: "Retirer une quantité d'une autre ou trouver un écart.", rule: "a − b = résultat. On peut vérifier en ajoutant le résultat à b pour retrouver a." },
-      cp_regle: { title: "Tracer et mesurer", why: "Utiliser les instruments de géométrie correctement.", rule: "La règle sert à tracer des traits droits et à mesurer des longueurs en cm." },
-      cp_monnaie: { title: "La monnaie", why: "Comprendre la valeur de l'euro et des centimes.", rule: "1 euro = 100 centimes. 1,50 € = 1 euro + 50 centimes." },
-
-      // CE1
-      ce1_num1000: { title: "Nombres jusqu'à 1000", why: "Lire et écrire les nombres jusqu'à 1000 (centaines).", rule: "Dans 347 : 3 centaines, 4 dizaines, 7 unités." },
-      ce1_soustraction: { title: "Soustraction avec retenue", why: "Savoir soustraire quand le chiffre du haut est plus petit.", rule: "On emprunte 1 dizaine à la colonne de gauche (elle devient 10 unités)." },
-      ce1_solides: { title: "Cube et pavé", why: "Reconnaître les solides de l'espace.", rule: "Cube = 6 faces carrées identiques. Pavé droit = faces rectangulaires." },
-      ce1_angle: { title: "Angle droit", why: "Reconnaître et vérifier un angle de 90°.", rule: "Un angle droit mesure 90°. On le vérifie avec une équerre." },
-      ce1_mesures: { title: "Unités de mesure", why: "Utiliser les unités courantes de longueur, masse et capacité.", rule: "1 m = 100 cm. 1 kg = 1000 g. 1 L = 100 cL." },
-
-      // CE2
-      ce2_num10000: { title: "Nombres jusqu'à 10 000", why: "Maîtriser les milliers.", rule: "Dans 3 482 : 3 milliers, 4 centaines, 8 dizaines, 2 unités." },
-      ce2_mult: { title: "Multiplication posée", why: "Multiplier des nombres plus grands en colonnes.", rule: "On multiplie chaque chiffre puis on additionne les produits partiels (en tenant compte des rangs)." },
-      ce2_division: { title: "Division simple", why: "Partager en parts égales ou chercher combien de fois un nombre entre dans un autre.", rule: "Dividende = Diviseur × Quotient + Reste (reste < diviseur)." },
-      ce2_figures: { title: "Figures planes", why: "Reconnaître et décrire les figures usuelles.", rule: "Triangle rectangle = un angle droit. Carré = 4 côtés égaux + 4 angles droits." },
-      ce2_conversions: { title: "Conversions d'unités", why: "Passer d'une unité à une autre.", rule: "1 km = 1000 m. 1 m = 100 cm. 1 kg = 1000 g. On multiplie ou on divise par 10, 100, 1000..." },
-
-      // CM1
-      cm1_grands: { title: "Grands nombres", why: "Lire et écrire les nombres jusqu'au million.", rule: "1 million = 1 000 000 = 1000 milliers." },
-      cm1_fractions: { title: "Fractions simples", why: "Représenter des parts d'un tout.", rule: "Numérateur = nombre de parts prises. Dénominateur = nombre total de parts égales. 3/4 = trois quarts." },
-      cm1_decimaux: { title: "Nombres décimaux", why: "Écrire les nombres à virgule (dixièmes, centièmes...).", rule: "3 + 2/10 = 3,2. Le chiffre juste après la virgule est le dixième." },
-      cm1_perimetre: { title: "Périmètres", why: "Calculer la longueur du contour d'une figure.", rule: "Carré : P = 4 × côté. Rectangle : P = 2 × (L + l)." },
-      cm1_paralleles: { title: "Parallèles & perpendiculaires", why: "Comprendre les positions relatives des droites.", rule: "Parallèles = ne se rencontrent jamais. Perpendiculaires = se coupent en formant un angle droit (90°)." },
-
-      // CM2
-      cm2_milliard: { title: "Jusqu'au milliard", why: "Lire les très grands nombres.", rule: "1 milliard = 1 000 000 000 = 1000 millions." },
-      cm2_fractions: { title: "Fractions & décimaux", why: "Passer d'une écriture à l'autre.", rule: "1/2 = 0,5. 1/4 = 0,25. 3/4 = 0,75. On divise le numérateur par le dénominateur." },
-      cm2_aires: { title: "Aires", why: "Mesurer la surface d'une figure.", rule: "Rectangle : A = L × l. Carré : A = côté × côté. Unité : cm², m²..." },
-      cm2_symetrie: { title: "Symétrie axiale", why: "Comme un effet miroir par rapport à un axe.", rule: "Chaque point et son image sont à égale distance de l'axe. Les distances et angles sont conservés." },
-      cm2_prop: { title: "Proportionnalité", why: "Résoudre des problèmes de « règle de trois », pourcentages, échelles...", rule: "Si 3 objets coûtent 12 €, 1 objet coûte 4 €, donc 6 objets coûtent 24 €. On multiplie ou divise par le même nombre." },
-
-      // 6ème
-      c6_fractions: { title: "Fractions", why: "Représenter des parts, des quotients, des mesures.", rule: "Numérateur / Dénominateur. On peut simplifier en divisant haut et bas par le même nombre." },
-      c6_priorites: { title: "Priorités opératoires", why: "Garantir un résultat unique pour une expression.", rule: "1) Parenthèses  2) Multiplications et divisions (de gauche à droite)  3) Additions et soustractions." },
-      c6_perimetre: { title: "Périmètre & aire du disque", why: "Mesurer le contour et la surface d'un cercle.", rule: "Périmètre (circonférence) = 2 × π × r. Aire = π × r². (π ≈ 3,14)" },
-      c6_volume: { title: "Volume du pavé droit", why: "Calculer l'espace occupé par un solide.", rule: "Volume = Longueur × Largeur × Hauteur. Unité : cm³, m³..." },
-      c6_symetrie: { title: "Symétrie axiale", why: "Transformer une figure comme dans un miroir.", rule: "Conserve les longueurs, les angles et les aires. L'axe est la médiatrice du segment joignant un point à son image." },
-      c6_donnees: { title: "Tableaux & diagrammes", why: "Organiser et lire des informations chiffrées.", rule: "On lit l'intersection d'une ligne et d'une colonne. Les diagrammes en bâtons comparent des quantités." },
-
-      // 5ème
-      c5_relatifs: { title: "Nombres relatifs", why: "Représenter des quantités négatives (températures, dettes, altitudes...).", rule: "Sur une droite graduée : à gauche du 0 = négatif. −3 + 5 = 2. On se déplace vers la droite pour ajouter." },
-      c5_litteral: { title: "Calcul littéral", why: "Manipuler des expressions avec des lettres (variables).", rule: "3x + 5x = 8x. On regroupe les termes semblables. x représente un nombre inconnu." },
-      c5_symetrie: { title: "Symétrie centrale", why: "Rotation de 180° autour d'un point (le centre).", rule: "Le centre est le milieu du segment qui joint un point à son image. Conserve distances et angles." },
-      c5_parallelo: { title: "Parallélogrammes", why: "Étudier les quadrilatères à côtés parallèles deux à deux.", rule: "Côtés opposés parallèles et de même longueur. Diagonales se coupent en leur milieu." },
-      c5_moyenne: { title: "Moyenne & fréquences", why: "Résumer une série de données par un seul nombre.", rule: "Moyenne = somme des valeurs ÷ nombre de valeurs. Fréquence = effectif / effectif total." },
-
-      // 4ème
-      c4_relatifs: { title: "Relatifs × et ÷", why: "Multiplier et diviser des nombres relatifs.", rule: "Règle des signes : (+)×(+)=+  (−)×(−)=+  (+)×(−)=−  (−)×(+)=−. Même chose pour la division." },
-      c4_puissances: { title: "Puissances", why: "Écrire les grands nombres et les multiplications répétées de façon compacte.", rule: "aⁿ = a × a × ... × a (n fois). 10³ = 1000. 2⁴ = 16." },
-      c4_litteral: { title: "Développement & équations", why: "Développer des expressions et résoudre des équations simples.", rule: "3(x+4) = 3x+12 (distributivité). Pour résoudre 2x=10, on divise les deux côtés par 2 → x=5." },
-      c4_pythagore: { title: "Théorème de Pythagore", why: "Calculer la longueur d'un côté dans un triangle rectangle.", rule: "Dans un triangle rectangle : a² + b² = c² où c est l'hypoténuse (le côté le plus long, opposé à l'angle droit)." },
-      c4_proba: { title: "Probabilités simples", why: "Mesurer le hasard sur une épreuve.", rule: "Probabilité = nombre de cas favorables / nombre de cas possibles. Entre 0 et 1." },
-
-      // 3ème
-      c3_arithmetique: { title: "Nombres premiers & PGCD", why: "Comprendre la décomposition des nombres et les diviseurs communs.", rule: "Un nombre premier n'a que deux diviseurs : 1 et lui-même (2, 3, 5, 7, 11, 13, 17...). PGCD = plus grand diviseur commun." },
-      c3_equations: { title: "Équations & inéquations", why: "Trouver la (ou les) valeur(s) inconnue(s) qui rendent une égalité vraie.", rule: "On isole x en faisant la même opération des deux côtés. 2x+5=13 → 2x=8 → x=4." },
-      c3_fonctions: { title: "Fonctions linéaires & affines", why: "Modéliser des situations de proportionnalité ou de variation constante.", rule: "Linéaire : f(x)=ax (passe par l'origine). Affine : f(x)=ax+b (droite de pente a et ordonnée à l'origine b)." },
-      c3_thales: { title: "Théorème de Thalès", why: "Calculer des longueurs dans des configurations de triangles emboîtés ou « en papillon ».", rule: "Si (DE) // (BC) dans le triangle ABC, alors AD/AB = AE/AC = DE/BC." },
-      c3_trigo: { title: "Trigonométrie", why: "Relier les longueurs des côtés aux mesures des angles dans un triangle rectangle.", rule: "cos(α) = côté adjacent / hypoténuse. sin(α) = côté opposé / hypoténuse. tan(α) = opposé / adjacent." },
-      c3_proba: { title: "Probabilités à 2 épreuves", why: "Calculer des probabilités d'événements composés (arbres).", rule: "On multiplie les probabilités le long des branches. P(A et B) = P(A) × P(B|A)." },
-
-      // Seconde
-      sec_ensembles: { title: "Ensembles & intervalles", why: "Décrire des ensembles de nombres de façon précise.", rule: "[a ; b] = fermé (inclut a et b). ]a ; b[ = ouvert (exclut a et b). +∞ et −∞ ne sont jamais inclus." },
-      sec_fonctions: { title: "Fonctions de référence", why: "Connaître les fonctions de base (carré, inverse, racine, cube...).", rule: "f(x)=x² est paire et positive. f(x)=1/x est définie sur ℝ*. f(x)=√x définie pour x≥0." },
-      sec_variations: { title: "Sens de variation", why: "Décrire si une fonction monte ou descend.", rule: "Croissante : x1 < x2 ⇒ f(x1) ≤ f(x2). Strictement croissante : l'inégalité est stricte. La courbe monte de gauche à droite." },
-      sec_vecteurs: { title: "Vecteurs & relation de Chasles", why: "Calculer et raisonner avec des déplacements.", rule: "Relation de Chasles : vecteur AB + vecteur BC = vecteur AC. Le vecteur nul a une norme nulle." },
-      sec_proba: { title: "Probabilités conditionnelles", why: "Calculer la probabilité d'un événement sachant qu'un autre s'est réalisé.", rule: "P(A|B) = P(A∩B) / P(B). On utilise souvent un arbre de probabilités." },
-
-      // 1ère
-      p1_second: { title: "Équations du second degré", why: "Résoudre les équations de la forme ax² + bx + c = 0.", rule: "Discriminant Δ = b² − 4ac. Si Δ>0 → 2 solutions. Δ=0 → 1 solution. Δ<0 → pas de solution réelle." },
-      p1_derivee: { title: "Dérivation", why: "Mesurer la vitesse de variation instantanée (pente de la tangente).", rule: "Dérivée de x² = 2x. Dérivée de xⁿ = n x^{n−1}. Dérivée d'une constante = 0. Dérivée de eˣ = eˣ." },
-      p1_exp: { title: "Fonction exponentielle", why: "Modéliser les croissances et décroissances (intérêts, populations, radioactivité...).", rule: "eˣ est toujours positive. (eˣ)' = eˣ. e⁰ = 1. eˣ × eʸ = e^{x+y}." },
-      p1_suites: { title: "Suites arithmétiques & géométriques", why: "Décrire des suites de nombres qui évoluent de façon régulière.", rule: "Arithmétique : uₙ₊₁ = uₙ + r. Géométrique : uₙ₊₁ = uₙ × q. Formules explicites : uₙ = u₀ + n r  et  uₙ = u₀ × qⁿ." },
-      p1_scalaire: { title: "Produit scalaire", why: "Mesurer l'angle et l'orthogonalité de deux vecteurs.", rule: "u · v = 0 ⇔ u et v sont orthogonaux. u · v = ||u|| × ||v|| × cos(θ). u · u = ||u||²." },
-
-      // Terminale
-      term_limites: { title: "Limites", why: "Étudier le comportement d'une fonction aux bornes de son ensemble de définition ou à l'infini.", rule: "lim (x→+∞) 1/x = 0. lim (x→+∞) x² = +∞. lim (x→0⁺) 1/x = +∞. On utilise les opérations sur les limites et les formes indéterminées." },
-      term_continuite: { title: "Continuité & TVI", why: "Garantir l'existence de solutions et le comportement « sans saut » d'une fonction.", rule: "Une fonction continue sur [a ; b] atteint toutes les valeurs entre f(a) et f(b) (Théorème des Valeurs Intermédiaires)." },
-      term_log: { title: "Logarithme népérien", why: "Fonction réciproque de l'exponentielle. Très utilisée en sciences.", rule: "ln(eˣ) = x et e^{ln(x)} = x. (ln x)' = 1/x. ln(a×b) = ln a + ln b. ln(1) = 0. ln(e) = 1." },
-      term_integrales: { title: "Intégrales", why: "Calculer des aires, des primitives, des valeurs moyennes...", rule: "Si F' = f, alors ∫ₐᵇ f(x) dx = F(b) − F(a). L'intégrale de 0 à 1 de 2x dx = [x²]₀¹ = 1." },
-      term_binomiale: { title: "Loi binomiale", why: "Modéliser le nombre de succès dans n épreuves identiques et indépendantes.", rule: "X ~ B(n, p). Espérance = n×p. Variance = n×p×(1−p). P(X=k) = C(n,k) × pᵏ × (1−p)^{n−k}." }
-    };
-
-    // ======================================================
-    // VOCAL
-    // ======================================================
-    const speak = (text) => {
-      if (!('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      const clean = String(text).replace(/[^\wÀ-ÿ\s.,!?€°×÷+\-/=]/gi, ' ').replace(/\s+/g, ' ').trim();
-      if (!clean) return;
-      const u = new SpeechSynthesisUtterance(clean);
-      u.lang = 'fr-FR';
-      u.rate = 0.9;
-      u.pitch = 1.05;
-      const voices = window.speechSynthesis.getVoices();
-      const fr = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Natural') || v.name.includes('Google'))) ||
-                voices.find(v => v.lang.startsWith('fr'));
-      if (fr) u.voice = fr;
-      window.speechSynthesis.speak(u);
-    };
-
-    // ======================================================
-    // GÉNÉRATEUR DE QUESTIONS – FORTEMENT ENRICHI
-    // ======================================================
-    function generateQuestion(type, grade) {
-      const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-      const pick = (arr) => arr[r(0, arr.length - 1)];
-      let text = '', ans = '', opts = [], speakText = '';
-
-      // ——— MATERNELLE ———
-      if (type === 'ps_formes') {
-        const qs = [
-          { t: "Où est le rond ?", a: "🔴", o: ["🔴", "🟦", "🔺", "⭐"] },
-          { t: "Où est le carré ?", a: "🟦", o: ["🔴", "🟦", "🔺", "⭐"] },
-          { t: "Où est le triangle ?", a: "🔺", o: ["🔴", "🟦", "🔺", "⭐"] },
-          { t: "Quelle forme n'a pas de côtés ?", a: "🔴", o: ["🔴", "🟦", "🔺", "⭐"] }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a; opts = q.o; speakText = q.t;
-      } else if (type === 'ps_count3') {
-        const n = r(1, 3);
-        const emoji = pick(["⭐", "🍎", "🔵", "🐶"]);
-        text = `Combien ?\n${emoji.repeat(n)}`;
-        speakText = `Combien y en a-t-il ?`;
-        ans = `${n}`; opts = ["1", "2", "3"];
-      } else if (type === 'ps_tailles') {
-        const qs = [
-          { t: "Qui est le plus grand ?", a: "🐘", o: ["🐘", "🐭", "🐱", "🐶"] },
-          { t: "Qui est le plus petit ?", a: "🐭", o: ["🐘", "🐭", "🐱", "🐶"] },
-          { t: "Qui est plus grand que le chat ?", a: "🐘", o: ["🐘", "🐭", "🐱", "🐶"] }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a; opts = q.o; speakText = q.t;
-      } else if (type === 'ps_espace') {
-        const qs = [
-          { t: "Où est le soleil ?", a: "☁️ En haut", o: ["☁️ En haut", "⬇️ En bas"] },
-          { t: "Où sont les pieds ?", a: "⬇️ En bas", o: ["☁️ En haut", "⬇️ En bas"] },
-          { t: "Le ciel est...", a: "☁️ En haut", o: ["☁️ En haut", "⬇️ En bas"] }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a; opts = q.o; speakText = q.t;
-      } else if (type === 'ms_count6') {
-        const n = r(3, 6);
-        const emoji = pick(["🍎", "⭐", "🔵", "🐸"]);
-        text = `Combien ?\n${emoji.repeat(n)}`;
-        speakText = "Compte bien.";
-        ans = `${n}`; opts = [`${n}`, `${n+1}`, `${Math.max(1,n-1)}`, `${n+2}`].filter((v,i,a)=>a.indexOf(v)===i);
-      } else if (type === 'ms_associer') {
-        const n = r(1, 6);
-        text = `Quel chiffre pour\n${'🔵'.repeat(n)} ?`;
-        speakText = "Quel chiffre correspond ?";
-        ans = `${n}`; opts = [`${n}`, `${n+1}`, `${Math.max(1,n-1)}`, `${n+2}`];
-      } else if (type === 'ms_formes') {
-        const qs = [
-          { t: "Quelle forme a 3 côtés ?", a: "🔺", o: ["🔺", "🟦", "🔴", "▭"] },
-          { t: "Quelle forme a 4 côtés égaux ?", a: "🟦", o: ["🔺", "🟦", "🔴", "▭"] },
-          { t: "Quelle forme est ronde ?", a: "🔴", o: ["🔺", "🟦", "🔴", "▭"] }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a; opts = q.o; speakText = q.t;
-      } else if (type === 'ms_rythme') {
-        const patterns = [
-          { t: "🔴 🔵 🔴 🔵 ...", a: "🔴" },
-          { t: "⭐ ⭐ 🔵 ⭐ ⭐ 🔵 ...", a: "⭐" },
-          { t: "🟢 🟡 🟢 🟡 ...", a: "🟢" },
-          { t: "🐶 🐱 🐶 🐱 ...", a: "🐶" }
-        ];
-        const p = pick(patterns);
-        text = `Quel est le suivant ?\n${p.t}`;
-        speakText = "Quel est le suivant dans la suite ?";
-        ans = p.a; opts = [p.a, "🔵", "🟢", "🟡"];
-      } else if (type === 'ms_comparer') {
-        const a = r(3, 6), b = r(1, a-1);
-        text = `Quelle collection a le plus ?\n${'⭐'.repeat(a)}   ou   ${'🍎'.repeat(b)}`;
-        speakText = "Quelle collection a le plus d'objets ?";
-        ans = '⭐'.repeat(a); opts = ['⭐'.repeat(a), '🍎'.repeat(b)];
-      } else if (type === 'gs_chaine') {
-        const n = r(2, 12);
-        const variants = [
-          { t: `Quel nombre vient après ${n} ?`, a: `${n+1}` },
-          { t: `Quel nombre vient juste avant ${n} ?`, a: `${n-1}` },
-          { t: `Quel nombre est entre ${n-1} et ${n+1} ?`, a: `${n}` }
-        ];
-        const v = pick(variants);
-        text = v.t; ans = v.a; speakText = v.t;
-        opts = [v.a, `${+v.a+1}`, `${+v.a-1}`, `${+v.a+2}`];
-      } else if (type === 'gs_decomp') {
-        const n = r(4, 10);
-        const p = r(1, n-1);
-        text = `${n} c'est ${p} et encore ... ?`;
-        speakText = `${n} c'est ${p} et encore combien ?`;
-        ans = `${n-p}`; opts = [`${n-p}`, `${n-p+1}`, `${n}`, "1"];
-      } else if (type === 'gs_formes') {
-        const qs = [
-          { t: "Quelle forme a 4 côtés égaux et 4 angles droits ?", a: "🟦 Carré" },
-          { t: "Quelle forme a 3 côtés ?", a: "🔺 Triangle" },
-          { t: "Quelle forme n'a aucun côté ?", a: "🔴 Cercle" },
-          { t: "Quelle forme a 4 côtés dont 2 longs et 2 courts ?", a: "▭ Rectangle" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a; speakText = q.t;
-        opts = ["🟦 Carré", "▭ Rectangle", "🔺 Triangle", "🔴 Cercle"];
-      } else if (type === 'gs_espace') {
-        const qs = [
-          { t: "Ma main droite pointe vers...", a: "👉 L'est" },
-          { t: "Le contraire de gauche est...", a: "👉 Droite" },
-          { t: "Au-dessus de ma tête se trouve...", a: "⬆️ Le haut" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a; speakText = q.t;
-        opts = ["👉 L'est", "👈 L'ouest", "⬆️ Le nord", "⬇️ Le sud"];
-      } else if (type === 'gs_masse') {
-        const qs = [
-          { t: "Qui est le plus lourd ?", a: "🚗", o: ["🚗", "🎈", "🪶", "📱"] },
-          { t: "Qui est le plus léger ?", a: "🪶", o: ["🚗", "🎈", "🪶", "📱"] },
-          { t: "Qu'est-ce qui pèse le plus ?", a: "🚗", o: ["🚗", "🎈", "🪶", "📱"] }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a; opts = q.o; speakText = q.t;
-      }
-
-      // ——— TABLES ———
-      else if (type === 'mult_tables') {
-        let a, b;
-        if (['PS','MS','GS','CP'].includes(grade)) { a = r(1,5); b = r(1,5); }
-        else if (['CE1','CE2'].includes(grade)) { a = r(2,10); b = r(2,10); }
-        else if (['CM1','CM2','6ème'].includes(grade)) { a = r(3,12); b = r(3,12); }
-        else { a = r(4,15); b = r(4,12); }
-        const forms = [
-          `Combien font ${a} × ${b} ?`,
-          `Calcule : ${a} × ${b} = ?`,
-          `${a} multiplié par ${b} égale ?`,
-          `Quel est le produit de ${a} et ${b} ?`
-        ];
-        text = pick(forms);
-        ans = `${a*b}`;
-        opts = [`${a*b}`, `${a*b + r(1,5)}`, `${Math.max(0,a*b - r(1,4))}`, `${a+b}`];
-      }
-
-      // ——— CP ———
-      else if (type === 'cp_num100') {
-        const n = r(15, 95);
-        const forms = [
-          { t: `Quel nombre vient juste avant ${n+1} ?`, a: `${n}` },
-          { t: `Quel nombre vient juste après ${n} ?`, a: `${n+1}` },
-          { t: `Quel est le double de ${Math.floor(n/2)} ?`, a: `${Math.floor(n/2)*2}` },
-          { t: `Combien font 10 + ${n-10} ?`, a: `${n}` }
-        ];
-        const f = pick(forms); text = f.t; ans = f.a;
-        opts = [f.a, `${+f.a+1}`, `${+f.a-1}`, `${+f.a+10}`];
-      } else if (type === 'cp_add') {
-        const a = r(1,12), b = r(1,12);
-        text = pick([`${a} + ${b} = ?`, `Calcule ${a} + ${b}`, `Combien font ${a} plus ${b} ?`]);
-        ans = `${a+b}`; opts = [`${a+b}`, `${a+b+1}`, `${a+b-1}`, `${a*b || a+b+3}`];
-      } else if (type === 'cp_soustraction') {
-        const a = r(8, 25), b = r(1, a-1);
-        text = pick([`${a} − ${b} = ?`, `Calcule ${a} − ${b}`, `Combien font ${a} moins ${b} ?`]);
-        ans = `${a-b}`; opts = [`${a-b}`, `${a-b+1}`, `${a+b}`, `${Math.max(0,a-b-1)}`];
-      } else if (type === 'cp_regle') {
-        const qs = [
-          { t: "Pour tracer un trait parfaitement droit, on utilise :", a: "Une règle" },
-          { t: "Quel instrument permet de tracer des segments droits ?", a: "Une règle" },
-          { t: "On utilise une équerre pour vérifier :", a: "Un angle droit" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Une règle", "Un compas", "Une équerre", "Un crayon seul"];
-      } else if (type === 'cp_monnaie') {
-        const qs = [
-          { t: "1 euro et 50 centimes = ?", a: "1,50 €" },
-          { t: "2 euros et 20 centimes = ?", a: "2,20 €" },
-          { t: "Combien de centimes dans 1 euro ?", a: "100" },
-          { t: "5 euros et 5 centimes = ?", a: "5,05 €" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "1,05 €", "15 €", "0,50 €"];
-      }
-
-      // ——— CE1 ———
-      else if (type === 'ce1_num1000') {
-        const n = r(150, 850);
-        const forms = [
-          { t: `Quel nombre vient juste après ${n} ?`, a: `${n+1}` },
-          { t: `Quel nombre vient juste avant ${n} ?`, a: `${n-1}` },
-          { t: `Combien de centaines dans ${n} ?`, a: `${Math.floor(n/100)}` }
-        ];
-        const f = pick(forms); text = f.t; ans = f.a;
-        opts = [f.a, `${+f.a+1}`, `${+f.a-1}`, `${+f.a+10}`];
-      } else if (type === 'ce1_soustraction') {
-        const qs = [
-          { t: "Dans une soustraction avec retenue, on emprunte :", a: "1 dizaine à la colonne de gauche" },
-          { t: "45 − 18 = ?", a: "27" },
-          { t: "73 − 29 = ?", a: "44" },
-          { t: "60 − 35 = ?", a: "25" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = q.a.includes("dizaine") ? ["1 dizaine à la colonne de gauche", "1 unité seulement", "Rien", "2 dizaines"] : [q.a, `${+q.a+1}`, `${+q.a-1}`, `${+q.a+5}`];
-      } else if (type === 'ce1_solides') {
-        const qs = [
-          { t: "Quel solide a 6 faces carrées identiques ?", a: "Le cube" },
-          { t: "Quel solide ressemble à une boîte de chaussures ?", a: "Le pavé droit" },
-          { t: "Combien de faces a un cube ?", a: "6" },
-          { t: "Un dé à jouer est un :", a: "Le cube" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Le cube", "Le pavé droit", "La pyramide", "La sphère"];
-      } else if (type === 'ce1_angle') {
-        const qs = [
-          { t: "Un angle droit mesure :", a: "90 degrés" },
-          { t: "L'angle formé par le coin d'un carré est :", a: "90 degrés" },
-          { t: "On utilise une équerre pour vérifier un angle de :", a: "90 degrés" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["90 degrés", "45 degrés", "180 degrés", "60 degrés"];
-      } else if (type === 'ce1_mesures') {
-        const qs = [
-          { t: "1 kg = ? grammes", a: "1000 g" },
-          { t: "1 m = ? centimètres", a: "100 cm" },
-          { t: "1 L = ? centilitres", a: "100 cL" },
-          { t: "1 km = ? mètres", a: "1000 m" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "100 g", "10 g", "10 000 g"];
-      }
-
-      // ——— CE2 ———
-      else if (type === 'ce2_num10000') {
-        const n = r(1500, 9500);
-        text = pick([`Combien de milliers dans ${n} ?`, `Dans ${n}, le chiffre des milliers est ?`]);
-        ans = `${Math.floor(n/1000)}`; opts = [`${Math.floor(n/1000)}`, `${Math.floor(n/100)}`, `${n%1000}`, "1"];
-      } else if (type === 'ce2_mult') {
-        const a = r(11, 40), b = r(2, 9);
-        text = pick([`${a} × ${b} = ?`, `Calcule ${a} × ${b}`, `Quel est le produit de ${a} et ${b} ?`]);
-        ans = `${a*b}`; opts = [`${a*b}`, `${a*b+r(3,8)}`, `${a*b-r(2,5)}`, `${a+b}`];
-      } else if (type === 'ce2_division') {
-        const d = r(3, 9), q = r(4, 12);
-        text = pick([`${d*q} ÷ ${d} = ?`, `Combien de fois ${d} dans ${d*q} ?`]);
-        ans = `${q}`; opts = [`${q}`, `${q+1}`, `${q-1}`, `${d}`];
-      } else if (type === 'ce2_figures') {
-        const qs = [
-          { t: "Un triangle rectangle possède :", a: "Un angle droit" },
-          { t: "Un carré a combien de côtés égaux ?", a: "4" },
-          { t: "Un rectangle a :", a: "4 angles droits" },
-          { t: "Combien de sommets a un triangle ?", a: "3" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = q.a.includes("angle") ? ["Un angle droit", "Trois angles droits", "Aucun angle droit", "Deux angles droits"] : [q.a, "3", "5", "6"];
-      } else if (type === 'ce2_conversions') {
-        const qs = [
-          { t: "3 km = ? mètres", a: "3000 m" },
-          { t: "5 m = ? cm", a: "500 cm" },
-          { t: "2 kg = ? g", a: "2000 g" },
-          { t: "4 L = ? cL", a: "400 cL" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "300 m", "30 m", "30 000 m"];
-      }
-
-      // ——— CM1 ———
-      else if (type === 'cm1_grands') {
-        const qs = [
-          { t: "Combien de centaines dans 1 000 000 ?", a: "10 000" },
-          { t: "1 million = combien de milliers ?", a: "1000" },
-          { t: "Écris en chiffres : deux millions", a: "2 000 000" },
-          { t: "Combien de dizaines dans 50 000 ?", a: "5000" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "1000", "100", "100 000"];
-      } else if (type === 'cm1_fractions') {
-        const qs = [
-          { t: "Comment s'écrit « trois quarts » ?", a: "3/4" },
-          { t: "Quelle fraction représente la moitié ?", a: "1/2" },
-          { t: "« Un tiers » s'écrit :", a: "1/3" },
-          { t: "Deux cinquièmes s'écrit :", a: "2/5" },
-          { t: "Quelle fraction est la plus grande : 1/2 ou 1/4 ?", a: "1/2" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "4/3", "1/3", "3/1"];
-      } else if (type === 'cm1_decimaux') {
-        const e = r(1, 9), d = r(1, 9);
-        const forms = [
-          { t: `${e} + ${d}/10 = ?`, a: `${e}.${d}` },
-          { t: `Écris sous forme décimale : ${e} + ${d}/10`, a: `${e}.${d}` },
-          { t: `Quel nombre est égal à ${e},${d} ?`, a: `${e}.${d}` }
-        ];
-        const f = pick(forms); text = f.t; ans = f.a;
-        opts = [f.a, `${e+1}.${d}`, `${e}.${d+1}`, `${e-1}.${d}`];
-      } else if (type === 'cm1_perimetre') {
-        const c = r(4, 15);
-        const forms = [
-          { t: `Périmètre d'un carré de côté ${c} cm ?`, a: `${c*4} cm` },
-          { t: `Un carré a un côté de ${c} cm. Son périmètre est :`, a: `${c*4} cm` },
-          { t: `Périmètre d'un rectangle 8 cm × 5 cm ?`, a: "26 cm" }
-        ];
-        const f = pick(forms); text = f.t; ans = f.a;
-        opts = [f.a, `${c*c} cm`, `${c*2} cm`, `${c*3} cm`];
-      } else if (type === 'cm1_paralleles') {
-        const qs = [
-          { t: "Deux droites qui ne se rencontrent jamais sont :", a: "Parallèles" },
-          { t: "Deux droites qui se coupent en formant un angle droit sont :", a: "Perpendiculaires" },
-          { t: "Les côtés opposés d'un rectangle sont :", a: "Parallèles" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Parallèles", "Perpendiculaires", "Sécantes", "Confondues"];
-      }
-
-      // ——— CM2 ———
-      else if (type === 'cm2_milliard') {
-        const qs = [
-          { t: "1 milliard = combien de millions ?", a: "1000" },
-          { t: "1 milliard = ?", a: "1 000 000 000" },
-          { t: "Combien de millions dans 3 milliards ?", a: "3000" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "100", "10", "1 000 000"];
-      } else if (type === 'cm2_fractions') {
-        const qs = [
-          { t: "Quelle fraction est égale à 0,5 ?", a: "1/2" },
-          { t: "0,25 = ?", a: "1/4" },
-          { t: "3/4 = ?", a: "0,75" },
-          { t: "Quelle fraction est égale à 0,2 ?", a: "1/5" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "1/5", "5/10", "2/5"];
-      } else if (type === 'cm2_aires') {
-        const L = r(4, 12), l = r(3, 9);
-        text = pick([`Aire d'un rectangle ${L} cm × ${l} cm ?`, `Calcule l'aire : longueur ${L} cm, largeur ${l} cm`]);
-        ans = `${L*l} cm²`; opts = [`${L*l} cm²`, `${2*(L+l)} cm²`, `${L+l} cm²`, `${L*l*2} cm²`];
-      } else if (type === 'cm2_symetrie') {
-        const qs = [
-          { t: "La symétrie axiale conserve :", a: "Les distances et les angles" },
-          { t: "Le symétrique d'un point par rapport à une droite est :", a: "À la même distance de l'axe" },
-          { t: "Une figure et son image par symétrie axiale ont :", a: "La même forme et la même taille" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Les distances et les angles", "Uniquement les couleurs", "La position", "Rien"];
-      } else if (type === 'cm2_prop') {
-        const p = r(2, 8);
-        const forms = [
-          { t: `Si 3 stylos coûtent ${3*p} €, combien coûtent 6 stylos ?`, a: `${6*p} €` },
-          { t: `2 kg de pommes coûtent ${2*p} €. Prix de 5 kg ?`, a: `${5*p} €` },
-          { t: `4 cahiers = ${4*p} €. Prix d'un cahier ?`, a: `${p} €` }
-        ];
-        const f = pick(forms); text = f.t; ans = f.a;
-        opts = [f.a, `${3*p+3} €`, `${9*p} €`, `${6*p+2} €`];
-      }
-
-      // ——— 6ème ———
-      else if (type === 'c6_fractions') {
-        const num = r(1, 7), den = r(num+1, 12);
-        const forms = [
-          { t: `Quelle fraction représente ${num} parts sur ${den} ?`, a: `${num}/${den}` },
-          { t: `Écris la fraction : ${num} sur ${den}`, a: `${num}/${den}` },
-          { t: `Un gâteau coupé en ${den} parts, on en prend ${num}. Fraction ?`, a: `${num}/${den}` },
-          { t: `Simplifie si possible : ${num*2}/${den*2}`, a: `${num}/${den}` }
-        ];
-        const f = pick(forms); text = f.t; ans = f.a;
-        opts = [f.a, `${den}/${num}`, `${num+1}/${den}`, `${num}/${den+1}`];
-      } else if (type === 'c6_priorites') {
-        const a = r(2, 9), b = r(2, 6), c = r(2, 7);
-        const cases = [
-          { q: `Calculer : ${a} + ${b} × ${c} = ?`, a: a + b * c },
-          { q: `Calculer : (${a} + ${b}) × ${c} = ?`, a: (a + b) * c },
-          { q: `Calculer : ${a} × ${c} − ${b} = ?`, a: a * c - b },
-          { q: `Calculer : ${a} × (${b} + ${c}) = ?`, a: a * (b + c) },
-          { q: `Calculer : ${b} × ${c} + ${a} = ?`, a: b * c + a }
-        ];
-        const ch = pick(cases); text = ch.q; ans = `${ch.a}`;
-        opts = [`${ch.a}`, `${ch.a+2}`, `${ch.a-1}`, `${a+b+c}`];
-      } else if (type === 'c6_perimetre') {
-        const qs = [
-          { t: "L'aire d'un disque de rayon r est :", a: "π × r²" },
-          { t: "Le périmètre d'un cercle de rayon r est :", a: "2 × π × r" },
-          { t: "Si le diamètre est 10 cm, le rayon est :", a: "5 cm" },
-          { t: "Aire d'un disque de rayon 3 (en π) ?", a: "9π" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "2 × π × r", "π × r", "r²"];
-      } else if (type === 'c6_volume') {
-        const L = r(2, 8), l = r(2, 6), h = r(2, 5);
-        text = pick([`Volume d'un pavé ${L} × ${l} × ${h} cm ?`, `Calcule le volume : L=${L}, l=${l}, h=${h}`]);
-        ans = `${L*l*h}`; opts = [`${L*l*h}`, `${L+l+h}`, `${L*l}`, `${L*l*h + r(1,5)}`];
-      } else if (type === 'c6_symetrie') {
-        const qs = [
-          { t: "La symétrie axiale conserve :", a: "Les distances et les angles" },
-          { t: "Le symétrique d'un segment de 7 cm mesure :", a: "7 cm" },
-          { t: "L'axe de symétrie d'un segment est sa :", a: "Médiatrice" },
-          { t: "Une symétrie axiale est une transformation qui :", a: "Conserve les distances" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "La moitié", "Le double", "Cela dépend"];
-      } else if (type === 'c6_donnees') {
-        const a = r(10, 50), b = r(12, 55);
-        const forms = [
-          { t: `Janvier : ${a}, Février : ${b}. Total ?`, a: `${a+b}` },
-          { t: `Différence entre ${b} et ${a} ?`, a: `${Math.abs(b-a)}` },
-          { t: `Moyenne de ${a} et ${b} ?`, a: `${Math.round((a+b)/2)}` }
-        ];
-        const f = pick(forms); text = f.t; ans = f.a;
-        opts = [f.a, `${a+b+5}`, `${Math.abs(a-b)}`, `${a*2}`];
-      }
-
-      // ——— 5ème ———
-      else if (type === 'c5_relatifs') {
-        const a = r(2, 15), b = r(3, 18);
-        const forms = [
-          { t: `−${a} + ${b} = ?`, a: `${b-a}` },
-          { t: `${b} + (−${a}) = ?`, a: `${b-a}` },
-          { t: `−${a} − ${b} = ?`, a: `${-a-b}` },
-          { t: `Calculer : −${a} + (−${b})`, a: `${-a-b}` }
-        ];
-        const f = pick(forms); text = f.t; ans = f.a;
-        opts = [f.a, `${-a-b}`, `${a+b}`, `${b-a-2}`];
-      } else if (type === 'c5_litteral') {
-        const qs = [
-          { t: "Simplifier : 3x + 5x = ?", a: "8x" },
-          { t: "Simplifier : 7a − 2a = ?", a: "5a" },
-          { t: "Simplifier : 4y + y = ?", a: "5y" },
-          { t: "Simplifier : 9x − 4x + 2 = ?", a: "5x + 2" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "15x", "3x + 5", "8"];
-      } else if (type === 'c5_symetrie') {
-        const qs = [
-          { t: "La symétrie centrale est une rotation de :", a: "180°" },
-          { t: "Dans une symétrie centrale, le centre est :", a: "Le milieu du segment joignant un point et son image" },
-          { t: "La symétrie centrale conserve :", a: "Les distances et les angles" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["180°", "90°", "360°", "45°"];
-      } else if (type === 'c5_parallelo') {
-        const qs = [
-          { t: "Dans un parallélogramme, les côtés opposés sont :", a: "Parallèles et de même longueur" },
-          { t: "Les diagonales d'un parallélogramme se :", a: "Coupe en leur milieu" },
-          { t: "Un rectangle est un parallélogramme particulier :", a: "Vrai" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Parallèles et de même longueur", "Perpendiculaires", "De longueurs différentes", "Toujours égaux à la diagonale"];
-      } else if (type === 'c5_moyenne') {
-        const qs = [
-          { t: "La moyenne de 4, 6 et 8 est :", a: "6" },
-          { t: "La moyenne de 10, 20 et 30 est :", a: "20" },
-          { t: "La moyenne de 5, 5, 5 et 15 est :", a: "7,5" },
-          { t: "Moyenne de 2, 4, 6, 8 ?", a: "5" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "5", "7", "18"];
-      }
-
-      // ——— 4ème ———
-      else if (type === 'c4_relatifs') {
-        const qs = [
-          { t: "(−3) × (−4) = ?", a: "12" },
-          { t: "(−5) × 3 = ?", a: "−15" },
-          { t: "6 × (−2) = ?", a: "−12" },
-          { t: "(−8) ÷ (−2) = ?", a: "4" },
-          { t: "(−20) ÷ 5 = ?", a: "−4" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "−12", "7", "−7"];
-      } else if (type === 'c4_puissances') {
-        const qs = [
-          { t: "10³ = ?", a: "1000" },
-          { t: "2⁴ = ?", a: "16" },
-          { t: "5² = ?", a: "25" },
-          { t: "10² = ?", a: "100" },
-          { t: "3³ = ?", a: "27" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "30", "100", "10 000"];
-      } else if (type === 'c4_litteral') {
-        const qs = [
-          { t: "Développer : 3(x + 4) = ?", a: "3x + 12" },
-          { t: "Développer : 5(2x − 1) = ?", a: "10x − 5" },
-          { t: "Simplifier : 4x + 2x − 3 = ?", a: "6x − 3" },
-          { t: "Résoudre : 2x = 10 → x = ?", a: "5" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "3x + 4", "x + 12", "7x"];
-      } else if (type === 'c4_pythagore') {
-        const qs = [
-          { t: "Dans un triangle rectangle, Pythagore s'écrit :", a: "a² + b² = c²" },
-          { t: "Si a=3, b=4, alors c = ?", a: "5" },
-          { t: "L'hypoténuse est le côté :", a: "Le plus long (opposé à l'angle droit)" },
-          { t: "Si a=5, b=12, c = ?", a: "13" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "a + b = c", "a² − b² = c²", "a × b = c"];
-      } else if (type === 'c4_proba') {
-        const qs = [
-          { t: "Probabilité d'obtenir face avec une pièce équilibrée ?", a: "1/2" },
-          { t: "Probabilité d'obtenir un 6 avec un dé ?", a: "1/6" },
-          { t: "Probabilité d'obtenir pair avec un dé ?", a: "1/2" },
-          { t: "Probabilité d'obtenir 1 ou 2 avec un dé ?", a: "1/3" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "1/6", "1", "0"];
-      }
-
-      // ——— 3ème ———
-      else if (type === 'c3_arithmetique') {
-        const qs = [
-          { t: "Lequel est premier ?", a: "17" },
-          { t: "Lequel est premier ?", a: "13" },
-          { t: "Lequel est premier ?", a: "19" },
-          { t: "PGCD de 12 et 18 ?", a: "6" },
-          { t: "PGCD de 15 et 25 ?", a: "5" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "15", "21", "27"];
-      } else if (type === 'c3_equations') {
-        const qs = [
-          { t: "Résoudre : 2x + 5 = 13 → x = ?", a: "4" },
-          { t: "Résoudre : 3x − 6 = 9 → x = ?", a: "5" },
-          { t: "Résoudre : 5x = 20 → x = ?", a: "4" },
-          { t: "Résoudre : x/2 = 7 → x = ?", a: "14" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "9", "3", "6"];
-      } else if (type === 'c3_fonctions') {
-        const qs = [
-          { t: "La fonction f(x) = 2x + 3 est :", a: "Une fonction affine" },
-          { t: "La fonction f(x) = 5x est :", a: "Une fonction linéaire" },
-          { t: "f(x) = −3 est :", a: "Une fonction constante" },
-          { t: "La fonction f(x) = x² est :", a: "Une fonction carrée" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Une fonction affine", "Une fonction linéaire", "Une fonction constante", "Une fonction carrée"];
-      } else if (type === 'c3_thales') {
-        const qs = [
-          { t: "Le théorème de Thalès s'applique avec :", a: "Des droites parallèles coupant des droites sécantes" },
-          { t: "Thalès permet de calculer :", a: "Des longueurs" },
-          { t: "Dans la configuration de Thalès, les rapports sont :", a: "Égaux" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Des droites parallèles coupant des droites sécantes", "Uniquement des triangles rectangles", "Des cercles", "Des angles droits seulement"];
-      } else if (type === 'c3_trigo') {
-        const qs = [
-          { t: "Dans un triangle rectangle, cos(α) = ?", a: "Côté adjacent / Hypoténuse" },
-          { t: "sin(α) = ?", a: "Côté opposé / Hypoténuse" },
-          { t: "tan(α) = ?", a: "Côté opposé / Côté adjacent" },
-          { t: "L'hypoténuse est le côté :", a: "Le plus long" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Côté adjacent / Hypoténuse", "Côté opposé / Hypoténuse", "Côté opposé / Adjacent", "Hypoténuse / Adjacent"];
-      } else if (type === 'c3_proba') {
-        const qs = [
-          { t: "On lance deux pièces. Probabilité de deux faces ?", a: "1/4" },
-          { t: "On lance deux dés. Probabilité d'obtenir un double 6 ?", a: "1/36" },
-          { t: "Probabilité d'obtenir pile puis face ?", a: "1/4" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "1/2", "1/6", "1"];
-      }
-
-      // ——— Seconde ———
-      else if (type === 'sec_ensembles') {
-        const qs = [
-          { t: "L'intervalle [2 ; 5] contient-il 5 ?", a: "Oui" },
-          { t: "L'intervalle ]2 ; 5[ contient-il 2 ?", a: "Non" },
-          { t: "L'intervalle [0 ; +∞[ contient-il −1 ?", a: "Non" },
-          { t: "3 ∈ [1 ; 4] ?", a: "Oui" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Oui", "Non", "Seulement 2", "Impossible à dire"];
-      } else if (type === 'sec_fonctions') {
-        const qs = [
-          { t: "La fonction f(x) = x² est :", a: "Paire et positive" },
-          { t: "La fonction f(x) = 1/x est définie sur :", a: "ℝ*" },
-          { t: "f(x) = √x est définie pour :", a: "x ≥ 0" },
-          { t: "La fonction cube f(x) = x³ est :", a: "Impaire" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Paire et positive", "Impaire", "Négative", "Constante"];
-      } else if (type === 'sec_variations') {
-        const qs = [
-          { t: "Si une fonction est strictement croissante, sa courbe :", a: "Monte de gauche à droite" },
-          { t: "Si f est décroissante, alors :", a: "x1 < x2 ⇒ f(x1) ≥ f(x2)" },
-          { t: "Un extremum local est :", a: "Un maximum ou minimum local" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Monte de gauche à droite", "Descend de gauche à droite", "Est horizontale", "Forme un cercle"];
-      } else if (type === 'sec_vecteurs') {
-        const qs = [
-          { t: "D'après Chasles : AB + BC = ?", a: "vecteur AC" },
-          { t: "Le vecteur nul a pour norme :", a: "0" },
-          { t: "Deux vecteurs colinéaires sont :", a: "Parallèles (ou opposés)" },
-          { t: "AB + BA = ?", a: "vecteur nul" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["vecteur AC", "vecteur CA", "vecteur nul", "vecteur BA"];
-      } else if (type === 'sec_proba') {
-        const qs = [
-          { t: "Les probabilités conditionnelles s'utilisent avec :", a: "Des arbres de probabilités" },
-          { t: "P(A|B) se lit :", a: "Probabilité de A sachant B" },
-          { t: "La formule des probabilités totales permet de :", a: "Calculer P(A) en partitionnant" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Des arbres de probabilités", "Uniquement des tableaux", "Des cercles", "Des droites"];
-      }
-
-      // ——— 1ère ———
-      else if (type === 'p1_second') {
-        const qs = [
-          { t: "Pour ax² + bx + c = 0, le discriminant est :", a: "Δ = b² − 4ac" },
-          { t: "Si Δ > 0, le nombre de solutions est :", a: "2" },
-          { t: "Si Δ = 0, le nombre de solutions est :", a: "1" },
-          { t: "Si Δ < 0, le nombre de solutions est :", a: "0" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "Δ = b² + 4ac", "Δ = 2b − 4ac", "Δ = b − 4ac"];
-      } else if (type === 'p1_derivee') {
-        const qs = [
-          { t: "La dérivée de f(x) = x² est :", a: "2x" },
-          { t: "La dérivée de f(x) = x³ est :", a: "3x²" },
-          { t: "La dérivée de f(x) = 5x est :", a: "5" },
-          { t: "La dérivée de f(x) = constante est :", a: "0" },
-          { t: "La dérivée de √x est :", a: "1/(2√x)" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "x", "2", "x²"];
-      } else if (type === 'p1_exp') {
-        const qs = [
-          { t: "La dérivée de eˣ est :", a: "eˣ" },
-          { t: "e⁰ = ?", a: "1" },
-          { t: "eˣ × eʸ = ?", a: "e^{x+y}" },
-          { t: "La fonction exponentielle est :", a: "Toujours positive" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "x·eˣ", "1/eˣ", "e"];
-      } else if (type === 'p1_suites') {
-        const qs = [
-          { t: "Dans une suite arithmétique de raison r, uₙ₊₁ − uₙ = ?", a: "r" },
-          { t: "Dans une suite géométrique de raison q, uₙ₊₁ / uₙ = ?", a: "q" },
-          { t: "Suite arithmétique : uₙ = u₀ + n×r. Vrai ?", a: "Vrai" },
-          { t: "Suite géométrique : uₙ = u₀ × qⁿ. Vrai ?", a: "Vrai" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "n", "uₙ", "0"];
-      } else if (type === 'p1_scalaire') {
-        const qs = [
-          { t: "Le produit scalaire de deux vecteurs orthogonaux est :", a: "0" },
-          { t: "u · u = ?", a: "||u||²" },
-          { t: "Si u · v = 0 et u, v non nuls, alors :", a: "Ils sont orthogonaux" },
-          { t: "u · v = ||u|| × ||v|| × cos(θ). Vrai ?", a: "Vrai" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["0", "1", "−1", "Leur norme"];
-      }
-
-      // ——— Terminale ———
-      else if (type === 'term_limites') {
-        const qs = [
-          { t: "lim (x→+∞) 1/x = ?", a: "0" },
-          { t: "lim (x→+∞) x² = ?", a: "+∞" },
-          { t: "lim (x→0) 1/x² = ?", a: "+∞" },
-          { t: "lim (x→+∞) eˣ = ?", a: "+∞" },
-          { t: "lim (x→−∞) eˣ = ?", a: "0" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "+∞", "1", "−∞"];
-      } else if (type === 'term_continuite') {
-        const qs = [
-          { t: "Le TVI s'applique aux fonctions :", a: "Continues sur un intervalle fermé" },
-          { t: "Une fonction dérivable est forcément :", a: "Continue" },
-          { t: "Le théorème des valeurs intermédiaires garantit :", a: "L'existence d'au moins une solution" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = ["Continues sur un intervalle fermé", "Uniquement dérivables", "Discontinues", "Périodiques"];
-      } else if (type === 'term_log') {
-        const qs = [
-          { t: "La dérivée de ln(x) est :", a: "1/x" },
-          { t: "ln(e) = ?", a: "1" },
-          { t: "ln(1) = ?", a: "0" },
-          { t: "ln(a×b) = ?", a: "ln(a) + ln(b)" },
-          { t: "e^{ln(x)} = ?", a: "x" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "ln(x)", "x", "eˣ"];
-      } else if (type === 'term_integrales') {
-        const qs = [
-          { t: "L'intégrale de 0 à 1 de 2x dx vaut :", a: "1" },
-          { t: "L'intégrale de 0 à 2 de x dx vaut :", a: "2" },
-          { t: "Une primitive de 2x est :", a: "x²" },
-          { t: "L'intégrale calcule souvent :", a: "Une aire sous la courbe" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "2", "0", "0,5"];
-      } else if (type === 'term_binomiale') {
-        const qs = [
-          { t: "La loi binomiale modélise :", a: "Le nombre de succès dans n épreuves indépendantes" },
-          { t: "Espérance d'une loi B(n,p) :", a: "n × p" },
-          { t: "Variance d'une loi B(n,p) :", a: "n × p × (1−p)" },
-          { t: "La loi binomiale est une loi :", a: "Discrète" }
-        ];
-        const q = pick(qs); text = q.t; ans = q.a;
-        opts = [q.a, "Une variable continue", "Uniquement pile ou face", "Des événements impossibles"];
-      }
-
-      // Fallback
-      else {
-        const a = r(3, 12), b = r(3, 10);
-        text = `${a} × ${b} = ?`;
-        ans = `${a*b}`;
-        opts = [`${a*b}`, `${a*b+2}`, `${a*b-1}`, `${a+b}`];
-      }
-
-      // Nettoyage final des options
-      opts = Array.from(new Set(opts.map(String))).filter(Boolean);
-      while (opts.length < 4) {
-        const extra = String((parseInt(ans) || 10) + opts.length + r(1, 8));
-        if (!opts.includes(extra)) opts.push(extra);
-      }
-      opts = opts.slice(0, 4).sort(() => Math.random() - 0.5);
-
-      return { text, ans: String(ans), options: opts, speakText: speakText || text };
-    }
-
-    // ======================================================
-    // COMPOSANT EXERCICE
-    // ======================================================
-    function ExerciseRunner({ userName, grade, module, onBack, onResult }) {
-      const [q, setQ] = useState({ text: '', ans: '', options: [], speakText: '' });
-      const [feedback, setFeedback] = useState(null);
-      const [isAnswering, setIsAnswering] = useState(false);
-      const [showConfetti, setShowConfetti] = useState(false);
-      const [timeLeft, setTimeLeft] = useState(15);
-      const [showExplain, setShowExplain] = useState(false);
-      const [isDuel, setIsDuel] = useState(false);
-      const [duelScores, setDuelScores] = useState({ p1: 0, p2: 0 });
-      const [activePlayer, setActivePlayer] = useState(1);
-      const [duelWinner, setDuelWinner] = useState(null);
-      const timerRef = useRef(null);
-      const isMat = IS_MATERNELLE(grade);
-
-      const loadNewQuestion = useCallback(() => {
-        setFeedback(null);
-        setIsAnswering(false);
-        setShowConfetti(false);
-        const newQ = generateQuestion(module.type, grade);
-        setQ(newQ);
-        setTimeLeft(15);
-        if (isMat || !isDuel) {
-          setTimeout(() => speak(newQ.speakText), 300);
-        }
-      }, [module.type, grade, isMat, isDuel]);
-
-      useEffect(() => { loadNewQuestion(); }, [loadNewQuestion]);
-
-      // Timer (désactivé en maternelle)
-      useEffect(() => {
-        if (isMat || feedback || showExplain || duelWinner) return;
-        timerRef.current = setInterval(() => {
-          setTimeLeft(prev => {
-            if (prev <= 1) {
-              clearInterval(timerRef.current);
-              if (isDuel) handleDuelAnswer(null);
-              else handleAnswer('');
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-        return () => clearInterval(timerRef.current);
-      }, [q.text, feedback, showExplain, duelWinner, isDuel, isMat]);
-
-      const handleAnswer = (choice) => {
-        if (isAnswering || feedback) return;
-        setIsAnswering(true);
-        clearInterval(timerRef.current);
-
-        const correct = String(choice).trim() === String(q.ans).trim();
-        if (correct) {
-          const xp = isMat ? 15 : Math.max(6, Math.floor(timeLeft / 2) + 5);
-          setShowConfetti(true);
-          setFeedback({ success: true, text: `Bravo ${userName} ! (+${xp} XP)` });
-          if (isMat) speak(`Bravo ${userName} ! C'est très bien !`);
-          else speak("Bravo ! C'est exact !");
-          setTimeout(() => {
-            onResult(xp);
-            loadNewQuestion();
-          }, 1500);
-        } else {
-          setFeedback({ success: false, text: isMat ? `Essaie encore ${userName}` : `La bonne réponse était : ${q.ans}` });
-          if (isMat) speak(`Ce n'est pas tout à fait ça. Essaie encore ${userName}.`);
-          else speak(`La bonne réponse était ${q.ans}`);
-          setTimeout(() => {
-            setFeedback(null);
-            setIsAnswering(false);
-            if (!isMat) loadNewQuestion();
-          }, isMat ? 2000 : 2200);
-        }
-      };
-
-      const handleDuelAnswer = (choice) => {
-        if (isAnswering || duelWinner) return;
-        setIsAnswering(true);
-        clearInterval(timerRef.current);
-        const correct = choice !== null && String(choice).trim() === String(q.ans).trim();
-
-        if (correct) {
-          setDuelScores(prev => {
-            const next = { ...prev, [`p${activePlayer}`]: prev[`p${activePlayer}`] + 1 };
-            if (next[`p${activePlayer}`] >= 5) {
-              setTimeout(() => setDuelWinner(activePlayer), 100);
-            }
-            return next;
-          });
-          setFeedback({ success: true, text: `Joueur ${activePlayer} marque un point !` });
-        } else {
-          setFeedback({ success: false, text: `Raté ! C'était ${q.ans}` });
-        }
-
-        setTimeout(() => {
-          setFeedback(null);
-          setIsAnswering(false);
-          setActivePlayer(p => p === 1 ? 2 : 1);
-          loadNewQuestion();
-        }, 1600);
-      };
-
-      const expl = EXPLANATIONS[module.type] || {
-        title: module.name,
-        why: "Comprendre les notions fondamentales de ce chapitre.",
-        rule: "Applique les définitions et propriétés de ton cours."
-      };
-
-      // ========== INTERFACE MATERNELLE ==========
-      if (isMat) {
-        return (
-          <div className="bg-gradient-to-b from-indigo-950 to-slate-950 p-5 sm:p-8 rounded-3xl text-center max-w-lg mx-auto border-4 border-indigo-500/30 shadow-2xl animate-pop relative overflow-hidden">
-            {showConfetti && (
-              <>
-                <span className="confetti-piece" style={{left:'18%', animationDelay:'0s'}}>🎉</span>
-                <span className="confetti-piece" style={{left:'38%', animationDelay:'0.1s'}}>⭐</span>
-                <span className="confetti-piece" style={{left:'58%', animationDelay:'0.2s'}}>🌟</span>
-                <span className="confetti-piece" style={{left:'78%', animationDelay:'0.15s'}}>✨</span>
-              </>
-            )}
-
-            <div className="flex justify-between items-center mb-5">
-              <button onClick={onBack} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-2xl text-sm font-bold">← Retour</button>
-              <div className="text-pink-300 font-bold text-sm bg-pink-500/20 px-3 py-1 rounded-full">{module.icon} {module.name}</div>
-            </div>
-
-            <button onClick={() => speak(q.speakText)} className="mb-5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white px-6 py-3 rounded-full font-bold text-base shadow-lg flex items-center gap-2 mx-auto active:scale-95 transition-all">
-              🔊 Écouter la consigne
-            </button>
-
-            <div className="bg-white/5 rounded-3xl p-6 mb-5 border border-white/10">
-              <h2 className="text-2xl sm:text-3xl font-black text-white leading-snug whitespace-pre-line">{q.text}</h2>
-            </div>
-
-            {feedback && (
-              <div className={`p-4 rounded-2xl mb-5 font-black text-lg animate-happy ${feedback.success ? 'bg-emerald-500/30 text-emerald-200 border-2 border-emerald-400' : 'bg-amber-500/30 text-amber-200 border-2 border-amber-400'}`}>
-                {feedback.text}
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              {q.options.map((opt, i) => (
-                <button key={i} onClick={() => handleAnswer(opt)} disabled={isAnswering || !!feedback}
-                  className="bg-gradient-to-b from-indigo-500 to-indigo-700 hover:from-indigo-400 hover:to-indigo-600 disabled:opacity-50 text-white font-black text-2xl py-6 px-3 rounded-3xl border-4 border-indigo-300/30 shadow-xl active:scale-90 transition-all min-h-[80px] flex items-center justify-center">
-                  {opt}
-                </button>
-              ))}
-            </div>
-            <p className="mt-5 text-xs text-indigo-300/70">Touche la bonne réponse • Tu peux réécouter autant de fois que tu veux</p>
-          </div>
-        );
-      }
-
-      // ========== INTERFACE CLASSIQUE + DUEL ==========
-      return (
-        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl max-w-xl mx-auto shadow-2xl relative animate-pop">
-          {showConfetti && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-              <div className="confetti-piece">⭐</div>
-              <div className="confetti-piece" style={{left:'30%', animationDelay:'0.1s'}}>🎉</div>
-              <div className="confetti-piece" style={{left:'70%', animationDelay:'0.2s'}}>✨</div>
-            </div>
-          )}
-
-          {/* Modal Explication */}
-          {showExplain && (
-            <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md rounded-3xl z-30 p-6 flex flex-col justify-between animate-pop">
-              <div>
-                <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
-                  <h3 className="text-base font-black text-amber-400 flex items-center gap-2">💡 {expl.title}</h3>
-                  <button onClick={() => setShowExplain(false)} className="text-slate-400 hover:text-white font-bold text-sm px-3 py-1 bg-slate-800 rounded-xl">✕ Fermer</button>
-                </div>
-                <div className="space-y-4 text-sm">
-                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                    <h4 className="font-extrabold text-indigo-400 mb-1 text-xs uppercase">Pourquoi apprend-on cela ?</h4>
-                    <p className="text-slate-300">{expl.why}</p>
-                  </div>
-                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                    <h4 className="font-extrabold text-emerald-400 mb-1 text-xs uppercase">Règle clé</h4>
-                    <p className="text-slate-300">{expl.rule}</p>
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => speak(expl.why + ". " + expl.rule)} className="w-full bg-indigo-600/30 text-indigo-300 py-3 rounded-2xl text-xs font-bold border border-indigo-500/30 flex items-center justify-center gap-2">
-                🔊 Écouter l'explication
-              </button>
-            </div>
-          )}
-
-          {/* Header */}
-          <div className="flex flex-wrap justify-between items-center gap-2 mb-5">
-            <button onClick={onBack} className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs">← Retour</button>
-            
-            {module.type === 'mult_tables' && (
-              <button onClick={() => { setIsDuel(!isDuel); setDuelScores({p1:0,p2:0}); setDuelWinner(null); setActivePlayer(1); }}
-                className={`px-4 py-2 rounded-xl text-xs font-black ${isDuel ? 'bg-rose-600 text-white animate-pulse' : 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/40'}`}>
-                ⚔️ {isDuel ? 'Mode Solo' : 'Mode Duel'}
-              </button>
-            )}
-
-            <button onClick={() => { setShowExplain(true); speak(expl.why); }} className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-black">
-              💡 Pourquoi & Théorème
-            </button>
-
-            {!isDuel && <span className="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl">⏱️ {timeLeft}s</span>}
-          </div>
-
-          {/* Score Duel */}
-          {isDuel && (
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-5 flex justify-around items-center">
-              <div className={`text-center p-2 rounded-xl ${activePlayer === 1 ? 'bg-indigo-600/20 border border-indigo-500' : ''}`}>
-                <p className="text-xs font-bold text-indigo-400">Joueur 1</p>
-                <p className="text-2xl font-black text-white">{duelScores.p1} / 5</p>
-              </div>
-              <div className="text-xl font-black text-slate-600">VS</div>
-              <div className={`text-center p-2 rounded-xl ${activePlayer === 2 ? 'bg-rose-600/20 border border-rose-500' : ''}`}>
-                <p className="text-xs font-bold text-rose-400">Joueur 2</p>
-                <p className="text-2xl font-black text-white">{duelScores.p2} / 5</p>
-              </div>
-            </div>
-          )}
-
-          {/* Victoire Duel */}
-          {duelWinner ? (
-            <div className="text-center py-10 space-y-4 animate-pop">
-              <div className="text-5xl">🏆</div>
-              <h2 className="text-2xl font-black text-amber-400">Victoire du Joueur {duelWinner} !</h2>
-              <button onClick={() => { setDuelScores({p1:0,p2:0}); setDuelWinner(null); setActivePlayer(1); loadNewQuestion(); }}
-                className="bg-indigo-600 text-white font-black px-6 py-3 rounded-2xl text-sm">
-                Rejouer un Duel ⚔️
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="text-center my-5">
-                <div className="text-4xl mb-3">{isDuel ? (activePlayer === 1 ? '🔵' : '🔴') : module.icon}</div>
-                <h2 className="text-lg sm:text-xl font-black text-white bg-slate-950/60 p-4 rounded-2xl border border-slate-800 leading-relaxed">
-                  {q.text}
-                </h2>
-              </div>
-
-              {feedback && (
-                <div className={`p-4 rounded-2xl mb-5 text-center font-black text-sm animate-pop ${feedback.success ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
-                  {feedback.text}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {q.options.map((opt, idx) => (
-                  <button key={idx} disabled={isAnswering}
-                    onClick={() => isDuel ? handleDuelAnswer(opt) : handleAnswer(opt)}
-                    className="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-400 font-black py-4 px-4 rounded-2xl text-white transition disabled:opacity-50 active:scale-95">
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      );
-    }
-
-    // ======================================================
-    // APPLICATION PRINCIPALE
-    // ======================================================
-    function App() {
-      const [userName, setUserName] = useState('');
-      const [selectedGrade, setSelectedGrade] = useState('6ème');
-      const [isLoggedIn, setIsLoggedIn] = useState(false);
-      const [activeModule, setActiveModule] = useState(null);
-      const [score, setScore] = useState(0);
-
-      const handleLogin = (e) => {
-        e.preventDefault();
-        if (userName.trim()) {
-          setIsLoggedIn(true);
-          speak(`Bienvenue ${userName} !`);
-        }
-      };
-
-      if (!isLoggedIn) {
-        return (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-md w-full shadow-2xl animate-pop text-center">
-              <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-lg shadow-indigo-600/30">🎓</div>
-              <h1 className="text-2xl font-black text-white mb-1">MathsAcademy</h1>
-              <p className="text-slate-400 text-sm mb-6">Programme officiel • Maternelle → Terminale</p>
-              <form onSubmit={handleLogin} className="space-y-4 text-left">
-                <div>
-                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Prénom</label>
-                  <input type="text" required value={userName} onChange={e => setUserName(e.target.value)}
-                    placeholder="Ton prénom..." className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500" />
-                </div>
-                <div>
-                  <label className="block text-xs font-extrabold text-indigo-400 uppercase mb-2">Niveau</label>
-                  <select value={selectedGrade} onChange={e => setSelectedGrade(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white font-bold outline-none focus:border-indigo-500 cursor-pointer">
-                    {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                </div>
-                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-600/30">
-                  COMMENCER
-                </button>
-              </form>
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div className="max-w-5xl mx-auto p-4 sm:p-6 min-h-screen flex flex-col">
-          <header className="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🎓</span>
-              <div>
-                <h1 className="text-base font-black text-white">MathsAcademy</h1>
-                <p className="text-xs text-slate-400">Joueur : <span className="font-bold text-white">{userName} ({selectedGrade})</span></p>
-              </div>
-            </div>
-            <div className="bg-slate-900 border border-amber-500/30 px-4 py-2 rounded-2xl flex items-center gap-2">
-              <span className="text-amber-400 text-lg">⭐</span>
-              <span className="text-sm font-black text-amber-400">{score} XP</span>
-            </div>
-          </header>
-
-          <main className="flex-1 mb-8">
-            {!activeModule ? (
-              <>
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {GRADES.map(g => (
-                    <button key={g} onClick={() => setSelectedGrade(g)}
-                      className={`px-4 py-2 rounded-2xl font-extrabold text-xs transition ${selectedGrade === g ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105' : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                      {g}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                  {(CURRICULUM[selectedGrade] || []).map(m => (
-                    <div key={m.id} onClick={() => setActiveModule(m)}
-                      className="bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/20 p-6 rounded-3xl transition flex flex-col justify-between h-40 shadow-lg cursor-pointer group">
-                      <div className="flex items-start justify-between">
-                        <span className="text-3xl bg-slate-950 p-2.5 rounded-2xl border border-slate-800 group-hover:scale-110 transition">{m.icon}</span>
-                        <span className="text-[10px] font-extrabold uppercase text-slate-400 bg-slate-800 px-2.5 py-1 rounded-xl">{m.domain}</span>
-                      </div>
-                      <div>
-                        <h3 className="font-extrabold text-base text-white group-hover:text-indigo-400 transition leading-snug">{m.name}</h3>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <ExerciseRunner
-                userName={userName}
-                grade={selectedGrade}
-                module={activeModule}
-                onBack={() => setActiveModule(null)}
-                onResult={xp => setScore(s => s + xp)}
-              />
-            )}
-          </main>
-
-          <footer className="py-4 border-t border-slate-900 flex justify-between items-center text-xs text-slate-500">
-            <button onClick={() => { setIsLoggedIn(false); setActiveModule(null); setScore(0); }} className="hover:text-indigo-400 underline">
-              Changer d'élève
-            </button>
-            <span>MathsAcademy © 2026</span>
-          </footer>
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-</body>
-</html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MathsAcademy Montessori</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>@keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}.pop{animation:pop .25s ease forwards}@keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}.cf{position:fixed;top:-20px;width:12px;height:12px;animation:fall 2.5s linear forwards;z-index:100;pointer-events:none}.big{font-size:2rem;line-height:2.4rem;word-break:break-all}.rot{transform:rotate(180deg)}</style></head>
+<body class="text-slate-100 min-h-screen font-sans" style="background:linear-gradient(180deg,#1e1b4b,#050510) fixed"><div id="app"></div>
+<script>
+const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a,pick=a=>a[R(0,a.length-1)],sh=a=>[...a].sort(()=>Math.random()-.5),$=s=>document.getElementById(s);
+const fm=n=>n<0?'−'+-n:''+n,fd=n=>n.toFixed(1).replace('.',','),SUP=['','','²','³','⁴','⁵','⁶','⁷'];
+const E=[['🍎','pommes'],['🐟','poissons'],['⭐','étoiles'],['🚗','voitures'],['🌸','fleurs'],['🐶','chiens'],['🎈','ballons gonflables'],['🍓','fraises'],['🐥','poussins'],['⚽','ballons de foot']];
+const COL=[['rouge','#ef4444'],['bleu','#3b82f6'],['vert','#22c55e'],['jaune','#facc15'],['orange','#f97316'],['violet','#a855f7'],['rose','#ec4899'],['marron','#92400e'],['turquoise','#14b8a6'],['gris','#94a3b8'],['bordeaux','#9f1239'],['beige','#d6b88a']];
+let mute=false,AC;
+const say=t=>{if(mute||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\u2B50]/gu,'').replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+/g,m=>m=='²'?' au carré':m=='³'?' au cube':' puissance '+[...m].map(c=>'0123456789−'['⁰¹²³⁴⁵⁶⁷⁸⁹⁻'.indexOf(c)]).join('')).replace(/≤/g,' inférieur ou égal à ').replace(/≥/g,' supérieur ou égal à ').replace(/</g,' inférieur à ').replace(/>/g,' supérieur à ').replace(/∩/g,' inter ').replace(/∪/g,' union ').replace(/√/g,' racine de ').replace(/°/g,' degrés').replace(/_/g,' ').replace(/\^/g,' puissance ').replace(/∫/g,' intégrale ').replace(/π/g,' pi ').replace(/[₀-₉]/g,c=>' '+(c.charCodeAt(0)-8320)).replace(/(\d+) h\b/g,'$1 heures').replace(/×/g,' fois ').replace(/\+/g,' plus ').replace(/[−-]/g,' moins ').replace(/=/g,' égale ').replace(/\//g,' sur ').replace(/∞/g,' l’infini '));u.lang='fr-FR';u.rate=.9;u.pitch=1.1;speechSynthesis.speak(u)};
+const tg=()=>{mute=!mute;window.speechSynthesis&&speechSynthesis.cancel();document.querySelectorAll('.mt').forEach(e=>e.textContent=mute?'🔇':'🔊')};
+const snd=ok=>{try{AC=AC||new(window.AudioContext||webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime;o.connect(g);g.connect(AC.destination);(ok?[523,659,784]:[300,200]).forEach((f,i)=>o.frequency.setValueAtTime(f,n+i*.12));g.gain.setValueAtTime(.1,n);g.gain.exponentialRampToValueAtTime(.001,n+.4);o.start();o.stop(n+.4)}catch(e){}};
+const cf=()=>{const c=['#6366f1','#f59e0b','#10b981','#ef4444','#8b5cf6','#ec4899'];for(let i=0;i<40;i++){const d=document.createElement('div');d.className='cf';d.style.cssText=`left:${Math.random()*100}vw;background:${pick(c)};animation-delay:${Math.random()*.5}s;border-radius:${i%2?'50%':0}`;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}};
+
+/* ---------- Visuels SVG ---------- */
+const svg=(b,w=100,h=80,c='mx-auto w-full max-w-[260px]')=>`<svg viewBox="0 0 ${w} ${h}" class="${c}">${b}</svg>`;
+const SH={rond:c=>`<circle cx="30" cy="30" r="24" fill="${c}"/>`,carré:c=>`<rect x="8" y="8" width="44" height="44" fill="${c}"/>`,triangle:c=>`<polygon points="30,5 56,54 4,54" fill="${c}"/>`,rectangle:c=>`<rect x="2" y="15" width="56" height="30" fill="${c}"/>`,étoile:c=>`<polygon points="30,3 37,22 57,23 42,36 47,56 30,45 13,56 18,36 3,23 23,22" fill="${c}"/>`};
+const em=(n,e,c='')=>`<div class="big ${c}">${e.repeat(n)}</div>`,row=(...a)=>`<div class="flex justify-center items-center gap-5 flex-wrap">${a.join('')}</div>`;
+const pie=(n,d)=>{let s='';for(let i=0;i<d;i++){const a=i/d*6.2832-1.5708,b=(i+1)/d*6.2832-1.5708;s+=`<path d="M40 40L${40+36*Math.cos(a)} ${40+36*Math.sin(a)}A36 36 0 0 1 ${40+36*Math.cos(b)} ${40+36*Math.sin(b)}Z" fill="${i<n?'#6366f1':'#1e293b'}" stroke="#94a3b8" stroke-width="1.5"/>`}return svg(s,80,80,'inline-block w-32')};
+const bar=(n,d)=>{let s='';for(let i=0;i<d;i++)s+=`<rect x="${2+i*96/d}" y="4" width="${96/d}" height="24" fill="${i<n?'#f59e0b':'#1e293b'}" stroke="#94a3b8"/>`;return svg(s,100,32,'block mx-auto w-56 my-1')};
+const nl=(a,b,m,lab)=>{let s='<path d="M5 30H195" stroke="#94a3b8" stroke-width="2"/>';for(let i=0;i<=b-a;i++){const x=10+i*180/(b-a);s+=`<path d="M${x} 24V36" stroke="#94a3b8"/><text x="${x}" y="50" font-size="9" fill="#cbd5e1" text-anchor="middle">${lab(a+i)}</text>`}const x=10+(m-a)*180/(b-a);return svg(s+`<circle cx="${x}" cy="30" r="5" fill="#f59e0b"/><text x="${x}" y="16" font-size="11" fill="#f59e0b" text-anchor="middle">?</text>`,200,58,'mx-auto w-full max-w-md')};
+const bt=(t,u)=>`<div class="flex justify-center items-end gap-4"><div class="flex gap-1">${'<div class="w-3 h-16 bg-amber-400 rounded-sm"></div>'.repeat(t)}</div><div class="flex flex-wrap gap-1 w-20">${'<div class="w-3 h-3 bg-indigo-400 rounded-sm"></div>'.repeat(u)}</div></div>`;
+const grid=(x,y)=>{let s='';for(let i=0;i<x;i++)for(let j=0;j<y;j++)s+=`<circle cx="${4+j*8}" cy="${4+i*8}" r="3" fill="${i%2?'#818cf8':'#f59e0b'}"/>`;return `<div class="mx-auto" style="max-width:${y*22}px">${svg(s,y*8,x*8,'w-full')}</div>`};
+const tri=(L,a,b,h)=>{const [r,p,q]=L,sc=70/Math.max(a,b),w=a*sc,hh=b*sc,T=(x,y,t,an='middle')=>`<text x="${x}" y="${y}" font-size="9" fill="#e2e8f0" text-anchor="${an}">${t}</text>`;return svg(`<polygon points="20,80 ${20+w},80 20,${80-hh}" fill="#312e81" stroke="#a5b4fc" stroke-width="1.5"/><path d="M20 72H28V80" fill="none" stroke="#a5b4fc"/>${T(8,90,r)}${T(20+w+3,90,p)}${T(24,80-hh-3,q)}${T(20+w/2,97,a==null?'':h[0])}${T(17,80-hh/2,h[1],'end')}${T(20+w/2+8,80-hh/2-4,h[2])}`,130,100,'mx-auto w-48')};
+const th=(f)=>{const A=[50,5],B=[8,90],C=[100,90],P=(u,t)=>[u[0]+(A[0]-u[0])*0+(u[0]-A[0])*0,0],M=[A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f],N=[A[0]+(C[0]-A[0])*f,A[1]+(C[1]-A[1])*f],T=(p,t,dx,dy)=>`<text x="${p[0]+dx}" y="${p[1]+dy}" font-size="10" fill="#e2e8f0">${t}</text>`;return svg(`<polygon points="50,5 8,90 100,90" fill="none" stroke="#a5b4fc" stroke-width="2"/><path d="M${M[0]} ${M[1]}L${N[0]} ${N[1]}" stroke="#f59e0b" stroke-width="2"/>${T(A,'A',-3,-1)}${T(B,'B',-9,4)}${T(C,'C',3,4)}${T(M,'M',-11,3)}${T(N,'N',4,3)}`,110,100,'mx-auto w-44')};
+const vg=(A,B)=>{let s='<defs><marker id="ar" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="#f59e0b"/></marker></defs>';for(let i=-5;i<=5;i++)s+=`<path d="M${90+15*i} 15V165M15 ${90+15*i}H165" stroke="#334155" stroke-width=".6"/>`;const X=p=>90+15*p[0],Y=p=>90-15*p[1];return svg(s+`<path d="M${X(A)} ${Y(A)}L${X(B)} ${Y(B)}" stroke="#f59e0b" stroke-width="2" marker-end="url(#ar)"/><text x="${X(A)-9}" y="${Y(A)-4}" fill="#e2e8f0" font-size="10">A</text><text x="${X(B)+3}" y="${Y(B)-4}" fill="#e2e8f0" font-size="10">B</text>`,180,180,'mx-auto w-56')};
+const gr=(f,xa,xb,mx)=>{const xs=[...Array(61)].map((_,i)=>xa+(xb-xa)*i/60),ys=xs.map(f),lo=Math.min(...ys),hi=Math.max(...ys),X=x=>5+(x-xa)/(xb-xa)*110,Y=y=>75-(y-lo)/(hi-lo||1)*70;let s=`<polyline fill="none" stroke="#818cf8" stroke-width="2" points="${xs.map((x,i)=>X(x)+','+Y(ys[i])).join(' ')}"/>`;if(xa<0&&xb>0)s+=`<path d="M${X(0)} 2V78" stroke="#475569"/>`;if(lo<0&&hi>0)s+=`<path d="M2 ${Y(0)}H118" stroke="#475569"/>`;if(mx!=null)s+=`<circle cx="${X(mx)}" cy="${Y(f(mx))}" r="3.5" fill="#f59e0b"/>`;return svg(s,120,80,'mx-auto w-56')};
+const P=(a,b,c)=>[[a,'x²'],[b,'x'],[c,'']].filter(t=>t[0]).map((t,i)=>{const k=t[0],m=Math.abs(k);return (k<0?'− ':i?'+ ':'')+(m==1&&t[1]?'':m)+t[1]}).join(' ');
+
+/* ---------- Générateurs de questions ---------- */
+const Q=(t,a,w,v='',np)=>{a=''+a;const o=[a];w.forEach(x=>{x=''+x;!o.includes(x)&&o.length<4&&o.push(x)});for(let k=1;!np&&o.length<4&&k<40;k++){const d=k%2?k:-k;for(const re of[/\d+/,/\d+(?!.*\d)/]){const x=a.replace(re,m=>Math.max(0,+m+d));!o.includes(x)&&o.length<4&&o.push(x)}}return{t,a,o:sh(o),v}};
+const mix=(max,tot)=>{const[a,an]=pick(E),[b,bn]=pick(E.filter(e=>e[0]!=a)),m=tot?max>>1:max,x=R(1,m),y=R(1,m),v=row(em(x,a),em(y,b));return tot?Q(`Combien y a-t-il de ${an} et de ${bn} en tout ?`,x+y,[x+y+1,x+y-1,x+y+2],v):Q(`Combien y a-t-il de ${an} ?`,x,[x+1,x-1,x+2],v)};
+const mult=T=>{const t=pick(T),b=R(1,10),[x,y]=R(0,1)?[t,b]:[b,t],p=x*y,k=R(0,2),[,an]=pick(E);
+if(k==0)return Q(`Combien font ${x} × ${y} ?`,p,[p+x,p-y,p+y,p+2],grid(x,y));
+if(k==1)return Q(`${x} × ? = ${p}`,y,[y+1,y-1,y+2],grid(x,y));
+return Q(`${x} rangées de ${y} ${an}. Combien de ${an} en tout ?`,p,[p+x,p-y,p+y,p+2],grid(x,y))};
+const gcd=(a,b)=>b?gcd(b,a%b):a,sg=n=>n<0?`− ${-n}`:`+ ${n}`,sp=n=>String(n).replace(/./g,c=>'⁰¹²³⁴⁵⁶⁷⁸⁹⁻'['0123456789-'.indexOf(c)]),fx=n=>String(+n.toFixed(3)).replace('.',','),c2=(x,y)=>`(${x} ; ${y})`,fr=(a,b)=>a+'/'+b;
+const pg=(pts,arr)=>{let s='<defs><marker id="ar2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="#f59e0b"/></marker></defs>';for(let i=-5;i<=5;i++)s+=`<path d="M${90+15*i} 15V165M15 ${90+15*i}H165" stroke="#334155" stroke-width=".6"/>`;s+='<path d="M15 90H165M90 15V165" stroke="#64748b"/>';const X=p=>90+15*p[0],Y=p=>90-15*p[1];if(arr)s+=`<path d="M${X(arr[0])} ${Y(arr[0])}L${X(arr[1])} ${Y(arr[1])}" stroke="#f59e0b" stroke-width="2" marker-end="url(#ar2)"/>`;pts.forEach(([x,y,l])=>s+=`<circle cx="${X([x,y])}" cy="${Y([x,y])}" r="3.5" fill="#f472b6"/><text x="${X([x,y])+5}" y="${Y([x,y])-5}" fill="#e2e8f0" font-size="10">${l}</text>`);return svg(s,180,180,'mx-auto w-56')};
+const iv=(a,b,ol,orr)=>{const lo=a-1,hi=b+1,n=hi-lo,X=v=>10+(v-lo)*180/n;let s='<path d="M5 30H195" stroke="#64748b" stroke-width="2"/>';for(let i=lo;i<=hi;i++)s+=`<path d="M${X(i)} 26V34" stroke="#94a3b8"/><text x="${X(i)}" y="47" font-size="8" fill="#cbd5e1" text-anchor="middle">${fm(i)}</text>`;return svg(s+`<path d="M${X(a)} 30H${X(b)}" stroke="#f59e0b" stroke-width="5"/><circle cx="${X(a)}" cy="30" r="4" fill="${ol?'#0f172a':'#f59e0b'}" stroke="#f59e0b" stroke-width="2"/><circle cx="${X(b)}" cy="30" r="4" fill="${orr?'#0f172a':'#f59e0b'}" stroke="#f59e0b" stroke-width="2"/>`,200,54,'mx-auto w-full max-w-md')};
+const cd=l=>`<pre class="text-left bg-slate-950 text-emerald-300 text-sm rounded-xl p-3 mx-auto w-fit max-w-full overflow-x-auto">${l.map(s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')).join('\n')}</pre>`;
+const bl=(rep,inn)=>`<div class="mx-auto w-56 text-left text-xs font-bold"><div class="bg-amber-500 text-slate-900 rounded-t-lg px-3 py-2">répéter ${rep} fois</div><div class="ml-4 space-y-1 bg-amber-500/30 p-1">${inn.map(t=>`<div class="bg-sky-500 text-white rounded px-3 py-2">${t}</div>`).join('')}</div><div class="bg-amber-500 h-2 rounded-b-lg"></div></div>`;
+const par=()=>svg('<polygon points="20,65 85,65 105,15 40,15" fill="#312e81" stroke="#a5b4fc" stroke-width="1.5"/>'+[['A',10,72],['B',88,72],['C',108,14],['D',30,14]].map(([l,x,y])=>`<text x="${x}" y="${y}" font-size="10" fill="#e2e8f0">${l}</text>`).join(''),120,80,'mx-auto w-44');
+const bars=A=>{const m=Math.max(...A),w=100/A.length;return svg(A.map((v,i)=>{const h=v/m*55,x=5+i*w*1.1;return `<rect x="${x}" y="${65-h}" width="${w*.8}" height="${h}" fill="#818cf8"/><text x="${x+w*.4}" y="75" font-size="8" fill="#e2e8f0" text-anchor="middle">${v}</text>`}).join(''),120,80,'mx-auto w-56')};
+const tree=(p,q,r)=>{const T=(x,y,t)=>`<text x="${x}" y="${y}" font-size="9" fill="#fbbf24">${t}</text>`,L=(a,b,c,d)=>`<path d="M${a} ${b}L${c} ${d}" stroke="#94a3b8"/>`;return svg(L(15,50,70,25)+L(15,50,70,75)+L(85,25,150,12)+L(85,25,150,38)+(r==null?'':L(85,75,150,62)+L(85,75,150,88)+T(105,64,fx(r))+T(105,92,fx(1-r))+T(152,64,'B')+T(152,90,'B̄'))+T(28,32,fx(p))+T(28,72,fx(1-p))+T(105,14,fx(q))+T(105,40,fx(1-q))+T(72,28,'A')+T(72,78,'Ā')+T(152,14,'B')+T(152,40,'B̄'),180,100,'mx-auto w-64')};
+const TRI=[[3,4,5],[5,12,13],[8,15,17],[7,24,25],[6,8,10]],NM=[['A','B','C'],['D','E','F'],['M','N','P'],['R','S','T'],['X','Y','Z']];
+const sb=n=>String(n).replace(/\d/g,d=>'₀₁₂₃₄₅₆₇₈₉'[d]),fN=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' '),fh=(h,m)=>`${h} h${m?' '+String(m).padStart(2,'0'):''}`;
+const sv=(k,c)=>svg(SH[k](c),60,60,'w-16 mx-auto'),art=k=>k=='étoile'?'l’étoile':'le '+k;
+const shp=P=>{const k=pick(P),[cn,cc]=pick(COL),t=R(0,3),o=sh(Object.keys(SH).filter(x=>x!=k)).slice(0,3),n=R(1,4);
+if(t<2)return Q(`Touche ${art(k)} !`,sv(k,cc),o.map(x=>sv(x,cc)),'',1);
+if(t==2)return Q('Comment s’appelle cette forme ?',k,o,svg(SH[k](cc),60,60,'mx-auto w-28'));
+return Q(`Combien de ${k}s vois-tu ?`,n,[n+1,n-1,n+2],row(...Array(n).fill(sv(k,cc))))};
+const OBJ=[['☀️','le soleil'],['🐦','l’oiseau'],['🎈','le ballon'],['⭐','l’étoile'],['🦋','le papillon'],['🍎','la pomme'],['🐱','le chat'],['🚗','la voiture'],['🌸','la fleur'],['🐟','le poisson'],['🐝','l’abeille'],['🍓','la fraise'],['🌈','l’arc-en-ciel'],['🐢','la tortue'],['🚀','la fusée']],BG=['bg-sky-900','bg-emerald-900','bg-rose-900','bg-amber-900','bg-violet-900','bg-teal-900','bg-fuchsia-900','bg-orange-900'],pos=(e,v,h,bg)=>`<div class="mx-auto w-40 h-40 rounded-2xl flex p-2 text-5xl ${bg}" style="align-items:${v};justify-content:${h}">${e}</div>`;
+const clk=(h,m)=>{const A=(a,l)=>`${40+l*Math.sin(a*Math.PI/180)} ${40-l*Math.cos(a*Math.PI/180)}`;let s='<circle cx="40" cy="40" r="37" fill="#1e293b" stroke="#a5b4fc" stroke-width="2"/>';for(let i=1;i<=12;i++){const a=i*Math.PI/6;s+=`<text x="${40+30*Math.sin(a)}" y="${43-30*Math.cos(a)}" font-size="8" fill="#e2e8f0" text-anchor="middle">${i}</text>`}return svg(s+`<path d="M40 40L${A((h%12+m/60)*30,20)}" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/><path d="M40 40L${A(m*6,30)}" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>`,80,80,'mx-auto w-40')};
+const rul=(a,b)=>{let s='<rect x="2" y="22" width="216" height="16" fill="#facc1533" stroke="#facc15"/>';for(let i=0;i<=20;i++)s+=`<path d="M${5+i*10} 22v6" stroke="#facc15"/><text x="${5+i*10}" y="36" font-size="6" fill="#fde68a" text-anchor="middle">${i}</text>`;return svg(s+`<path d="M${5+a*10} 12H${5+b*10}" stroke="#f472b6" stroke-width="3"/><path d="M${5+a*10} 8v8M${5+b*10} 8v8" stroke="#f472b6" stroke-width="2"/>`,220,44,'mx-auto w-full max-w-md')};
+const poly=(n,rot,c)=>svg(`<polygon points="${[...Array(n)].map((_,i)=>{const a=(rot+i*360/n)*Math.PI/180;return `${40+32*Math.sin(a)},${40-32*Math.cos(a)}`}).join(' ')}" fill="${c}" stroke="#e2e8f0" stroke-width="2"/>`,80,80,'mx-auto w-32');
+const ang=d=>{const r=d*Math.PI/180;return svg(`<path d="M30 65H100M30 65L${30+70*Math.cos(r)} ${65-70*Math.sin(r)}" stroke="#a5b4fc" stroke-width="2.5" fill="none"/>`+(d==90?'<path d="M30 53h12v12" fill="none" stroke="#f59e0b" stroke-width="2"/>':`<path d="M50 65A20 20 0 0 0 ${30+20*Math.cos(r)} ${65-20*Math.sin(r)}" fill="none" stroke="#f59e0b" stroke-width="2"/>`),110,75,'mx-auto w-48')};
+const ln=(cx,cy,a,l)=>{const r=a*Math.PI/180,dx=l*Math.cos(r),dy=l*Math.sin(r);return `<path d="M${cx-dx} ${cy+dy}L${cx+dx} ${cy-dy}" stroke="#a5b4fc" stroke-width="2.5"/>`};
+const box=()=>svg('<polygon points="10,70 70,70 70,30 10,30" fill="#4338ca"/><polygon points="10,30 70,30 95,15 35,15" fill="#6366f1"/><polygon points="70,70 95,55 95,15 70,30" fill="#312e81"/>',105,80,'mx-auto w-40');
+const rc=(L,l)=>svg(`<rect x="10" y="14" width="80" height="44" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/><text x="50" y="10" font-size="9" fill="#e2e8f0" text-anchor="middle">${L} cm</text><text x="94" y="40" font-size="9" fill="#e2e8f0">${l} cm</text>`,130,66,'mx-auto w-44');
+const tr=(b,h)=>svg(`<polygon points="10,58 90,58 50,14" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/><path d="M50 14V58" stroke="#f59e0b" stroke-dasharray="3"/><text x="50" y="68" font-size="9" fill="#e2e8f0" text-anchor="middle">${b} cm</text><text x="54" y="40" font-size="9" fill="#f59e0b">${h} cm</text>`,110,72,'mx-auto w-44');
+const bc=(N,V)=>{const m=Math.max(...V),w=120/N.length;return svg(V.map((v,i)=>{const h=v/m*50,x=5+i*w;return `<rect x="${x}" y="${58-h}" width="${w*.7}" height="${h}" fill="#818cf8"/><text x="${x+w*.35}" y="${55-h}" font-size="7" fill="#fbbf24" text-anchor="middle">${v}</text><text x="${x+w*.35}" y="68" font-size="6" fill="#e2e8f0" text-anchor="middle">${N[i]}</text>`}).join(''),135,72,'mx-auto w-64')};
+const bt3=(c,d,u)=>`<div class="flex justify-center items-end gap-3 flex-wrap"><div class="flex gap-1">${'<div class="w-8 h-8 bg-rose-400 rounded-sm"></div>'.repeat(c)}</div><div class="flex gap-1">${'<div class="w-2.5 h-10 bg-amber-400 rounded-sm"></div>'.repeat(d)}</div><div class="flex flex-wrap gap-1 w-16">${'<div class="w-2.5 h-2.5 bg-indigo-400 rounded-sm"></div>'.repeat(u)}</div></div>`;
+const pz=(a,b,op)=>{const w=Math.max(String(a).length,String(b).length)+2;return `<pre class="text-2xl font-mono inline-block text-right">${String(a).padStart(w)}\n${op} ${String(b).padStart(w-2)}\n${'─'.repeat(w)}</pre>`};
+const tb=(...R)=>`<table class="mx-auto text-base border-collapse">${R.map(r=>`<tr>${r.map(v=>`<td class="border border-slate-600 px-3 py-1">${v}</td>`).join('')}</tr>`).join('')}</table>`;
+const G={
+ps_shapes:()=>shp(['rond','carré','triangle']),ms_formes:()=>shp(['carré','triangle']),gs_formes:()=>shp(Object.keys(SH)),
+ps_count3:()=>mix(3),
+ms_count6:()=>R(0,1)?mix(6):mix(6,1),
+ms_compare(){const[a,an]=pick(E),[b,bn]=pick(E.filter(e=>e[0]!=a));let x=R(1,9),y=R(1,9);while(y==x)y=R(1,9);const more=R(0,1),win=(x>y)==!!more?an:bn,los=win==an?bn:an;return Q(more?'Qu’y a-t-il en plus grand nombre ?':'Qu’y a-t-il en plus petit nombre ?',win,[los,...E.map(e=>e[1]).filter(n=>n!=an&&n!=bn)],row(em(x,a),em(y,b)))},
+gs_num(){const t=R(0,5),n=R(1,9);return t==0?Q(`Quel nombre vient juste après ${n} ?`,n+1,[n,n+2,n-1]):t==1?Q(`Quel nombre vient juste avant ${n+1} ?`,n,[n+1,n+2,n-1]):t==2?Q(`Complète : ${n-1}, ?, ${n+1}`,n,[n+2,n-1,n+1]):mix(10)},
+gs_decomp(){const n=R(2,10),x=R(1,n-1),[a]=pick(E);return Q(`${x} et combien font ${n} ?`,n-x,[n-x+1,n-x-1,n-x+2],`<div class="big">${a.repeat(x)}<span class="opacity-30">${'⬜'.repeat(n-x)}</span></div>`)},
+cp_num100(){const t=R(0,4),n=R(1,99),d=n/10|0,u=n%10;
+if(t<2)return Q('Quel nombre est représenté ? (barres = dizaines)',n,[n+1,n-1,u*10+d,n+10],bt(d,u));
+if(t==2)return Q(`Quel nombre vient juste après ${n} ?`,n+1,[n-1,n+10,n+2]);
+if(t==3)return Q(`Combien de dizaines y a-t-il dans ${n} ?`,d,[u,d+1,d-1],bt(d,u));
+const st=new Set([n]);while(st.size<4)st.add(R(1,99));const A=[...st],big=R(0,1),w=big?Math.max(...A):Math.min(...A);return Q(`Quel nombre est le plus ${big?'grand':'petit'} ?`,w,A.filter(v=>v!=w))},
+cp_add_sub(){const t=R(0,4),[a]=pick(E),x=R(1,9),y=R(1,9),X=R(5,15),Y=R(1,20-X);
+if(t==0)return Q(`Combien font ${x} + ${y} ?`,x+y,[x+y+1,x+y-1,x+y+2],row(em(x,a),'<b class="text-3xl">➕</b>',em(y,a)));
+if(t==1){const s=Math.max(x,y),l=Math.min(x,y);return Q(`Combien font ${s} − ${l} ? (les images grises sont enlevées)`,s-l,[s-l+1,s-l-1,s+l],`<div class="big">${a.repeat(s-l)}<span class="opacity-25 grayscale">${a.repeat(l)}</span></div>`)}
+if(t==2)return Q(`Combien font ${X} + ${Y} ?`,X+Y,[X+Y+1,X+Y-1,X+Y+10]);
+if(t==3)return Q(`Combien font ${X+Y} − ${Y} ?`,X,[X+1,X-1,X+Y]);
+return Q(`${X} + ? = ${X+Y}`,Y,[Y+1,Y-1,Y+2])},
+ce1_tables:()=>mult([2,3,4,5]),
+ce2_tables:()=>mult([1,2,3,4,5,6,7,8,9]),
+cm1_fractions(){const d=R(2,12),n=R(1,d-1),t=R(0,4),f=(a,b)=>a+'/'+b,v=t%2?bar(n,d):pie(n,d);
+if(t<2)return Q('Quelle fraction est coloriée ?',f(n,d),[f(n+1,d),f(d-n,d),f(n,d+1),f(d,n)],v);
+if(t<4)return Q('Quelle fraction n’est PAS coloriée ?',f(d-n,d),[f(n,d),f(d-n+1,d),f(d-n,d+1),f(d,d-n)],v);
+return Q(`Comment lit-on la fraction ${n}/${d} ?`,`${n} sur ${d}`,[`${n+1} sur ${d}`,`${n} sur ${d+2}`,`${d} sur ${n}`],pie(n,d))},
+cm2_frac_ops(){const d=R(3,12),t=R(0,3),f=(a,b)=>a+'/'+b;
+if(t==0){const a=R(1,d-2),b=R(1,d-1-a);return Q(`${f(a,d)} + ${f(b,d)} = ?`,f(a+b,d),[f(a+b,2*d),f(a+b+1,d),f(a*b,d)],bar(a,d)+bar(b,d))}
+if(t==1){const x=R(2,d-1),y=R(1,x-1);return Q(`${f(x,d)} − ${f(y,d)} = ?`,f(x-y,d),[f(x-y,d-y),f(x-y+1,d),f(x+y,d)],bar(x,d))}
+if(t==2){const n=R(1,d-1),k=R(2,4);return Q(`${f(n,d)} = ?/${d*k}`,n*k,[n+k,n*k+1,n*k-1],pie(n,d))}
+const D=pick([2,3,4,5,10]),n=R(1,D-1),m=R(1,10);return Q(`Combien font ${f(n,D)} de ${D*m} ?`,n*m,[n*m+D,n+m,D*m-n],pie(n,D))},
+c6_fractions(){const t=R(0,3),f=(a,b)=>a+'/'+b;
+if(t==0){const D=pick([2,3,4,5,6,8,10]),n=R(1,D-1),m=R(2,12);return Q(`Combien font ${f(n,D)} de ${D*m} ?`,n*m,[n*m+D,n+m,D*m-n],pie(n,D))}
+if(t==1){const n=R(1,9);return Q(`Écris ${f(n,10)} en nombre décimal.`,`0,${n}`,[`0,0${n}`,`${n},0`,`${n},1`],pie(n,10))}
+if(t==2){const d=R(2,9),n=R(1,15),a=n<d?'Inférieure à 1':n==d?'Égale à 1':'Supérieure à 1';return Q(`La fraction ${f(n,d)} est…`,a,['Inférieure à 1','Égale à 1','Supérieure à 1','On ne peut pas savoir'].filter(x=>x!=a))}
+return G.cm1_fractions()},
+c6_decimals(){const t=R(0,4),n=R(0,19);
+if(t==0){const a=R(1,9);let b=R(10,99);while(a*10==b)b=R(10,99);const s1=`${n},${a}`,s2=`${n},${b}`,big=R(0,1),w=(a*10>b)==!!big?s1:s2;return Q(`Quel nombre est le plus ${big?'grand':'petit'} ?`,w,[w==s1?s2:s1,'Ils sont égaux','On ne peut pas savoir'])}
+if(t==1){const x=R(1,9);return Q('Quel nombre est repéré sur la droite ?',`${n},${x}`,[`${n},${x+1}`,`${n},${x-1}`,`${n+1},${x}`,`${x},${n}`],nl(n*10,n*10+10,n*10+x,v=>v%10?'':v/10))}
+if(t==2){const x=R(11,99),y=R(11,99),s=(x+y)/10;return Q(`Calcule ${fd(x/10)} + ${fd(y/10)}`,fd(s),[fd(s+.1),fd(s-.1),fd(s+1)])}
+if(t==3){const x=R(100,999)/100,s=x.toFixed(2).replace('.',','),r=Math.round(x);return Q(`Arrondis ${s} à l’unité.`,r,[Math.floor(x)+1==r?r-1:Math.floor(x)+1,r+1,r-1])}
+const x=R(100,999),s=`${x/100}`.replace('.',','),ds=String(x),k=R(0,1);return Q(`Quel est le chiffre des ${k?'centièmes':'dixièmes'} de ${(x/100).toFixed(2).replace('.',',')} ?`,ds[k?2:1],[...'0123456789'].filter(c=>c!=ds[k?2:1]))},
+c5_relatifs(){const t=R(0,5),x=R(-9,9),y=R(-9,9),pa=v=>v<0?`(${fm(v)})`:v;
+if(t==0){const a=R(-10,0),m=R(a,a+10);return Q('Quel nombre est repéré sur la droite ?',fm(m),[fm(-m),fm(m+1),fm(m-1),fm(m+2)],nl(a,a+10,m,fm))}
+if(t==1)return Q(`Calcule : ${fm(x)} + ${pa(y)}`,fm(x+y),[fm(x-y),fm(-(x+y)),fm(x+y+2),fm(Math.abs(x)+Math.abs(y))]);
+if(t==2)return Q(`Calcule : ${fm(x)} − ${pa(y)}`,fm(x-y),[fm(x+y),fm(-(x-y)),fm(x-y+2),fm(y-x+1)]);
+if(t==3){const st=new Set([x]);while(st.size<4)st.add(R(-9,9));const A=[...st],lo=R(0,1),w=lo?Math.min(...A):Math.max(...A);return Q(`Quel nombre est le plus ${lo?'petit':'grand'} ?`,fm(w),A.filter(v=>v!=w).map(fm))}
+if(t==4){const k=R(1,15)*(R(0,1)?1:-1);return Q(`Quel est l’opposé de ${fm(k)} ?`,fm(-k),[fm(k),fm(k+1),fm(k-1)])}
+const T=R(-10,15),d=R(1,10),up=R(0,1);return Q(`Il fait ${fm(T)} degrés. La température ${up?'monte':'baisse'} de ${d} degrés. Quelle température ?`,fm(up?T+d:T-d),[fm(up?T-d:T+d),fm(T),fm(-T),fm(T+d+1)],'<div class="text-5xl">🌡️</div>')},
+c4_pythagore(){const L=pick(NM),r=R(0,2),[Rr,p,q]=[L[r],...L.filter((_,i)=>i!=r)],[a,b,c]=pick(TRI).map(v=>v*(R(0,1)?1:2)),n=L.join(''),t=R(0,4),A=Rr+p,B=Rr+q,H=p+q;
+if(t==0)return Q(`${n} est rectangle en ${Rr}. ${A} = ${a} et ${B} = ${b}. Calcule ${H}.`,c,[a+b,c+1,c-1,c+2],tri(L,a,b,[a,b,'?']));
+if(t==1)return Q(`${n} est rectangle en ${Rr}. ${A} = ${a} et ${H} = ${c}. Calcule ${B}.`,b,[c-a,b+1,b-1,c+a],tri(L,a,b,[a,'?',c]));
+if(t==2)return Q(`${n} est rectangle en ${Rr}. Quelle égalité est vraie ?`,`${H}² = ${A}² + ${B}²`,[`${A}² = ${H}² + ${B}²`,`${B}² = ${H}² + ${A}²`,`${H} = ${A} + ${B}`],tri(L,3,4,['','','']));
+if(t==3)return Q(`${n} est rectangle en ${Rr}. ${A} = ${a} et ${B} = ${b}. Calcule ${H}².`,a*a+b*b,[(a+b)**2,Math.abs(a*a-b*b),a*a+b*b+1,a+b]);
+const ok=R(0,1),s=ok?c:c+1;return Q(`Un triangle a pour côtés ${a} ; ${b} ; ${s}. Est-il rectangle ?`,ok?'Oui':'Non',ok?['Non','Impossible à dire','Seulement si isocèle']:['Oui','Impossible à dire','Seulement si isocèle'],tri(['A','B','C'],a,b,[a,b,s]))},
+c3_thales(){const a=R(2,6),k=R(2,4),x=R(2,6),t=R(0,3),v=th(1/k),e='Les droites (MN) et (BC) sont parallèles. ';
+if(t==0)return Q(`${e}AM = ${a}, AB = ${a*k}, AC = ${x*k}. Calcule AN.`,x,[x+1,x-1,x+2,a*k],v);
+if(t==1)return Q(`${e}AM = ${a}, AB = ${a*k}, AN = ${x}. Calcule AC.`,x*k,[x*k+1,x+k,x*k-1,x+a],v);
+if(t==2)return Q(`${e}AM = ${a}, AB = ${a*k}, BC = ${x*k}. Calcule MN.`,x,[x+1,x-1,x+2,x*k],v);
+return Q(`${e}AM = ${a}, AB = ${a*k}, MN = ${x}. Calcule BC.`,x*k,[x*k+1,x*k-1,x+k,x+a],v)},
+sec_vect(){const t=R(0,5),a=R(-6,6),b=R(-6,6),c=R(-6,6),d=R(-6,6),c2=(x,y)=>`(${x} ; ${y})`;
+if(t==0){const A=[R(-4,4),R(-4,4)],B=[R(-5,5),R(-5,5)];if(A[0]==B[0]&&A[1]==B[1])B[0]+=A[0]>4?-1:1;const dx=B[0]-A[0],dy=B[1]-A[1];return Q('Lis les coordonnées du vecteur AB sur le quadrillage.',c2(dx,dy),[c2(dy,dx),c2(-dx,-dy),c2(dx+1,dy),c2(dx,dy+2)],vg(A,B))}
+if(t==1)return Q(`u${c2(a,b)} + v${c2(c,d)} a pour coordonnées :`,c2(a+c,b+d),[c2(a-c,b-d),c2(a+c,b-d),c2(a*c,b*d),c2(a+c+1,b+d)]);
+if(t==2){const[A,B,C]=sh('ABCDEFMNPQ'.split(''));return Q(`Relation de Chasles : vecteur ${A}${B} + vecteur ${B}${C} = ?`,`vecteur ${A}${C}`,[`vecteur ${C}${A}`,`vecteur ${A}${B}`,`vecteur ${B}${C}`])}
+if(t==3)return Q(`Le vecteur u${c2(a,b+(b||1))} a pour opposé −u de coordonnées :`,c2(-a,-(b+(b||1))),[c2(a,b+(b||1)),c2(-a,b+(b||1)),c2(b+(b||1),a)]);
+if(t==4){const[p,q,r]=pick(TRI),s=R(0,1)?1:-1,u=R(0,1)?1:-1;return Q(`Calcule la norme du vecteur u${c2(p*s,q*u)}.`,r,[p+q,r+1,r-1,Math.abs(p-q)])}
+const x=R(-4,4),y=R(-4,4),X=x+2*R(-3,3),Y=y+2*R(-3,3);return Q(`Quel est le milieu de A${c2(x,y)} et B${c2(X,Y)} ?`,c2((x+X)/2,(y+Y)/2),[c2(x+X,y+Y),c2((X-x)/2,(Y-y)/2),c2((x+X)/2+1,(y+Y)/2),c2((x+Y)/2,(y+X)/2)])},
+c5_litteral(){const t=R(0,4),a=R(2,9),b=R(2,9),k=R(2,9);
+if(t==0)return Q(`Réduis : ${a}x + ${b}x`,`${a+b}x`,[`${a*b}x`,`${a+b}x²`,`${a+b+1}x`,`${a*b}x²`]);
+if(t==1)return Q(`Calcule ${a}x + ${b} pour x = ${k}.`,a*k+b,[(a+b)*k,a+b+k,a*k-b,a*k+b+a]);
+if(t==2)return Q(`Périmètre d’un rectangle de longueur x et de largeur ${b} ?`,`2x + ${2*b}`,[`x + ${b}`,`2x + ${b}`,`x + ${2*b}`,`${2*b}x`],svg(`<rect x="15" y="15" width="70" height="40" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/><text x="50" y="11" font-size="10" fill="#e2e8f0" text-anchor="middle">x</text><text x="90" y="38" font-size="10" fill="#e2e8f0">${b}</text>`,110,65,'mx-auto w-44'));
+if(t==3)return Q(`Un cahier coûte x euros. J’achète ${k} cahiers. Combien je dépense ?`,`${k}x`,[`x + ${k}`,`x − ${k}`,`x / ${k}`,`${k}x²`],em(k,'📒'));
+const w=pick([['double',2],['triple',3],['quadruple',4]]);return Q(`Quelle expression traduit : le ${w[0]} d’un nombre x, augmenté de ${k} ?`,`${w[1]}x + ${k}`,[`${w[1]}(x + ${k})`,`x + ${w[1]}${k}`,`${k}x + ${w[1]}`,`x${sp(w[1])} + ${k}`])},
+c5_symetrie(){const t=R(0,3),O=[R(-1,1),R(-1,1)],A=[R(-3,3),R(-3,3)];if(A[0]==O[0]&&A[1]==O[1])A[0]+=2;const B=[2*O[0]-A[0],2*O[1]-A[1]];
+if(t<2)return Q('Quelles sont les coordonnées du symétrique A′ de A par rapport à O ?',c2(...B),[c2(-A[0],-A[1]),c2(A[1],A[0]),c2(B[0]+1,B[1]),c2(B[1],B[0]),c2(2*O[0]+A[0],2*O[1]+A[1])],pg([[A[0],A[1],'A'],[O[0],O[1],'O']]));
+if(t==2)return Q('A′ est le symétrique de A par rapport à O. Que représente O pour le segment [AA′] ?','son milieu',['son extrémité','sa longueur','sa médiatrice','un point extérieur'],pg([[A[0],A[1],'A'],[O[0],O[1],'O'],[B[0],B[1],'A′']]));
+return Q('Que conserve une symétrie centrale ?','les longueurs et les angles',['seulement les longueurs','seulement les angles','ni les longueurs ni les angles','seulement les aires'])},
+c5_para(){const t=R(0,4),a=R(30,150),L=R(3,12),l=R(2,9),v=par();
+if(t==0)return Q(`ABCD est un parallélogramme et l’angle A mesure ${a} degrés. Combien mesure l’angle C ?`,a,[180-a,90,360-a,a+10],v);
+if(t==1)return Q(`ABCD est un parallélogramme et l’angle A mesure ${a} degrés. Combien mesure l’angle B ?`,180-a,[a,360-a,90,180-a+10],v);
+if(t==2)return Q(`ABCD est un parallélogramme avec AB = ${L} cm et BC = ${l} cm. Quel est son périmètre en cm ?`,2*(L+l),[L+l,L*l,2*L+l,L+2*l],v);
+if(t==3)return Q('Que peut-on dire des diagonales d’un parallélogramme ?','elles se coupent en leur milieu',['elles sont perpendiculaires','elles sont égales','elles sont parallèles'],v);
+return Q('Un quadrilatère a deux côtés opposés parallèles et de même longueur. C’est un…','parallélogramme',['trapèze quelconque','cerf-volant','quadrilatère quelconque'],v)},
+c5_stats(){const t=R(0,3),A=[...Array(5)].map(()=>R(1,30));
+if(t==0){let B,m;do{m=R(4,15);B=[R(1,20),R(1,20),R(1,20)];B.push(4*m-B[0]-B[1]-B[2])}while(B[3]<1||B[3]>20);return Q('Quelle est la moyenne de ces 4 notes ?',m,[m+1,m-1,Math.max(...B),Math.min(...B)],bars(B))}
+if(t==1){const n=pick([4,5,10,20,25,50]),k=R(1,n-1),p=k*100/n;return Q(`${k} élèves sur ${n} aiment les maths. Quel pourcentage cela représente-t-il ?`,`${p} %`,[`${k} %`,`${n-k} %`,`${p+10} %`,`${100-p} %`])}
+if(t==2)return Q('Quelle est l’étendue de cette série ?',Math.max(...A)-Math.min(...A),[Math.max(...A),Math.min(...A),Math.max(...A)+Math.min(...A),Math.max(...A)-Math.min(...A)+1],bars(A));
+const m=[...A].sort((x,y)=>x-y)[2];return Q('Quelle est la médiane de cette série ?',m,[A[0]===m?A[1]:A[0],Math.max(...A),Math.min(...A),m+1],bars(A))},
+c5_scratch(){const t=R(0,3),n=R(2,10),m=R(2,9),s=R(0,10),k=R(2,6);
+if(t==0)return Q('De combien de pas avance le lutin ?',n*m,[n+m,n*m+m,n*m-m,n*m+n],bl(n,[`avancer de ${m} pas`]));
+if(t==1)return Q(`Le score commence à ${s}. Quel est le score final ?`,s+n*m,[n*m,s+n+m,s+n*m+m,s+(n-1)*m],bl(n,[`ajouter ${m} à score`]));
+if(t==2){const p=pick([3,4,5,6,8]);return Q(`Pour dessiner un polygone régulier à ${p} côtés, de quel angle tourne-t-on à chaque fois ?`,360/p,[180/p,360/p+30,360/p-10,90],bl(p,['avancer de 50 pas','tourner de ? degrés']))}
+return Q(`Le lutin avance d’abord de ${m} pas, puis exécute ce bloc. Quelle distance totale a-t-il parcourue ?`,m+n*k,[n*k,m*n*k,m+n+k,m+(n-1)*k],bl(n,[`avancer de ${k} pas`]))},
+c4_relatifs2(){const t=R(0,4),a=R(-9,9)||3,b=R(-9,9)||-2,pa=v=>v<0?`(${fm(v)})`:v,k=R(2,9);
+if(t==0)return Q(`Calcule : ${fm(a)} × ${pa(b)}`,fm(a*b),[fm(-a*b),fm(a+b),fm(a-b),fm(a*b+1)]);
+if(t==1)return Q(`Calcule : ${fm(a*b)} ÷ ${pa(b)}`,fm(a),[fm(-a),fm(a*b),fm(a+1),fm(a*b+b)]);
+if(t==2){const F=[...Array(3)].map(()=>R(1,9)*(R(0,1)?1:-1)),ans=F.filter(v=>v<0).length%2?'négatif':'positif';return Q(`Quel est le signe de ${F.map(pa).join(' × ')} ?`,ans,['positif','négatif','nul','impossible à dire'].filter(x=>x!=ans))}
+if(t==3)return Q(`Calcule : (−${k})²`,k*k,[fm(-k*k),fm(-2*k),2*k]);
+return Q(`Calcule : −${k}²`,fm(-k*k),[k*k,fm(-2*k),2*k])},
+c4_puissances(){const t=R(0,4),a=R(2,6),n=R(2,4),i=R(2,8),j=R(2,8),e=R(2,5);
+if(t==0)return Q(`Calcule ${a}${sp(n)}`,a**n,[a*n,a**n+a,a**(n-1),a**n-1],`<div class="big">${Array(n).fill(a).join(' × ')}</div>`);
+if(t==1)return Q(`10${sp(i)} × 10${sp(j)} = ?`,`10${sp(i+j)}`,[`10${sp(i*j)}`,`100${sp(i+j)}`,`10${sp(Math.abs(i-j)||1)}`,`10${sp(i+j+1)}`,`10${sp(i+j-1)}`]);
+if(t==2)return Q(`(10${sp(e)})${sp(j)} = ?`,`10${sp(e*j)}`,[`10${sp(e+j)}`,`100${sp(e*j)}`,`10${sp(e*j+1)}`,`10${sp(e*j-1)}`]);
+if(t==3)return Q(`10${sp(-n)} s’écrit :`,`0,${'0'.repeat(n-1)}1`,[`0,${'0'.repeat(n)}1`,`0,${'0'.repeat(n-2)}1`,'1'+'0'.repeat(n),`−1${'0'.repeat(n)}`]);
+const d=R(11,99),k=R(2,6),N=(d*10**(k-1)).toLocaleString('fr-FR');return Q(`${N} = ${fd(d/10)} × 10 puissance ?`,k,[k-1,k+1,k+2],'<div class="big">🔟</div>')},
+c4_dev(){const t=R(0,3),k=R(2,9),a=R(1,9),b=R(1,9),x=R(-6,9),bal='<div class="text-5xl">⚖️</div>';
+if(t==0)return Q(`Développe : ${k}(x + ${a})`,`${k}x + ${k*a}`,[`${k}x + ${a}`,`x + ${k*a}`,`${k+a}x`,`${k}x + ${k+a}`]);
+if(t==1)return Q(`Développe : ${k}(x − ${a})`,`${k}x − ${k*a}`,[`${k}x + ${k*a}`,`${k}x − ${a}`,`x − ${k*a}`,`${k}x − ${k+a}`]);
+if(t==2){const r=k*x+a;return Q(`Résous : ${k}x ${sg(a)} = ${fm(r)}`,fm(x),[x+1,x-1,r-a,-x,x+2].map(fm),bal)}
+const c=R(1,6),m=R(1,4),d=b+m*x;return Q(`Résous : ${c+m}x ${sg(b)} = ${c}x ${sg(d)}`,fm(x),[x+1,x-1,-x,x+2,x*2].map(fm),bal)},
+c4_trans(){const t=R(0,3),A=[R(-3,3),R(-3,3)],u=[R(-2,2),R(-2,2)];if(!u[0]&&!u[1])u[0]=2;const B=[A[0]+u[0],A[1]+u[1]];
+if(t<2)return Q(`A${c2(...A)} et le vecteur u${c2(...u)}. Quelles sont les coordonnées de A′, image de A par la translation de vecteur u ?`,c2(...B),[c2(A[0]-u[0],A[1]-u[1]),c2(...u),c2(B[1],B[0]),c2(A[0]*u[0],A[1]*u[1])],pg([[A[0],A[1],'A'],[B[0],B[1],'A′']],[A,B]));
+const P=[R(-4,4),R(-4,4)];if(!P[0]&&!P[1])P[0]=3;const Rs=[[-P[1],P[0]],[-P[0],-P[1]],[P[1],-P[0]]],N=['un quart de tour dans le sens inverse des aiguilles d’une montre','un demi-tour','un quart de tour dans le sens des aiguilles d’une montre'],r=R(0,2);return Q(`Rotation de centre O (0 ; 0) : ${N[r]}. Quelle est l’image de A${c2(...P)} ?`,c2(...Rs[r]),[...Rs.filter((_,i)=>i!=r).map(v=>c2(...v)),c2(...P),c2(P[1],P[0])],pg([[P[0],P[1],'A'],[0,0,'O']]))},
+c4_proba(){const t=R(0,3);
+if(t<2){const r=R(1,6),b=R(1,6),g=R(1,4),T=r+b+g,c=pick([['rouge',r],['bleue',b],['verte',g]]);return Q(`Un sac contient ${T} boules. On en tire une au hasard. Probabilité d’obtenir une boule ${c[0]} ?`,fr(c[1],T),[fr(T-c[1],T),fr(c[1]+1,T),fr(T,c[1]),fr(c[1],T+1)],`<div class="big">${sh([...Array(r).fill('🔴'),...Array(b).fill('🔵'),...Array(g).fill('🟢')]).join('')}</div>`)}
+if(t==2){const E2=pick([['un nombre pair',3],['un multiple de 3',2],['un nombre supérieur à 4',2],['le nombre 6',1],['un nombre impair',3],['un nombre inférieur ou égal à 2',2]]);return Q(`On lance un dé à 6 faces. Probabilité d’obtenir ${E2[0]} ?`,fr(E2[1],6),[fr(E2[1],5),fr(E2[1]+1,6),fr(6,E2[1]),fr(E2[1],12)],'<div class="big">🎲</div>')}
+const C=pick([['un as',4],['un cœur',8],['une figure (valet, dame, roi)',12],['le roi de cœur',1],['un pique',8]]);return Q(`On tire une carte dans un jeu de 32 cartes. Probabilité d’obtenir ${C[0]} ?`,fr(C[1],32),[fr(C[1],52),fr(C[1]+1,32),fr(32,C[1]),fr(C[1],16)],'<div class="big">🃏</div>')},
+c3_premiers(){const t=R(0,3),pf=[2,3,5,7],F=a=>{const c={};[...a].sort((x,y)=>x-y).forEach(p=>c[p]=(c[p]||0)+1);return Object.keys(c).map(p=>p+(c[p]>1?sp(c[p]):'')).join(' × ')};
+if(t==0){const ps=[2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59],cs=[9,15,21,25,27,33,35,39,45,49,51,55,57,63,65,77,91];return Q('Quel nombre est premier ?',pick(ps),sh(cs).slice(0,3))}
+if(t==1){const L=R(2,4),a=[...Array(L)].map(()=>pick(pf)),n=a.reduce((x,y)=>x*y),W=new Set();while(W.size<3){const b=[...a],i=R(0,L-1);b[i]=pick(pf.filter(p=>p!=b[i]));const s=F(b);if(s!=F(a))W.add(s)}return Q(`Décompose ${n} en produit de facteurs premiers.`,F(a),[...W])}
+if(t==2){const g=R(2,12);let p=R(2,9),q=R(2,9);while(p==q||gcd(p,q)>1){p=R(2,9);q=R(2,9)}const A=g*p,B=g*q;return Q(`Quel est le PGCD de ${A} et ${B} ?`,g,[A*B/g,Math.min(A,B),g+1,g*2])}
+let p=R(1,8),q=R(2,9);while(p>=q||gcd(p,q)>1){p=R(1,8);q=R(2,9)}const g=R(2,9);return Q(`Simplifie ${g*p}/${g*q} en fraction irréductible.`,`${p}/${q}`,[`${q}/${p}`,`${p+1}/${q}`,`${p}/${q+1}`,`${g*p}/${g*q-g}`])},
+c3_equ(){const t=R(0,3),a=R(2,9),x=R(-6,9),b=R(1,12),op=pick(['<','>','≤','≥']),FL={'<':'>','>':'<','≤':'≥','≥':'≤'},bal='<div class="text-5xl">⚖️</div>';
+if(t==0){const c=b-a*x;return Q(`Résous : −${a}x + ${b} = ${fm(c)}`,fm(x),[x+1,x-1,-x,x+2,c-b].map(fm),bal)}
+if(t==1){const c=R(1,5),m=R(1,4),d=b+m*x;return Q(`Résous : ${c+m}x ${sg(b)} = ${c}x ${sg(d)}`,fm(x),[x+1,x-1,-x,x+2,2*x].map(fm),bal)}
+if(t==2){const c=a*x+b;return Q(`Résous : ${a}x + ${b} ${op} ${fm(c)}`,`x ${op} ${fm(x)}`,[`x ${FL[op]} ${fm(x)}`,`x ${op} ${fm(x+1)}`,`x ${FL[op]} ${fm(x+1)}`,`x ${op} ${fm(-x)}`])}
+const c=b-a*x;return Q(`Résous : −${a}x + ${b} ${op} ${fm(c)}`,`x ${FL[op]} ${fm(x)}`,[`x ${op} ${fm(x)}`,`x ${op} ${fm(-x)}`,`x ${FL[op]} ${fm(-x)}`,`x ${op} ${fm(x+1)}`])},
+c3_fonctions(){const t=R(0,4),a=R(-5,5)||2,b=R(-6,6)||3,k=R(-4,4),g=x=>a*x+b,ca=a==1?'':a==-1?'−':fm(a),f=`f(x) = ${ca}x ${sg(b)}`,v=gr(g,-3,3);
+if(t==0)return Q(`${f}. Calcule f(${fm(k)}).`,fm(g(k)),[a*k-b,a+b+k,g(k)+a,-g(k)].map(fm),gr(g,-3,3,k));
+if(t==1)return Q(`${f}. Quel est l’antécédent de ${fm(g(k))} ?`,fm(k),[-k,k+1,g(k),k-1].map(fm),v);
+if(t==2){const x1=R(-3,0),x2=x1+R(1,3);return Q(`La droite (d) passe par A(${fm(x1)} ; ${fm(g(x1))}) et B(${fm(x2)} ; ${fm(g(x2))}). Quel est son coefficient directeur ?`,fm(a),[-a,a+1,a-1,b].map(fm),v)}
+if(t==3){const p=R(2,5),q=R(1,9);return Q(`Une fonction linéaire vérifie f(${p}) = ${fm(a*p)}. Que vaut f(${q}) ?`,fm(a*q),[a*p+q,a+q,a*q+a,-a*q].map(fm))}
+return Q(`${f}. Quelle est l’ordonnée à l’origine de sa représentation graphique ?`,fm(b),[a,-b,a+b,b+1].map(fm),v)},
+c3_trigo(){const t=R(0,4),[a,b,c]=pick(TRI),W=[['opposé','hypoténuse'],['adjacent','hypoténuse'],['opposé','adjacent']].map(x=>x.join(' / ')),N=['sin','cos','tan'],i=R(0,2),L=['R','P','Q'],th=R(10,80),Vv=[`${b}/${c}`,`${a}/${c}`,`${b}/${a}`];
+if(t==0)return Q(`RPQ est rectangle en R et α est l’angle en P. Quelle formule donne ${N[i]}(α) ?`,W[i],[...W.filter((_,j)=>j!=i),'hypoténuse / opposé'],tri(L,a,b,['adj.','opp.','hyp.']));
+if(t==1)return Q(`RPQ est rectangle en R avec RP = ${a}, RQ = ${b} et PQ = ${c}. α est l’angle en P. Calcule ${N[i]}(α).`,Vv[i],[...Vv.filter((_,j)=>j!=i),`${c}/${b}`],tri(L,a,b,[a,b,c]));
+if(t==2){const T=pick([['sin 30°','0,5'],['cos 60°','0,5'],['tan 45°','1'],['cos 0°','1'],['sin 90°','1'],['sin 0°','0'],['cos 90°','0']]);return Q(`Que vaut ${T[0]} ?`,T[1],['0','0,5','1','2'].filter(v=>v!=T[1]))}
+if(t==3)return Q(`Dans un triangle rectangle, un angle aigu mesure ${th} degrés. Combien mesure l’autre angle aigu ?`,90-th,[180-th,th,90+th,100-th],tri(L,a,b,['','','']));
+const k=R(2,12);return Q(`RPQ est rectangle en R, l’angle en P mesure 45 degrés et RP = ${k}. Que vaut RQ ?`,k,[k*2,k+1,k-1,Math.round(k*1.4)],tri(L,a,a,[k,'?','']))},
+c3_proba2(){const t=R(0,5),pl=n=>n>1?'s':'',DD='<div class="big">🎲🎲</div>';
+if(t==0){const s=R(2,12),n=6-Math.abs(s-7);return Q(`On lance deux dés équilibrés. Probabilité que la somme soit égale à ${s} ?`,fr(n,36),[fr(n+1,36),fr(n,12),fr(n,6),fr(n+2,36)],DD)}
+if(t==1){const E2=pick([['deux fois pile',1],['une pile et une face (dans un ordre quelconque)',2],['au moins un pile',3],['aucun pile',1]]);return Q(`On lance deux pièces équilibrées. Probabilité d’obtenir ${E2[0]} ?`,fr(E2[1],4),[fr(E2[1],2),fr(E2[1]+1,4),fr(E2[1],3),fr(E2[1],8)],'<div class="big">🪙🪙</div>')}
+if(t==2){const E2=pick([['un double',6],['une somme paire',18],['au moins un 6',11],['une somme supérieure ou égale à 10',6],['une somme inférieure ou égale à 4',6],['un produit égal à 6',4]]);return Q(`On lance deux dés équilibrés. Probabilité d’obtenir ${E2[0]} ?`,fr(E2[1],36),[fr(E2[1],6),fr(E2[1]+1,36),fr(E2[1],12),fr(E2[1]-1,36)],DD)}
+if(t==3){const E2=pick([['pile et un 6',1],['face et un nombre pair',3],['pile et un nombre impair',3],['pile et un multiple de 3',2],['face et un nombre supérieur à 4',2]]);return Q(`On lance une pièce puis un dé. Probabilité d’obtenir ${E2[0]} ?`,fr(E2[1],12),[fr(E2[1],6),fr(E2[1],8),fr(E2[1]+1,12),fr(E2[1],2)],'<div class="big">🪙🎲</div>')}
+const r=R(1,10),b=R(1,10),T=r+b,v=`<div class="big">${'🔴'.repeat(r)}${'🔵'.repeat(b)}</div>`,S0=`Un sac contient ${r} boule${pl(r)} rouge${pl(r)} et ${b} bleue${pl(b)}.`;
+if(t==4)return Q(`${S0} On tire une boule, on la remet, puis on en tire une seconde. Probabilité de tirer rouge puis bleue ?`,fr(r*b,T*T),[fr(r*b,T),fr(r+b,T*T),fr(r*b,T*(T-1)),fr(r,T)],v);
+return Q(`${S0} On tire deux boules successivement sans remise. Probabilité de tirer rouge puis bleue ?`,fr(r*b,T*(T-1)),[fr(r*b,T*T),fr(r*b,T),fr(r*(r-1),T*(T-1)),fr(r+b,T*(T-1))],v)},
+sec_ens(){const t=R(0,4),a=R(-6,2),b=a+R(2,6),ol=R(0,1),orr=R(0,1),I=(x,y,l,r)=>`${l?']':'['}${fm(x)} ; ${fm(y)}${r?'[':']'}`,W=[I(a,b,1-ol,orr),I(a,b,ol,1-orr),I(a,b,1-ol,1-orr),I(a,b+1,ol,orr)];
+if(t==0)return Q('Quel intervalle est représenté sur la droite ?',I(a,b,ol,orr),W,iv(a,b,ol,orr));
+if(t==1)return Q(`Écris avec un intervalle : ${fm(a)} ${ol?'<':'≤'} x ${orr?'<':'≤'} ${fm(b)}`,I(a,b,ol,orr),W);
+if(t==2)return Q(`Quel nombre appartient à l’intervalle ${I(a,b,ol,orr)} ?`,fm(R(a+1,b-1)),[ol?a:a-1,orr?b:b+1,b+2].map(fm));
+if(t==3){const c=R(a+1,b-1),d=b+R(1,4),u=R(0,1),B=(x,y)=>`[${fm(x)} ; ${fm(y)}]`;return Q(`${B(a,b)} ${u?'∪':'∩'} ${B(c,d)} = ?`,u?B(a,d):B(c,b),[B(a,c),B(b,d),u?B(c,b):B(a,d),B(c,d)])}
+const k=R(2,9),[x,an]=pick([[`${k}`,'ℕ'],[`−${k}`,'ℤ'],[`1/${k+1}`,'ℚ'],[`√${pick([2,3,5,6,7,8,10])}`,'ℝ'],['π','ℝ'],[fd(k/10),'ℚ']]);return Q(`Quel est le plus petit de ces ensembles qui contient ${x} ? (ℕ entiers naturels, ℤ relatifs, ℚ rationnels, ℝ réels)`,an,['ℕ','ℤ','ℚ','ℝ'].filter(v=>v!=an))},
+sec_ref(){const t=R(0,4),FN=[['carré : x²',x=>x*x,-3,3,'ℝ','paire'],['cube : x³',x=>x**3,-2,2,'ℝ','impaire'],['inverse : 1/x',x=>1/x,.3,4,']−∞ ; 0[ ∪ ]0 ; +∞[','impaire'],['racine carrée',Math.sqrt,0,9,'[0 ; +∞[','ni paire ni impaire'],['valeur absolue',Math.abs,-4,4,'ℝ','paire']],i=R(0,4),F=FN[i],nm=F[0].split(' :')[0];
+if(t==0)return Q('Quelle fonction de référence est représentée ?',F[0],FN.filter((_,j)=>j!=i).map(v=>v[0]),gr(F[1],F[2],F[3]));
+if(t==1){const k=R(2,9),j=R(-9,9),c=R(-4,4);return [Q(`Quelle est l’image de ${fm(j)} par la fonction carré ?`,fm(j*j),[-j*j,2*j,j*j+1,-2*j].map(fm)),Q(`Quelle est l’image de ${fm(c)} par la fonction cube ?`,fm(c**3),[3*c,-(c**3),c*c,c**3+1].map(fm)),Q(`Quelle est l’image de ${k*k} par la fonction racine carrée ?`,k,[k*2,k+1,k-1,k*k]),Q(`Quelle est l’image de ${fm(j)} par la fonction valeur absolue ?`,fm(Math.abs(j)),[-j,j+1,Math.abs(j)+1,-Math.abs(j)].map(fm)),Q(`Quelle est l’image de ${k} par la fonction inverse ?`,`1/${k}`,[`${k}`,`−1/${k}`,`1/${k+1}`,`${k+1}`])][i]}
+if(t==4){const x=R(1,9),y=x+R(1,9),C=[[`(${fm(-y)})²`,`(${fm(-x)})²`,'>',-y,-x],[`${x}²`,`${y}²`,'<',x,y],[`${x}³`,`${y}³`,'<',x,y],[`1/${x}`,`1/${y}`,'>',x,y],[`√${x}`,`√${y}`,'<',x,y]],[A,B,sy,u,w]=pick(C);return Q(`On a ${fm(u)} < ${fm(w)}. Compare ${A} et ${B}.`,sy,['<','>','=','impossible à dire'].filter(z=>z!=sy))}
+if(t==2)return Q(`Quel est l’ensemble de définition de la fonction ${nm} ?`,F[4],['ℝ','[0 ; +∞[',']−∞ ; 0[ ∪ ]0 ; +∞[',']0 ; +∞['].filter(v=>v!=F[4]));
+return Q(`La fonction ${nm} est…`,F[5],['paire','impaire','ni paire ni impaire','constante'].filter(v=>v!=F[5]))},
+sec_var(){const t=R(0,3),a=pick([-3,-2,-1,1,2,3]),h=R(1,3)*(R(0,1)?1:-1),k=R(-4,4),ca=a==1?'':a==-1?'−':fm(a),I1=`[${fm(h)} ; +∞[`,I2=`]−∞ ; ${fm(h)}]`,fn=`f(x) = ${ca}(x ${sg(-h)})² ${k?sg(k):''}`.trim(),v=gr(x=>a*(x-h)**2+k,h-4,h+4,h);
+if(t==0)return Q(`${fn}. Sur quel intervalle f est-elle croissante ?`,a>0?I1:I2,[a>0?I2:I1,`[${fm(k)} ; +∞[`,`]−∞ ; ${fm(k)}]`,`[${fm(h+1)} ; +∞[`],v);
+if(t==1)return Q(`${fn}. Quel est ${a>0?'le minimum':'le maximum'} de f ?`,fm(k),[h,-k,k+a,k+1].map(fm),v);
+if(t==2){const a2=R(-4,4),b=R(-5,5),ans=a2>0?'croissante':a2<0?'décroissante':'constante';return Q(`f(x) = ${a2}x ${sg(b)}. Sur ℝ, la fonction f est…`,ans,['croissante','décroissante','constante','ni croissante ni décroissante'].filter(x=>x!=ans))}
+const dec=R(0,1),p=R(-9,5),q=p+R(1,5),ans=`f(${fm(p)}) ${dec?'>':'<'} f(${fm(q)})`;return Q(`f est ${dec?'décroissante':'croissante'} sur ℝ et ${fm(p)} < ${fm(q)}. Quelle comparaison est vraie ?`,ans,[`f(${fm(p)}) ${dec?'<':'>'} f(${fm(q)})`,`f(${fm(p)}) = f(${fm(q)})`,'On ne peut pas savoir'])},
+sec_pcond(){const t=R(0,3),pA=pick([.1,.2,.3,.4,.5,.6,.8]),q=pick([.2,.4,.5,.6,.8]),qb=pick([.1,.2,.3,.4,.5,.6]),pAB=pA*q;
+if(t==0)return Q(`P(A) = ${fx(pA)} et P(A ∩ B) = ${fx(pAB)}. Calcule P_A(B).`,fx(q),[fx(pAB),fx(pA),fx(1-q),fx(pA*pAB)]);
+if(t==1)return Q(`Sur l’arbre, P(A) = ${fx(pA)} et P_A(B) = ${fx(q)}. Calcule P(A ∩ B).`,fx(pAB),[fx(pA+q),fx(q),fx(pA),fx(pAB*2)],tree(pA,q));
+if(t==2)return Q(`Sur l’arbre : P(A) = ${fx(pA)}, P_A(B) = ${fx(q)} et P_Ā(B) = ${fx(qb)}. Calcule P(B).`,fx(pAB+(1-pA)*qb),[fx(pAB),fx(pAB*qb),fx(q+qb),fx(pAB+qb)],tree(pA,q,qb));
+const pB=pick([.2,.4,.5,.8]),ind=R(0,1),x=ind?pA*pB:pA*pB/2,ans=ind?'Oui':'Non';return Q(`P(A) = ${fx(pA)}, P(B) = ${fx(pB)} et P(A ∩ B) = ${fx(x)}. A et B sont-ils indépendants ?`,ans,['Oui','Non','Impossible à dire','Seulement si A = B'].filter(v=>v!=ans))},
+sec_python(){const t=R(0,5),a=R(2,20),b=R(2,9),n=R(3,8),k=R(1,6),e=R(2,3),ttl='Que va afficher ce programme ?';
+if(t==0){const O=[['+',b,a+b],['-',b,a-b],['*',b,a*b],['//',b,Math.floor(a/b)],['%',b,a%b],['**',e,a**e]],[op,y,v]=pick(O);return Q(ttl,v,sh(O.map(o=>o[2])).filter(z=>z!=v),cd([`x = ${a}`,`y = ${y}`,`print(x ${op} y)`]))}
+if(t==1){const V=R(0,2),c=V==1?['s = 0',`for i in range(${n}):`,`    s = s + ${k}`,'print(s)']:['s = 0',`for i in range(${V?'1, '+(n+1):n}):`,'    s = s + i','print(s)'],v=V==0?n*(n-1)/2:V==1?n*k:n*(n+1)/2;return Q(ttl,v,[n*(n+1)/2,n*n,n,v+1,v-1].filter(z=>z!=v),cd(c))}
+if(t==2){const th=R(2,20),x=R(1,25),op=pick(['>','>=','<']),r=op=='>'?x>th:op=='>='?x>=th:x<th,ans=r?'grand':'petit';return Q(ttl,ans,['grand','petit','erreur','rien'].filter(z=>z!=ans),cd([`x = ${x}`,`if x ${op} ${th}:`,'    print("grand")','else:','    print("petit")']))}
+if(t==3)return Q(ttl,k*n+b,[k+n+b,k*(n+b),n*b+k,k*n+b+1],cd(['def f(x):',`    return ${k} * x + ${b}`,`print(f(${n}))`]));
+if(t==4){const w=pick(['maths','python','triangle','fraction','bonjour','cercle','angle','vecteur','nombre','carre']),ans=w.length*(k>3?2:1);return Q(ttl,ans,[w.length+1,w.length-1,w.length+2,ans*2],cd([`mot = "${w}"`,k>3?'print(len(mot) * 2)':'print(len(mot))']))}
+let m=a;while(m>b)m-=k;return Q(ttl,m,[m+k,m-k,a,m+1],cd([`n = ${a}`,`while n > ${b}:`,`    n = n - ${k}`,'print(n)']))},
+ps_tailles(){const e=pick(['🐘','🐶','🐱','🐻','🐸','🍎','⭐','🚗','🌸','🐟','🐥','🎈']),S=[R(10,16),R(20,26),R(30,38)],big=R(0,1),m=s=>`<span style="font-size:${s/10}rem">${e}</span>`,w=big?S[2]:S[0];return Q(`Touche le plus ${big?'grand':'petit'} !`,m(w),S.filter(s=>s!=w).map(m),'',1)},
+ps_espace(){const[e,nm]=pick(OBJ),up=R(0,1);return Q(`Où est ${nm} ?`,up?'⬆️ En haut':'⬇️ En bas',[up?'⬇️ En bas':'⬆️ En haut'],pos(e,up?'flex-start':'flex-end','center',pick(BG)),1)},
+gs_espace(){const[e,nm]=pick(OBJ),bg=pick(BG),v=R(0,1),h=R(0,1);if(R(0,1))return Q(`Où est ${nm} ?`,h?'👉 À droite':'👈 À gauche',[h?'👈 À gauche':'👉 À droite'],pos(e,'center',h?'flex-end':'flex-start',bg),1);const L=['↖️ En haut à gauche','↗️ En haut à droite','↙️ En bas à gauche','↘️ En bas à droite'],a=L[v*2+h];return Q(`Où est ${nm} ?`,a,L.filter(x=>x!=a),pos(e,v?'flex-end':'flex-start',h?'flex-end':'flex-start',bg),1)},
+ms_associer(){const[e,nm]=pick(E),n=R(1,6),g=c=>`<span class="text-2xl">${e.repeat(c)}</span>`;if(R(0,1))return Q('Quel chiffre correspond à ce groupe ?',n,[n+1,n-1,n+2,n+3].filter(x=>x>0),em(n,e));return Q(`Touche le groupe qui a ${n} ${nm} !`,g(n),sh([1,2,3,4,5,6].filter(x=>x!=n)).slice(0,3).map(g),'',1)},
+ms_rythme(){const C=sh(['🔴','🔵','🟢','🟡','🟣','🟠']),p=pick([[0,1],[0,1,2],[0,0,1],[0,1,1]]),L=R(p.length*2,p.length*2+2),s=[...Array(L)].map((_,i)=>C[p[i%p.length]]),a=C[p[L%p.length]];return Q('Quelle est la suite du rythme ?',a,C.slice(0,4).filter(x=>x!=a),`<div class="big">${s.join(' ')} ❓</div>`,1)},
+gs_masse(){const W=[['🐘',5000],['🚗',1500],['🏋️',100],['🐶',20],['🍎',.2],['🪶',.001],['🎈',.01],['📱',.19],['📚',1],['🐱',4],['⚽',.4],['🍉',5]],a=pick(W);let b=pick(W);while(b==a)b=pick(W);const hv=R(0,1),w=(a[1]>b[1])==!!hv?a:b,l=w==a?b:a;return Q(`Qui est le plus ${hv?'lourd':'léger'} ?`,w[0],[l[0]],`<div class="big">${a[0]} ${b[0]}</div>`,1)},
+cp_regle(){const a=R(0,12),d=R(1,8),b=a+d,t=R(0,2);if(t==0)return Q('Combien mesure le trait rose ?',`${d} cm`,[`${b} cm`,`${d+1} cm`,`${d+2} cm`,`${a} cm`],rul(a,b));if(t==1)return Q(`Je trace un trait de ${d} cm à partir de la graduation ${a}. Où s’arrête-t-il ?`,b,[b+1,b-1,d,a+d+2],rul(a,a));return Q(`Le trait rose commence à ${a} et finit à ${b}. Quelle est sa longueur en cm ?`,d,[b,d+1,d-1,a+b],rul(a,b))},
+cp_monnaie(){const P=[['1 €',100],['2 €',200],['5 €',500],['10 €',1000],['50 c',50],['20 c',20],['10 c',10]],S=[...Array(R(2,4))].map(()=>pick(P)),t=S.reduce((x,y)=>x+y[1],0),f=c=>(c%100?(c/100).toFixed(2).replace('.',','):c/100)+' €';return Q('Quelle somme d’argent y a-t-il ?',f(t),[t+100,t+50,t+10,t+200].map(f),`<div class="flex justify-center flex-wrap gap-2">${S.map(s=>`<span class="${s[1]>=500?'bg-emerald-500 rounded-lg':'bg-amber-400 rounded-full'} text-slate-900 font-black px-3 py-2">${s[0]}</span>`).join('')}</div>`)},
+cp_heure(){const h=R(1,12),m=pick([0,15,30,45]),v=clk(h,m);if(R(0,1))return Q('Quelle heure est-il ?',fh(h,m),[fh(h%12+1,m),fh(h,(m+30)%60),fh(h==1?12:h-1,m),fh(m/5||12,h*5%60)],v);const k=R(1,5),h2=(h+k-1)%12+1;return Q(`Il est ${fh(h,m)}. Quelle heure sera-t-il dans ${k} heure${k>1?'s':''} ?`,fh(h2,m),[fh(h2%12+1,m),fh(h2,(m+30)%60),fh(h,m),fh(h==1?12:h-1,m)],v)},
+ce1_num1000(){const t=R(0,4),n=R(101,998),c=n/100|0,d=(n/10|0)%10,u=n%10;
+if(t==0)return Q('Quel nombre est représenté ? (carrés = centaines, barres = dizaines)',n,[n+1,n-1,n+10,u*100+d*10+c],bt3(c,d,u));
+if(t==1)return R(0,1)?Q(`Quel nombre vient juste après ${n} ?`,n+1,[n-1,n+10,n+100]):Q(`Quel nombre vient juste avant ${n} ?`,n-1,[n+1,n-10,n-100]);
+if(t==2){const k=R(0,2),D=[c,d,u];return Q(`Quel est le chiffre des ${['centaines','dizaines','unités'][k]} de ${n} ?`,D[k],[...D,c+1,d+1].filter(x=>x!=D[k]))}
+if(t==3){const st=new Set([n]);while(st.size<4)st.add(R(101,998));const A=[...st],b=R(0,1),w=b?Math.max(...A):Math.min(...A);return Q(`Quel nombre est le plus ${b?'grand':'petit'} ?`,w,A.filter(v=>v!=w))}
+return Q(`${c} × 100 + ${d} × 10 + ${u} = ?`,n,[n+10,n-1,u*100+d*10+c,n+100])},
+ce1_soustraction(){const t=R(0,3);let A,B;do{A=t==1?R(200,999):R(31,99);B=R(t==1?101:11,A-11)}while(A%10>=B%10);const r=A-B,w=[r+10,r-10,r+1,r-1];if(t<2)return Q('Calcule cette soustraction posée.',r,w,pz(A,B,'−'));if(t==2)return Q(`${A} − ? = ${r}`,B,[B+10,B-10,B+1,r]);return Q(`Il y avait ${A} billes. On en perd ${B}. Combien en reste-t-il ?`,r,w)},
+ce1_solides(){const S=[['un cube','🧊',6,12,8],['un pavé droit','📦',6,12,8],['une pyramide à base carrée','🔺',5,8,5],['un prisme à base triangulaire','⛺',5,9,6]],P=['de faces','d’arêtes','de sommets'],s=pick(S),k=R(0,2),x=s[2+k];if(R(0,1))return Q(`Combien ${P[k]} a ${s[0]} ?`,x,[x+1,x-1,x+2,x+4],em(1,s[1]));const n=R(2,20);return Q(`Chaque solide est ${s[0]}. Avec ${n} solides identiques, combien ${P[k]} en tout ?`,n*x,[n*x+x,n*x-x,n+x,n*x+1],em(n,s[1]))},
+ce1_angle(){const d=R(0,4)?R(5,175):90,t=R(0,1),d2=t?R(1,180):d,f=x=>x==90?'droit':x<90?'aigu':x<180?'obtus':'plat';return Q(t?`Un angle de ${d2} degrés est…`:'Cet angle est…',f(d2),['droit','aigu','obtus','plat'].filter(x=>x!=f(d2)),t?'':ang(d))},
+ce1_mesures(){const n=R(1,99),p=R(1,99),t=R(0,3);if(t==0)return Q(`${n} kg = ? g`,n*1000,[n*100,n*10,n*10000]);if(t==1)return Q(`${n} m = ? cm`,n*100,[n*10,n*1000,n]);if(t==2)return Q(`${n} m et ${p} cm = ? cm`,n*100+p,[n*10+p,n+p,n*1000+p]);const[a,u]=pick([['la longueur d’un crayon','cm'],['la masse d’une pomme','g'],['la contenance d’une bouteille d’eau','L'],['la masse d’un éléphant','kg'],['la hauteur d’une porte','m'],['la longueur d’une piscine','m']]);return Q(`Quelle unité choisir pour mesurer ${a} ?`,u,sh(['cm','g','L','kg','m'].filter(x=>x!=u)).slice(0,3))},
+ce2_num10000(){const t=R(0,4),n=R(1000,9999),m=n/1000|0,c=(n/100|0)%10,d=(n/10|0)%10,u=n%10,D=[m,c,d,u],k=R(0,3);
+if(t==0)return Q(`Quel est le chiffre des ${['milliers','centaines','dizaines','unités'][k]} de ${n} ?`,D[k],D.concat(D[k]+1).filter(x=>x!=D[k]));
+if(t==1)return Q(`${m} × 1000 + ${c} × 100 + ${d} × 10 + ${u} = ?`,n,[n+100,n-10,n+1000,n+1]);
+if(t==2){const st=new Set([n]);while(st.size<4)st.add(R(1000,9999));const A=[...st],b=R(0,1),w=b?Math.max(...A):Math.min(...A);return Q(`Quel nombre est le plus ${b?'grand':'petit'} ?`,w,A.filter(v=>v!=w))}
+if(t==3){const af=R(0,1);return Q(`Quel nombre vient juste ${af?'après':'avant'} ${n} ?`,af?n+1:n-1,[af?n-1:n+1,n+10,n-10])}
+const r=Math.round(n/100)*100;return Q(`${n} arrondi à la centaine la plus proche ?`,r,[r+100,r-100,Math.floor(n/100)*100+1,Math.round(n/10)*10])},
+ce2_mult(){const a=R(12,99),b=R(2,9),p=a*b;if(R(0,2)<2)return Q(`Calcule cette multiplication posée : ${a} × ${b}`,p,[p+10,p-10,p+100,p-1],pz(a,b,'×'));return Q(`${b} paquets de ${a} images. Combien d’images en tout ?`,p,[p+b,p-a,p+10,a+b])},
+ce2_division(){const d=R(2,9),q=R(3,12),r=R(1,d-1),t=R(0,3),n=d*q,m=n+r;if(t==0)return Q(`${n} ÷ ${d} = ?`,q,[q+1,q-1,d,n-d]);if(t==1)return Q(`Dans la division de ${m} par ${d}, quel est le quotient ?`,q,[q+1,q-1,r]);if(t==2)return Q(`Dans la division de ${m} par ${d}, quel est le reste ?`,r,[d,q,r+1,d-r]);return Q(`Je partage ${n} bonbons entre ${d} enfants. Combien de bonbons chacun ?`,q,[q+1,q-1,d,n-d],n<=40?em(n,'🍬'):'')},
+ce2_figures(){const t=R(0,2),c=pick(['#6366f1','#f59e0b','#10b981','#ec4899']),[n,nm]=pick([[3,'triangle'],[5,'pentagone'],[6,'hexagone'],[8,'octogone']]),rot=R(0,59);
+if(t==0)return Q('Comment s’appelle cette figure ?',nm,['triangle','pentagone','hexagone','octogone'].filter(x=>x!=nm),poly(n,rot,c));
+if(t==1)return Q('Combien de côtés a cette figure ?',n,[n+1,n-1,n+2],poly(n,rot,c));
+const w=R(20,45),sq=R(0,1),h=sq?w:w+R(8,25),k=sq?'carré':'rectangle',[W,H]=R(0,1)?[w,h]:[h,w];return Q('Comment s’appelle cette figure ?',k,['carré','rectangle','triangle','losange'].filter(x=>x!=k),svg(`<rect x="${40-W/2}" y="${40-H/2}" width="${W}" height="${H}" fill="${c}" stroke="#e2e8f0" stroke-width="2"/>`,80,80,'mx-auto w-32'))},
+ce2_conversions(){const n=R(1,99),[a,b,f]=pick([['km','m',1000],['m','cm',100],['kg','g',1000],['L','mL',1000],['h','min',60]]);return R(0,1)?Q(`${n} ${a} = ? ${b}`,n*f,[n*f*10,n*f/10,n*f+f,n+f]):Q(`${n*f} ${b} = ? ${a}`,n,[n*10,n+1,n+2,n*f])},
+cm1_grands(){const n=R(10000,999999),a=n/1000|0,b=n%1000,t=R(0,3);
+if(t==0)return Q(`Combien de milliers y a-t-il dans ${fN(n)} ?`,a,[n/100|0,n/10000|0,b,a+1]);
+if(t==1){const m=R(100000,999999),d=String(m),k=R(0,2),i=d.length-4-k;return Q(`Quel est le chiffre des ${['unités de mille','dizaines de mille','centaines de mille'][k]} de ${fN(m)} ?`,d[i],sh([...'0123456789'].filter(x=>x!=d[i])))}
+if(t==2)return Q(`${a} × 1 000 + ${b} = ?`,fN(n),[fN(n+1000),fN(n*10),fN(a*100+b),fN(n-b+b*10)]);
+const st=new Set([n]);while(st.size<4)st.add(R(10000,999999));const A=[...st],g=R(0,1),w=g?Math.max(...A):Math.min(...A);return Q(`Quel nombre est le plus ${g?'grand':'petit'} ?`,fN(w),A.filter(v=>v!=w).map(fN))},
+cm1_operations(){const t=R(0,2);if(t==0){const a=R(12,99),b=R(11,29);return Q(`${a} × ${b} = ?`,a*b,[a*b+10,a*b-10,a*b+a,a*b-b],pz(a,b,'×'))}if(t==1){const d=R(2,9),q=R(11,99);return Q(`${d*q} ÷ ${d} = ?`,q,[q+1,q-1,q+10,d])}const d=R(3,9),q=R(5,30),r=R(1,d-1);return Q(`${d*q+r} = ${d} × ? + ${r}`,q,[q+1,q-1,q+r,r])},
+cm1_perimetre(){const t=R(0,3),L=R(3,20),l=R(2,15),c=R(2,25),a=R(3,15),b=R(3,15),d=R(3,15);
+if(t==0)return Q(`Périmètre d’un rectangle de ${L} cm sur ${l} cm ?`,`${2*(L+l)} cm`,[`${L*l} cm`,`${L+l} cm`,`${2*L+l} cm`],rc(L,l));
+if(t==1)return Q(`Périmètre d’un carré de côté ${c} cm ?`,`${4*c} cm`,[`${c*c} cm`,`${2*c} cm`,`${c+4} cm`],rc(c,c));
+if(t==2)return Q(`Un triangle a pour côtés ${a} cm, ${b} cm et ${d} cm. Quel est son périmètre ?`,`${a+b+d} cm`,[`${a*b*d} cm`,`${a+b} cm`,`${a+b+d+1} cm`,`${2*(a+b)} cm`]);
+return Q(`Un carré a un périmètre de ${4*c} cm. Quelle est la longueur de son côté ?`,`${c} cm`,[`${4*c} cm`,`${2*c} cm`,`${c+4} cm`,`${c*c} cm`])},
+cm1_paralleles(){const a=R(0,179),t=R(0,2),K=['parallèles','perpendiculaires','sécantes non perpendiculaires'],b=pick([R(20,70),R(110,160)]),r=a*Math.PI/180,s=t==0?ln(60+18*Math.sin(r),50+18*Math.cos(r),a,48)+ln(60-18*Math.sin(r),50-18*Math.cos(r),a,48):ln(60,50,a,48)+ln(60,50,a+(t==1?90:b),48);return Q('Ces deux droites sont…',K[t],[...K.filter((_,i)=>i!=t),'confondues'],svg(s,120,100,'mx-auto w-48'))},
+cm2_milliard(){const n=R(10000000,999999999),a=n/1e6|0,k=R(2,30),t=R(0,3);
+if(t==0)return Q(`${k} milliards = ? millions`,k*1000,[k*100,k*10,k*1000000]);
+if(t==1)return Q(`Combien de millions y a-t-il dans ${fN(n)} ?`,a,[n/1000|0,a+1,n/1e5|0]);
+if(t==2){const d=String(n),j=R(0,2),i=d.length-7-j;if(i<0)return G.cm2_milliard();return Q(`Quel est le chiffre des ${['unités de millions','dizaines de millions','centaines de millions'][j]} de ${fN(n)} ?`,d[i],sh([...'0123456789'].filter(x=>x!=d[i])))}
+const b=R(1,999);return Q(`${a} millions et ${b} mille s’écrit :`,fN(a*1e6+b*1000),[fN(a*1e6+b),fN(a*1000+b),fN(a*1e5+b*1000)])},
+cm2_operations(){const t=R(0,3),a=R(11,999)/10,b=R(11,99)/10;
+if(t==0)return Q(`${fx(a)} + ${fx(b)} = ?`,fx(a+b),[fx(a+b+.1),fx(a+b-.1),fx(a+b+1),fx(a+b-1)]);
+if(t==1){const x=Math.max(a,b),y=Math.min(a,b);return Q(`${fx(x)} − ${fx(y)} = ?`,fx(x-y),[fx(x-y+.1),fx(x-y-.1),fx(x-y+1),fx(x+y)])}
+if(t==2){const k=pick([10,100,1000]);return Q(`${fx(a)} × ${k} = ?`,fx(a*k),[fx(a*k/10),fx(a*k*10),fx(a/10),fx(a+k)])}
+const c=R(2,9),d=R(11,99)/10;return Q(`${fx(d)} × ${c} = ?`,fx(d*c),[fx(d*c+.1),fx(d*c-.1),fx(d*c+c),fx(d*c*10)])},
+cm2_aires(){const t=R(0,3),L=R(3,20),l=R(2,15),c=R(2,15),b=R(2,20)*2,h=R(2,15),k=R(1,99);
+if(t==0)return Q(`Aire d’un rectangle de ${L} cm sur ${l} cm ?`,`${L*l} cm²`,[`${2*(L+l)} cm²`,`${L+l} cm²`,`${L*l*2} cm²`],rc(L,l));
+if(t==1)return Q(`Aire d’un carré de côté ${c} cm ?`,`${c*c} cm²`,[`${4*c} cm²`,`${2*c} cm²`,`${c*c+c} cm²`],rc(c,c));
+if(t==2)return Q(`Aire d’un triangle de base ${b} cm et de hauteur ${h} cm ?`,`${b*h/2} cm²`,[`${b*h} cm²`,`${b+h} cm²`,`${b*h/4} cm²`],tr(b,h));
+return Q(`${k} m² = ? dm²`,k*100,[k*10,k*1000,k*10000])},
+cm2_symetrie(){const t=R(0,3),A=[R(-5,5),R(-5,5)],ay=R(0,1);if(t==3)return Q('Que conserve une symétrie axiale ?','les longueurs et les angles',['seulement les longueurs','seulement les angles','ni les longueurs ni les angles','seulement les aires']);const B=ay?[-A[0],A[1]]:[A[0],-A[1]],C=ay?[A[0],-A[1]]:[-A[0],A[1]];return Q(`Quelles sont les coordonnées du symétrique de A par rapport à l’axe des ${ay?'ordonnées (axe vertical)':'abscisses (axe horizontal)'} ?`,c2(...B),[c2(-A[0],-A[1]),c2(A[1],A[0]),c2(...C),c2(A[0]+1,A[1])],pg([[A[0],A[1],'A']]))},
+cm2_prop(){const t=R(0,2),a=R(2,6),b=a+R(1,8),p=R(2,9);
+if(t==0)return Q(`${a} stylos coûtent ${a*p} €. Combien coûtent ${b} stylos ?`,`${b*p} €`,[`${b*p+a} €`,`${(b-a)*p} €`,`${b+p} €`,`${b*p-p} €`],tb(['Stylos',a,b],['Prix (€)',a*p,'?']));
+if(t==1)return Q('Dans ce tableau de proportionnalité, quel est le coefficient de proportionnalité ?',p,[p+1,p-1,p*2],tb(['Quantité',a,b],['Prix (€)',a*p,b*p]));
+return Q(`Une recette pour ${a} personnes demande ${a*p} g de farine. Combien pour ${b} personnes ?`,`${b*p} g`,[`${b*p+a} g`,`${(b-a)*p} g`,`${a*p+b} g`,`${b*p-p} g`],tb(['Personnes',a,b],['Farine (g)',a*p,'?']))},
+c6_priorites(){const a=R(2,20),b=R(2,9),c=R(2,9),d=R(2,9),t=R(0,4);
+if(t==0)return Q(`${a} + ${b} × ${c} = ?`,a+b*c,[(a+b)*c,a+b+c,a*b+c,a+b*c+b]);
+if(t==1)return Q(`(${a} + ${b}) × ${c} = ?`,(a+b)*c,[a+b*c,a+b+c,a+b+c*2,(a+b)*c+c]);
+if(t==2)return Q(`${a+b} − ${b} + ${c} = ?`,a+c,[a-c,a+2*c,a+b+c,a]);
+if(t==3)return Q(`${d*c} ÷ ${c} + ${b} = ?`,d+b,[d+b+c,d*c+b,d-b,b+c]);
+return Q(`${a} + ${b} × (${c+d} − ${d}) = ?`,a+b*c,[(a+b)*c,a+b*(c+d)-d,a+b*d,a+b+c])},
+c6_perimetre(){const r=R(1,25),t=R(0,3),dm=R(0,1),g=dm?`de diamètre ${2*r} cm`:`de rayon ${r} cm`,v=svg(`<circle cx="40" cy="40" r="32" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/><path d="M40 40H72" stroke="#f59e0b" stroke-width="2"/><text x="56" y="36" font-size="8" fill="#e2e8f0" text-anchor="middle">${dm?'d = '+2*r:'r = '+r}</text>`,80,80,'mx-auto w-32');
+if(t==0)return Q(`Aire d’un disque ${g} ?`,`${r*r}π cm²`,[`${2*r}π cm²`,`${r}π cm²`,`${2*r*r}π cm²`],v);
+if(t==1)return Q(`Périmètre d’un disque ${g} ?`,`${2*r}π cm`,[`${r*r}π cm`,`${r}π cm`,`${4*r}π cm`],v);
+if(t==2)return Q(`Avec π ≈ 3,14, périmètre d’un disque ${g} ?`,`${fx(6.28*r)} cm`,[`${fx(3.14*r*r)} cm`,`${fx(3.14*r)} cm`,`${fx(6.28*r+1)} cm`],v);
+return Q(`Avec π ≈ 3,14, aire d’un disque ${g} ?`,`${fx(3.14*r*r)} cm²`,[`${fx(6.28*r)} cm²`,`${fx(3.14*r)} cm²`,`${fx(3.14*r*r+1)} cm²`],v)},
+c6_volume(){const t=R(0,3),L=R(2,12),l=R(2,9),h=R(2,9),c=R(2,9),k=R(1,99);
+if(t==0)return Q(`Volume d’un pavé droit de ${L} cm × ${l} cm × ${h} cm ?`,`${L*l*h} cm³`,[`${L*l+h} cm³`,`${2*(L*l+l*h+L*h)} cm³`,`${L+l+h} cm³`,`${L*l*h*2} cm³`],box());
+if(t==1)return Q(`Volume d’un cube d’arête ${c} cm ?`,`${c**3} cm³`,[`${c*c} cm³`,`${3*c} cm³`,`${6*c*c} cm³`],box());
+if(t==2)return Q(`Combien de cubes de 1 cm d’arête remplissent un pavé de ${L} cm sur ${l} cm sur ${h} cm ?`,L*l*h,[L*l,L*l+h,L+l+h,L*l*h+L],box());
+return Q(`${k} L = ? cm³`,k*1000,[k*100,k*10,k*10000])},
+c6_donnees(){const N=sh(['Chats','Chiens','Lapins','Poissons','Oiseaux']).slice(0,R(4,5)),V=N.map(()=>R(1,15)),v=bc(N,V),t=R(0,3),mx=Math.max(...V),i=V.indexOf(mx);if(V.filter(x=>x==mx).length>1)return G.c6_donnees();
+if(t==0)return Q('Quel animal est le plus fréquent ?',N[i],N.filter(x=>x!=N[i]).slice(0,3),v);
+if(t==1){const s=V.reduce((x,y)=>x+y,0);return Q('Combien d’animaux y a-t-il en tout ?',s,[s+1,s-1,mx,s+2],v)}
+if(t==2){const j=(i+1)%N.length;return Q(`Combien de ${N[i].toLowerCase()} de plus que de ${N[j].toLowerCase()} ?`,mx-V[j],[mx+V[j],mx-V[j]+1,mx,V[j]],v)}
+const k=R(0,N.length-1);return Q(`Combien de ${N[k].toLowerCase()} y a-t-il ?`,V[k],[V[k]+1,V[k]-1,V[k]+2,mx],v)},
+p1_second(){const t=R(0,3),a=pick([-3,-2,-1,1,2,3]),r1=R(-5,5);let r2;do r2=R(-5,5);while(r2==r1);const b=-a*(r1+r2),c=a*r1*r2,D=b*b-4*a*c,s=[r1,r2].sort((x,y)=>x-y),eq=`${P(a,b,c)} = 0`,v=gr(x=>a*x*x+b*x+c,-6,6);
+if(t==0)return Q(`Calcule le discriminant de ${eq}`,D,[b*b+4*a*c,b*b-2*a*c,-D-1,b-4*a*c],v);
+if(t==1)return Q(`Quelles sont les solutions de ${eq} ?`,`${fm(s[0])} et ${fm(s[1])}`,[`${fm(-s[0])} et ${fm(-s[1])}`,`${fm(s[0])} et ${fm(-s[1])}`,`${fm(-s[0])} et ${fm(s[1])}`],v);
+if(t==2){const A=pick([-3,-2,-1,1,2,3]),B=R(-6,6),C=R(-6,6),d=B*B-4*A*C,n=d>0?'2':d==0?'1':'0';return Q(`Combien de solutions réelles a ${P(A,B,C)} = 0 ?`,n,['0','1','2','une infinité'].filter(x=>x!=n),gr(x=>A*x*x+B*x+C,-6,6))}
+return Q(`Quelle est la somme des solutions de ${eq} ?`,fm(r1+r2),[fm(r1*r2),fm(-(r1+r2)),fm(r1+r2+1),fm(b)],v)},
+p1_exp(){const t=R(0,4),a=R(-5,5),b=R(-5,5),k=R(2,6),E=n=>`e${sp(n)}`;
+if(t==0)return Q(`${E(a)} × ${E(b)} = ?`,E(a+b),[E(a*b),E(a-b),E(a+b+1),E(a+b-1)]);
+if(t==1)return Q(`${E(a)} ÷ ${E(b)} = ?`,E(a-b),[E(a+b),E(b-a),E(a*b),E(a-b+1)]);
+if(t==2)return Q(`(${E(a)})${sp(k)} = ?`,E(a*k),[E(a+k),E(a**2+k),E(a*k+1),E(a*k-1)]);
+if(t==3)return Q(`Quelle est la dérivée de f(x) = e^(${k}x) ?`,`${k}e^(${k}x)`,[`e^(${k}x)`,`${k}xe^(${k}x)`,`e^(${k-1}x)`,`${k}e^(${k-1}x)`],gr(Math.exp,-3,2));
+const[q,an]=pick([['e⁰ = ?','1'],['Pour tout réel x, eˣ est…','strictement positif'],['La dérivée de eˣ est…','eˣ'],['e¹ = ?','e']]);return Q(q,an,['1','strictement positif','eˣ','e','0','négatif'].filter(x=>x!=an).slice(0,3))},
+p1_suites(){const t=R(0,4),u0=R(-5,10),r=pick([-5,-4,-3,-2,2,3,4,5,7]),n=R(4,20),q=R(2,3),m=R(2,5),g=R(1,5);
+if(t==0)return Q(`(uₙ) est arithmétique avec u₀ = ${fm(u0)} et de raison ${fm(r)}. Calcule u${sb(n)}.`,fm(u0+n*r),[u0+(n-1)*r,u0+(n+1)*r,u0*n*r,u0+n+r].map(fm));
+if(t==1)return Q(`(uₙ) est géométrique avec u₀ = ${g} et de raison ${q}. Calcule u${sb(m)}.`,g*q**m,[g*q*m,g+q*m,g*q**(m+1),g*q**(m-1)]);
+if(t==2)return Q(`(uₙ) est arithmétique, u${sb(n)} = ${fm(u0)} et u${sb(n+1)} = ${fm(u0+r)}. Quelle est la raison ?`,fm(r),[r+1,-r,u0,r-1].map(fm));
+if(t==3){const ar=R(0,1),x=ar?`arithmétique de raison ${fm(r)}`:`géométrique de raison ${q}`;return Q(`Si uₙ₊₁ = ${ar?'uₙ '+sg(r):q+' × uₙ'}, alors (uₙ) est…`,x,[ar?`géométrique de raison ${fm(r)}`:`arithmétique de raison ${q}`,'ni arithmétique ni géométrique',ar?`arithmétique de raison ${fm(-r)}`:`géométrique de raison ${q+1}`])}
+return Q(`Suite arithmétique : u₀ = ${fm(u0)}, u₁ = ${fm(u0+r)}, u₂ = ${fm(u0+2*r)}. Que vaut u₃ ?`,fm(u0+3*r),[u0+4*r,u0+3*r+1,u0+2*r+r*r,u0*r].map(fm))},
+p1_scalaire(){const t=R(0,3),a=R(-5,5),b=R(-5,5),c=R(-5,5),d=R(-5,5),s=a*c+b*d,v=pg([[a,b,'u'],[c,d,'v']]);
+if(t==0)return Q(`u${c2(a,b)} et v${c2(c,d)}. Calcule u · v.`,fm(s),[a*d+b*c,a*c-b*d,a+b+c+d,-s].map(fm),v);
+if(t==1){const A=a||2,ok=R(0,1),x=ok?-b:-b+R(1,2);return Q(`u${c2(A,b)} et v${c2(x,A)} sont-ils orthogonaux ?`,ok?'Oui':'Non',['Oui','Non','Impossible à dire','Seulement si u = v'].filter(z=>z!=(ok?'Oui':'Non')),pg([[A,b,'u'],[x,A,'v']]))}
+if(t==2)return Q(`u${c2(a,b)}. Calcule u · u (la norme au carré).`,a*a+b*b,[(a+b)**2,a*a-b*b,2*a*b,a*a+b*b+1]);
+const p=2*R(1,5),q=R(1,6),i=R(0,4),cs=[1,.5,0,-.5,-1],ag=[0,60,90,120,180];return Q(`‖u‖ = ${p}, ‖v‖ = ${q} et l’angle (u, v) mesure ${ag[i]} degrés. Calcule u · v.`,fm(p*q*cs[i]),[p*q,p*q*cs[(i+1)%5],p+q,p*q*cs[(i+2)%5]].map(fm))},
+p1_proba(){const PS=[[.2,.3,.5],[.1,.4,.5],[.25,.25,.5],[.5,.2,.3],[.1,.1,.8],[.4,.4,.2],[.3,.3,.4]],p=pick(PS),X=[R(-5,3),R(4,8),R(9,15)],t=R(0,2),E=X.reduce((s,x,i)=>s+x*p[i],0),row1=['xᵢ',...X.map(fm)];
+if(t==0)return Q('Calcule l’espérance E(X).',fx(E),[fx((X[0]+X[1]+X[2])/3),fx(E+1),fx(E-1),fx(X[0]+X[1]+X[2])],tb(row1,['P(X = xᵢ)',...p.map(fx)]));
+if(t==1)return Q(`Quelle est la probabilité manquante P(X = ${fm(X[2])}) ?`,fx(p[2]),[fx(p[0]),fx(1-p[2]),fx(p[1]),fx(p[0]+p[1]+.1)],tb(row1,['P(X = xᵢ)',fx(p[0]),fx(p[1]),'?']));
+return Q(`Calcule P(X ≥ ${fm(X[1])}).`,fx(p[1]+p[2]),[fx(p[2]),fx(p[1]),fx(p[0]+p[1]),'1'],tb(row1,['P(X = xᵢ)',...p.map(fx)]))},
+term_continuite(){const t=R(0,4),k=R(2,20),a=R(0,3),b=a+R(2,6),f=x=>x*x-k;if(f(a)*f(b)==0)return G.term_continuite();
+if(t<4){const ok=f(a)*f(b)<0,A=ok?'Oui : les signes sont contraires':'Non : les signes sont identiques';return Q(`f(x) = x² − ${k} est continue sur [${a} ; ${b}]. On a f(${a}) = ${fm(f(a))} et f(${b}) = ${fm(f(b))}. Le théorème des valeurs intermédiaires garantit-il une solution de f(x) = 0 ?`,A,['Oui : les signes sont contraires','Non : les signes sont identiques','Oui : f est croissante','Non : f n’est pas continue'].filter(x=>x!=A),gr(f,a-.5,b+.5))}
+const[q,an]=pick([['Une fonction dérivable sur I est…','continue sur I'],['Le TVI s’applique aux fonctions…','continues sur un intervalle'],['Si f est continue et strictement monotone, f(x) = k a…','au plus une solution'],['Une fonction polynôme est…','continue sur ℝ']]);return Q(q,an,['continue sur I','continues sur un intervalle','au plus une solution','continue sur ℝ','toujours croissante','discontinue'].filter(x=>x!=an).slice(0,3))},
+term_log(){const t=R(0,6),a=R(2,16),b=a+R(1,8),n=R(2,5),k=R(-4,6);
+if(t==0)return Q(`ln(${a}) + ln(${b}) = ?`,`ln(${a*b})`,[`ln(${a+b})`,`${a*b}`,`ln(${a})ln(${b})`,`ln(${a*b+1})`]);
+if(t==1)return Q(`ln(${a}) − ln(${b}) = ?`,`ln(${a}/${b})`,[`ln(${b}/${a})`,`ln(${a-b})`,`ln(${a})/ln(${b})`,`ln(${a*b})`]);
+if(t==2)return Q(`ln(${a}${sp(n)}) = ?`,`${n}ln(${a})`,[`ln(${a*n})`,`${a}ln(${n})`,`ln(${a})${sp(n)}`,`${n} + ln(${a})`]);
+if(t==3)return Q(`ln(e${sp(k)}) = ?`,fm(k),[-k,k+1,k-1,k*2].map(fm));
+if(t==4)return Q(`Résous ln(x) = ${fm(k)}`,`x = e${sp(k)}`,[`x = e${sp(-k)}`,`x = ${fm(k)}`,`x = ln(${Math.abs(k)+1})`,`x = e${sp(k+1)}`]);
+if(t==5)return Q(`Résous e^x = ${a}`,`x = ln(${a})`,[`x = e${sp(a)}`,`x = ${a}`,`x = ln(${a+1})`,`x = 1/${a}`]);
+return Q(`Quelle est la dérivée de f(x) = ${a}ln(x) ?`,`${a}/x`,[`${a}ln(x)`,`1/${a}x`,`ln(${a}x)`,`${a}x`])},
+term_integrales(){const t=R(0,3),k=R(1,9),a=R(0,4),b=a+R(1,5),m=R(1,4)*3;
+if(t==0)return Q(`Calcule l’intégrale de ${a} à ${b} de la fonction constante f(x) = ${k}.`,k*(b-a),[k*(b+a),k*b,k*a,k*(b-a)+k]);
+if(t==1)return Q(`Calcule l’intégrale de ${a} à ${b} de f(x) = 2x.`,b*b-a*a,[b-a,b*b+a*a,2*(b-a),(b*b-a*a)/2+1]);
+if(t==2)return Q(`Une primitive de f(x) = ${2*k}x est :`,`${k}x²`,[`${2*k}x²`,`${k}x`,`${2*k}`,`${k}x² + ${k}x`]);
+return Q(`Calcule l’intégrale de 0 à ${m} de f(x) = x².`,m*m*m/3,[m*m*m,m*m/2,m*m*m/2,m*m*m/3+1],gr(x=>x*x,0,m))},
+term_espace(){const T=[[2,3,6,7],[1,2,2,3],[2,6,9,11],[4,4,7,9],[6,6,7,11]],t=R(0,3),A=[R(-4,4),R(-4,4),R(-4,4)],B=A.map(x=>x+R(-3,3)),v3=p=>`(${p.map(fm).join(' ; ')})`,V='<div class="big">🧊</div>';
+if(t==0)return Q(`A${v3(A)} et B${v3(B)}. Quelles sont les coordonnées du vecteur AB ?`,v3(B.map((x,i)=>x-A[i])),[v3(A.map((x,i)=>x-B[i])),v3(B.map((x,i)=>x+A[i])),v3(B.map((x,i)=>x-A[i]+(i==0?1:0))),v3(B.map((x,i)=>Math.abs(x-A[i])))],V);
+if(t==1){const C=A.map(x=>x+2*R(-3,3));return Q(`A${v3(A)} et B${v3(C)}. Quelles sont les coordonnées du milieu de [AB] ?`,v3(A.map((x,i)=>(x+C[i])/2)),[v3(A.map((x,i)=>x+C[i])),v3(C.map((x,i)=>(x-A[i])/2)),v3(A.map((x,i)=>(x+C[i])/2+(i==2?1:0))),v3(A.map((x,i)=>(x+C[i])/2+(i==0?1:0)))],V)}
+if(t==2){const[p,q,r,s]=pick(T);return Q(`Le vecteur AB a pour coordonnées ${v3([p,-q,r])}. Quelle est la distance AB ?`,s,[p+q+r,p*p+q*q+r*r,s+1,s-1],V)}
+const u=[R(-4,4),R(-4,4),R(-4,4)],w=[R(-4,4),R(-4,4),R(-4,4)],sc=u[0]*w[0]+u[1]*w[1]+u[2]*w[2];return Q(`u${v3(u)} et v${v3(w)}. Calcule u · v.`,fm(sc),[sc+1,-sc,u[0]*w[0]+u[1]*w[1],sc+u[2]].map(fm),V)},
+term_binomiale(){const n=R(3,12),p=pick([.1,.2,.25,.3,.4,.5,.6,.7]),k=R(1,n-1),C=(n,k)=>{let r=1;for(let i=1;i<=k;i++)r=r*(n-k+i)/i;return Math.round(r)},t=R(0,4),X=`X suit la loi binomiale B(${n} ; ${fx(p)}).`;
+if(t==0)return Q(`${X} Calcule E(X).`,fx(n*p),[fx(n*(1-p)),fx(n+p),fx(n*p*(1-p)),fx(n*p+1)]);
+if(t==1)return Q(`${X} Calcule V(X).`,fx(n*p*(1-p)),[fx(n*p),fx(n*(1-p)),fx(n*p*p),fx(n*p*(1-p)+1)]);
+if(t==2)return Q(`Combien vaut le coefficient binomial « ${k} parmi ${n} » ?`,C(n,k),[n*k,C(n,k)+n,C(n,k-1)+1,C(n,k)+1]);
+if(t==3)return Q(`X suit la loi binomiale B(${n} ; 0,5). Calcule P(X = 0).`,fr(1,2**n),[fr(1,2*n),fr(n,2**n),fr(1,n),fr(1,2**(n-1))]);
+return Q(`X suit la loi binomiale B(${n} ; 0,5). Calcule P(X = ${k}).`,fr(C(n,k),2**n),[fr(k,2**n),fr(C(n,k),2*n),fr(C(n,k),n*n),fr(1,2**n)])},
+p1_deriv(){const t=R(0,3),a=pick([-3,-2,-1,1,2,3]),b=R(-5,5),c=R(-5,5),x0=R(-3,3);
+if(t==0){const f=a*x0*x0+b*x0+c;return Q(`f(x) = ${P(a,b,c)}. Calcule le nombre dérivé f’(${x0}).`,2*a*x0+b,[f,a*x0+b,2*a*x0,2*a*x0+b+2],gr(x=>a*x*x+b*x+c,-3,3,x0))}
+if(t==1){const n=R(2,6),F=(k,e)=>`${k}x${e==1?'':SUP[e]}`;return Q(`Quelle est la dérivée de f(x) = x${SUP[n]} ?`,F(n,n-1),[F(n-1,n),F(1,n-1),F(n,n),F(n+1,n-1)])}
+if(t==2)return Q(`f(x) = ${a}x ${b<0?'−':'+'} ${Math.abs(b)||1}. Que vaut f’(x) ?`,a,[b||1,a+b,0,-a]);
+return Q(`Quelle est la dérivée de f(x) = ${a}x² ?`,`${2*a}x`,[`${a}x`,`${2*a}`,`${a*a}x`,`${a}x²`])},
+term_lim(){const t=R(0,4),a=pick([-3,-2,-1,1,2,3]),k=pick([-9,-5,-3,-2,-1,1,2,3,5,9]),I=['+∞','−∞','0'],sg=n=>n<0?`− ${-n}`:`+ ${n}`;
+if(t==0)return Q(`Limite de ${k}/x quand x tend vers +∞ ?`,'0',['+∞','−∞',`${k}`],gr(x=>k/x,.5,8));
+if(t==1){const b=R(-5,5),c=R(-5,5),ans=a>0?'+∞':'−∞';return Q(`Limite de ${P(a,b,c)} quand x tend vers +∞ ?`,ans,[...I.filter(x=>x!=ans),`${a}`],gr(x=>a*x*x+b*x+c,-3,3))}
+if(t==2){const c=R(1,5),m=R(1,6),b=R(-5,5),d=R(1,9);return Q(`Limite de (${c*m}x ${sg(b)}) / (${c}x ${sg(d)}) quand x tend vers +∞ ?`,m,[c*m,c,'+∞','0'])}
+if(t==3){const ans=k>0?'+∞':'−∞';return Q(`Limite de ${k}/x quand x tend vers 0 avec x > 0 ?`,ans,[...I.filter(x=>x!=ans),`${k}`],gr(x=>k/x,.3,4))}
+const n=R(2,7),ans=(a>0)==(n%2==0)?'+∞':'−∞';return Q(`Limite de ${a}x${SUP[n]} quand x tend vers −∞ ?`,ans,[...I.filter(x=>x!=ans),`${a}`])}
+};
+const CUR={PS:[['ps_formes','Les formes (rond)','🔴','Sensoriel'],['ps_count3','Compter jusqu’à 3','⭐','Nombres'],['ps_tailles','Petit et Grand','🐘','Grandeurs'],['ps_espace','Haut et Bas','☁️','Espace']],
+MS:[['ms_count6','Compter jusqu’à 6','🍎','Nombres'],['ms_associer','Chiffre et quantité','🔢','Nombres'],['ms_formes','Carré et Triangle','🟦','Sensoriel'],['ms_rythme','Les rythmes','🔵🔴','Logique'],['ms_comparer','Plus et Moins','⚖️','Nombres']],
+GS:[['gs_chaine','Compter jusqu’à 10','🔟','Nombres'],['gs_decomp','Décomposer les nombres','🧩','Nombres'],['gs_formes','Toutes les formes','▭','Sensoriel'],['gs_espace','Droite et Gauche','👈👉','Espace'],['gs_masse','Lourd et Léger','🏋️','Grandeurs']],
+CP:[['cp_num100','Nombres jusqu’à 100','💯','Nombres'],['cp_add','Additions','➕','Calcul'],['cp_soustraction','Soustractions','➖','Calcul'],['cp_regle','Tracer à la règle','📏','Géométrie'],['cp_monnaie','La monnaie (Euro)','💶','Grandeurs'],['cp_heure','Lire l’heure','🕒','Grandeurs']],
+CE1:[['ce1_num1000','Nombres jusqu’à 1000','🔢','Nombres'],['ce1_tables','Tables de 2 à 5','✖️','Calcul'],['ce1_soustraction','Soustraction avec retenue','➖','Calcul'],['ce1_solides','Cube et pavé droit','🧊','Géométrie'],['ce1_angle','Angle droit','📐','Géométrie'],['ce1_mesures','m, g, kg, L','📏','Grandeurs']],
+CE2:[['ce2_num10000','Nombres jusqu’à 10 000','🔢','Nombres'],['ce2_mult','Multiplication posée','✖️','Calcul'],['ce2_division','Division simple','➗','Calcul'],['ce2_tables','Toutes les tables','📊','Calcul'],['ce2_figures','Carré, rectangle, triangle','🟦','Géométrie'],['ce2_conversions','Conversions d’unités','🔄','Grandeurs']],
+CM1:[['cm1_grands','Nombres jusqu’au million','🔢','Nombres'],['cm1_fractions','Fractions simples','🍕','Nombres'],['cm1_decimaux','Nombres décimaux','🎯','Nombres'],['cm1_operations','Multiplications & divisions','✖️','Calcul'],['cm1_perimetre','Périmètres','📏','Grandeurs'],['cm1_paralleles','Parallèles & perpendiculaires','📐','Géométrie']],
+CM2:[['cm2_milliard','Jusqu’au milliard','🔢','Nombres'],['cm2_fractions','Fractions & décimaux','🍰','Nombres'],['cm2_operations','Opérations avec décimaux','➕','Calcul'],['cm2_aires','Aires','📐','Grandeurs'],['cm2_symetrie','Symétrie axiale','🪞','Géométrie'],['cm2_prop','Proportionnalité','📈','Proportionnalité']],
+'6ème':[['c6_fractions','Fractions','🔢','Nombres'],['c6_priorites','Priorités opératoires','⚖️','Calcul'],['c6_perimetre','Périmètre & aire du disque','⭕','Grandeurs'],['c6_volume','Volume du pavé droit','📦','Grandeurs'],['c6_symetrie','Symétrie axiale','🪞','Géométrie'],['c6_donnees','Tableaux & diagrammes','📊','Données']],
+'5ème':[['c5_relatifs','Nombres relatifs','🌡️','Nombres'],['c5_litteral','Calcul littéral','🔤','Algèbre'],['c5_symetrie','Symétrie centrale','🔄','Géométrie'],['c5_parallelo','Parallélogrammes','▱','Géométrie'],['c5_moyenne','Moyenne & fréquences','📊','Statistiques'],['c5_scratch','Scratch (boucles)','💻','Algorithmique']],
+'4ème':[['c4_relatifs','Relatifs × et ÷','🌡️','Nombres'],['c4_puissances','Puissances','¹⁰','Nombres'],['c4_litteral','Développement & équations','🔤','Algèbre'],['c4_pythagore','Théorème de Pythagore','📐','Géométrie'],['c4_transfo','Translation & rotation','🔄','Géométrie'],['c4_proba','Probabilités simples','🎲','Probabilités']],
+'3ème':[['c3_arithmetique','Nombres premiers & PGCD','🔢','Nombres'],['c3_equations','Équations & inéquations','⚖️','Algèbre'],['c3_fonctions','Fonctions linéaires & affines','📈','Fonctions'],['c3_thales','Théorème de Thalès','📐','Géométrie'],['c3_trigo','Trigonométrie','△','Géométrie'],['c3_proba','Probabilités à 2 épreuves','🎲','Probabilités']],
+Seconde:[['sec_ensembles','Ensembles & intervalles','ℝ','Algèbre'],['sec_fonctions','Fonctions de référence','📉','Fonctions'],['sec_variations','Sens de variation','📈','Fonctions'],['sec_vecteurs','Vecteurs & Chasles','➡️','Géométrie'],['sec_proba','Probabilités conditionnelles','🌳','Probabilités'],['sec_python','Python de base','🐍','Algorithmique']],
+'1ère':[['p1_second','Équations du 2nd degré','ax²','Algèbre'],['p1_derivee','Dérivation','📈','Analyse'],['p1_exp','Fonction exponentielle','eˣ','Analyse'],['p1_suites','Suites arith. & géom.','🔢','Suites'],['p1_scalaire','Produit scalaire','⋅','Géométrie'],['p1_proba','Variables aléatoires','🎲','Probabilités']],
+Terminale:[['term_limites','Limites','∞','Analyse'],['term_continuite','Continuité & TVI','📈','Analyse'],['term_log','Logarithme népérien','ln','Analyse'],['term_integrales','Intégrales','∫','Analyse'],['term_espace','Géométrie dans l’espace','🧊','Géométrie'],['term_binomiale','Loi binomiale','🎲','Probabilités']]};
+const AL={ps_formes:'ps_shapes',ms_comparer:'ms_compare',gs_chaine:'gs_num',cp_add:()=>{let q;do q=G.cp_add_sub();while(!/\+/.test(q.t));return q},cp_soustraction:()=>{let q;do q=G.cp_add_sub();while(!/−/.test(q.t)||/\+/.test(q.t));return q},cm1_decimaux:'c6_decimals',cm2_fractions:'cm2_frac_ops',c6_symetrie:'cm2_symetrie',c5_parallelo:'c5_para',c5_moyenne:'c5_stats',c4_relatifs:'c4_relatifs2',c4_litteral:'c4_dev',c4_transfo:'c4_trans',c3_arithmetique:'c3_premiers',c3_equations:'c3_equ',c3_proba:'c3_proba2',sec_ensembles:'sec_ens',sec_fonctions:'sec_ref',sec_variations:'sec_var',sec_vecteurs:'sec_vect',sec_proba:'sec_pcond',p1_derivee:'p1_deriv',term_limites:'term_lim'};
+Object.entries(AL).forEach(([k,v])=>G[k]=typeof v=='string'?()=>G[v]():v);
+const DU=['ce1_tables','ce2_tables','ce2_mult','cm1_operations'],BO='bg-slate-800 hover:bg-indigo-600 text-white font-black py-4 px-3 rounded-2xl border border-slate-700 active:scale-95 shadow-lg',BM='bg-gradient-to-b from-indigo-500 to-indigo-700 text-white font-black text-3xl py-6 px-3 rounded-3xl border-4 border-indigo-300/30 shadow-xl active:scale-90 min-h-[80px] flex items-center justify-center',BP='bg-indigo-600 hover:bg-indigo-500 font-black py-2 rounded-xl text-sm';
+
+/* ---------- Interface ---------- */
+let S={u:'',g:'PS',mn:'',xp:0,m:null,q:null,t:25,tm:0,done:0,D:null};
+const app=$('app'),H=s=>app.innerHTML=s,mat=()=>['PS','MS','GS'].includes(S.g);
+const login=()=>H(`<div class="min-h-screen flex items-center justify-center p-4"><div class="bg-slate-900/90 p-8 rounded-3xl max-w-md w-full border-2 border-indigo-500/30 shadow-2xl text-center pop"><div class="text-5xl mb-3">🎓✨</div><h1 class="text-3xl font-black bg-gradient-to-r from-pink-400 to-indigo-400 bg-clip-text text-transparent">MathsAcademy Montessori</h1><p class="text-slate-400 text-sm mt-2 mb-6">Programme officiel • De la maternelle à la Terminale</p><input id="nm" class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-4 py-3 text-lg mb-4 focus:outline-none focus:border-pink-500" placeholder="Prénom de l’élève"><select id="gr" class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl px-4 py-3 mb-5">${[['Maternelle',['PS','MS','GS']],['Élémentaire',['CP','CE1','CE2','CM1','CM2']],['Collège',['6ème','5ème','4ème','3ème']],['Lycée',['Seconde','1ère','Terminale']]].map(([l,g])=>`<optgroup label="${l}">${g.map(x=>`<option ${x==S.g?'selected':''}>${x}</option>`).join('')}</optgroup>`).join('')}</select><button onclick="go()" class="w-full bg-gradient-to-r from-pink-500 to-indigo-500 font-black py-4 rounded-2xl text-lg active:scale-95">C’est parti ! 🚀</button></div></div>`);
+const go=()=>{const n=$('nm').value.trim();if(!n)return $('nm').focus();S.u=n;S.g=$('gr').value;home();say(`Bonjour ${n} !`)};
+const setG=g=>{S.g=g;home()};
+const home=()=>{clearInterval(S.tm);S.m=null;S.D=null;H(`<div class="max-w-4xl mx-auto p-4"><header class="flex justify-between items-center py-3 mb-4"><div><h1 class="text-2xl font-black">🎓 MathsAcademy Montessori</h1><p class="text-sm text-indigo-300">Joueur : <b class="text-white">${S.u}</b> (${S.g})</p></div><div class="flex gap-2 items-center"><button class="mt bg-slate-800 px-3 py-2 rounded-xl" onclick="tg()">${mute?'🔇':'🔊'}</button><div class="bg-amber-400/20 text-amber-300 px-4 py-2 rounded-full font-black border border-amber-400/40">⭐ ${S.xp} XP</div></div></header><div class="flex flex-wrap gap-2 mb-6">${Object.keys(CUR).map(g=>`<button onclick="setG('${g}')" class="px-4 py-2 rounded-full text-sm font-bold ${S.g==g?'bg-indigo-600 shadow-lg':'bg-slate-800 text-slate-400 hover:bg-slate-700'}">${g}</button>`).join('')}</div><div class="grid gap-4 grid-cols-1 sm:grid-cols-2 ${mat()?'':'lg:grid-cols-3'}">${CUR[S.g].map(([id,n,ic,dm])=>`<div onclick="play('${id}')" class="cursor-pointer p-5 rounded-2xl border-2 active:scale-95 transition ${mat()?'bg-gradient-to-br from-indigo-600/40 to-pink-600/30 border-pink-400/40 hover:border-pink-300':'bg-slate-900/80 border-slate-700 hover:border-indigo-500'}"><div class="text-3xl mb-3">${ic}</div><div class="font-black leading-snug">${n}</div><div class="text-xs text-indigo-300 mt-2">${dm}</div>${DU.includes(id)?`<button onclick="event.stopPropagation();duel('${id}')" class="mt-3 w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-black py-2 rounded-xl text-sm">⚔️ Duel à 2</button>`:''}</div>`).join('')}</div><button onclick="S.xp=0;login()" class="mt-10 text-sm text-slate-500 hover:text-slate-300 underline">Changer d’élève</button></div>`)};
+const play=id=>{S.m=id;S.D=null;S.mn=(CUR[S.g].find(x=>x[0]==id)||[])[1];next()};
+const next=()=>{if(!S.m||S.D)return;S.done=0;S.q=G[S.m]();S.t=25;clearInterval(S.tm);draw();say(S.q.t);if(!mat())S.tm=setInterval(()=>{if(--S.t<=0){clearInterval(S.tm);S.done=1;fb(0,`Temps écoulé ! La réponse était ${S.q.a}.`);setTimeout(next,2800)}else{const e=$('tm');if(e)e.textContent='⏱️ '+S.t+'s'}},1000)};
+const draw=()=>{const q=S.q;H(`<div class="max-w-lg mx-auto p-4"><div class="bg-slate-900/90 p-5 rounded-3xl text-center border border-slate-800 pop"><div class="flex justify-between items-center gap-2 mb-3"><button onclick="home()" class="bg-slate-800 px-3 py-2 rounded-xl text-xs font-black">← RETOUR</button><span class="text-xs font-black text-indigo-400 bg-indigo-950 px-3 py-1.5 rounded-xl border border-indigo-800/40 truncate max-w-[150px]">${S.g} • ${S.mn}</span><span class="flex gap-2"><button onclick="say(S.q.t)" class="bg-slate-800 px-3 py-2 rounded-xl">🔁${mat()?' Écouter':''}</button><button class="mt bg-slate-800 px-3 py-2 rounded-xl" onclick="tg()">${mute?'🔇':'🔊'}</button>${mat()?'':`<span id="tm" class="text-xs font-mono font-bold bg-slate-800 text-amber-400 px-3 py-2 rounded-xl">⏱️ ${S.t}s</span>`}</span></div><div class="my-3">${q.v}</div><h2 class="text-lg sm:text-xl font-black my-4">${q.t}</h2><div id="fb"></div><div id="op" class="grid grid-cols-2 ${mat()?'gap-4':'gap-3'}">${q.o.map((o,i)=>`<button onclick="ans(${i})" class="${mat()?BM:BO}">${o}</button>`).join('')}</div></div></div>`)};
+const fb=(ok,m)=>{$('fb').innerHTML=`<div class="p-3 rounded-xl mb-3 font-black text-sm ${ok?'bg-emerald-500/20 text-emerald-300':'bg-rose-500/20 text-rose-300'}">${m}</div>`;say(m)};
+const ans=i=>{if(S.done)return;const b=$('op').children[i];if(S.q.o[i]==S.q.a){S.done=1;clearInterval(S.tm);snd(1);cf();const xp=mat()?15:Math.max(5,S.t);S.xp+=xp;fb(1,`Bravo ${S.u} ! (+${xp} XP)`);setTimeout(next,1400)}else{snd(0);b.disabled=true;b.classList.add('opacity-30');fb(0,`Oups ${S.u}, essaie encore !`)}};
+
+/* ---------- Duel (multiplication) : 2 joueurs face à face, premier à 10 ---------- */
+const duel=id=>{const p2=prompt('Prénom du joueur 2 ?','Joueur 2')||'Joueur 2';clearInterval(S.tm);S.m=id;S.D={n:[S.u,p2],s:[0,0],l:[0,0],d:0,w:-1};dn()};
+const dn=()=>{const D=S.D;if(!D)return;D.l=[0,0];D.d=0;S.q=G[S.m]();dr();say(S.q.t)};
+const rp=()=>{S.D.s=[0,0];S.D.w=-1;dn()};
+const dp=p=>{const D=S.D,q=S.q;return `<div class="${p?'rot':''} p-3 flex-1 flex flex-col justify-center text-center"><div class="font-black text-sm text-amber-400">${D.n[p]} : ${D.s[p]}/10</div><div>${q.v}</div><h2 class="font-black my-2">${q.t}</h2><div class="grid grid-cols-2 gap-2">${q.o.map((o,i)=>`<button ${D.l[p]||D.d?'disabled':''} onclick="da(${p},${i})" class="${BO} ${D.l[p]?'opacity-30':''}">${o}</button>`).join('')}</div></div>`};
+const dr=()=>{const D=S.D;if(D.w>=0)return H(`<div class="min-h-screen flex items-center justify-center p-4 text-center"><div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 pop"><div class="text-6xl mb-3">🏆</div><h2 class="text-2xl font-black mb-5">${D.n[D.w]} gagne ${D.s[D.w]} à ${D.s[1-D.w]} !</h2><div class="flex gap-3 justify-center"><button onclick="rp()" class="${BP} px-5">Rejouer</button><button onclick="home()" class="bg-slate-800 font-black px-5 rounded-xl text-sm">Menu</button></div></div></div>`);H(`<div class="min-h-screen flex flex-col">${dp(1)}<div class="flex justify-between items-center bg-slate-900 px-3 py-2"><button onclick="home()" class="bg-slate-800 px-3 py-1 rounded-xl text-xs font-black">← MENU</button><b class="text-xs text-amber-400">⚔️ Premier à 10 points</b><span><button class="mt px-2" onclick="tg()">${mute?'🔇':'🔊'}</button><button class="px-2" onclick="say(S.q.t)">🔁</button></span></div>${dp(0)}</div>`)};
+const da=(p,i)=>{const D=S.D,q=S.q;if(D.d||D.l[p])return;if(q.o[i]==q.a){D.d=1;D.s[p]++;snd(1);cf();if(D.s[p]>=10){D.w=p;dr();say(`${D.n[p]} gagne la partie !`);return}dr();say(`Point pour ${D.n[p]} !`);setTimeout(dn,1200)}else{D.l[p]=1;snd(0);if(D.l[0]&&D.l[1]){D.d=1;setTimeout(dn,1000)}dr()}};
+login();
+</script></body></html>
